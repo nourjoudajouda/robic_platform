@@ -1,0 +1,59 @@
+/* Theme Toggle Button Styles */
+.theme-toggle-btn {
+    background: transparent !important;
+    border: none !important;
+    color: hsl(var(--body-color)) !important;
+    font-size: 1.5rem !important;
+    padding: 0.5rem 1rem !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none !important;
+    line-height: 1;
+}
+
+.theme-toggle-btn:hover {
+    color: hsl(var(--base)) !important;
+    transform: scale(1.1);
+    background: transparent !important;
+}
+
+.theme-toggle-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--base) / 0.3);
+    border-radius: 4px;
+}
+
+.theme-toggle-btn .theme-icon {
+    display: inline-block !important;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle-btn:hover .theme-icon {
+    transform: rotate(15deg);
+}
+
+/* Dark Mode Icon */
+[data-theme="dark"] body .theme-icon.la-moon,
+body[data-theme="dark"] .theme-icon.la-moon {
+    display: inline-block !important;
+}
+
+[data-theme="dark"] body .theme-icon.la-sun,
+body[data-theme="dark"] .theme-icon.la-sun {
+    display: none !important;
+}
+
+/* Light Mode Icon */
+[data-theme="light"] body .theme-icon.la-moon,
+body[data-theme="light"] .theme-icon.la-moon {
+    display: none !important;
+}
+
+[data-theme="light"] body .theme-icon.la-sun,
+body[data-theme="light"] .theme-icon.la-sun {
+    display: inline-block !important;
+}
+
