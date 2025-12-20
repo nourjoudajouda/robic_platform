@@ -125,6 +125,14 @@ class FileManager
     * @return void
     */
 	protected function uploadImage(){
+        try {
+            // If no size is specified, just move the file directly without processing
+            if (!$this->size && !$this->thumb) {
+                $this->file->move($this->path, $this->filename);
+                return;
+            }
+            
+            // Otherwise, use Intervention Image for resizing
         $manager = new ImageManager(new Driver());
         $image = $manager->read($this->file);
 
@@ -143,6 +151,14 @@ class FileManager
             }
 	        $thumb = explode('x', $this->thumb);
 	        $manager->read($this->file)->resize($thumb[0], $thumb[1])->save($this->path . '/thumb_' . $this->filename);
+            }
+        } catch (\Exception $e) {
+            // If Intervention Image fails, try to move the file directly
+            if (!$this->size && !$this->thumb) {
+                $this->file->move($this->path, $this->filename);
+            } else {
+                throw $e;
+            }
 	    }
 	}
 

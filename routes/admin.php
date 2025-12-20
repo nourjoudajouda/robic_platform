@@ -62,6 +62,72 @@ Route::middleware('admin')->group(function () {
         Route::post('status/{id?}', 'status')->name('status');
     });
 
+    Route::controller('ProductController')->name('product.')->prefix('product')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+        Route::post('status/{id}', 'status')->name('status');
+    });
+
+    Route::controller('WarehouseController')->name('warehouse.')->prefix('warehouse')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+        Route::post('status/{id}', 'status')->name('status');
+    });
+
+    Route::controller('BatchController')->name('batch.')->prefix('batch')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+        Route::post('status/{id}', 'status')->name('status');
+    });
+
+    Route::controller('BatchSellOrderController')->name('batch-sell-order.')->prefix('batch-sell-order')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+        Route::post('status/{id}', 'status')->name('status');
+    });
+
+    // Manage Admins
+    Route::controller('ManageAdminController')->name('admin.')->prefix('admin')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+    });
+
+    // Roles & Permissions
+    Route::controller('RoleController')->name('role.')->prefix('role')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+    });
+
+    // Assign Roles to Admins
+    Route::controller('AdminRoleController')->name('admin-role.')->prefix('admin-role')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('assign/{id}', 'assign')->name('assign');
+    });
+
     Route::controller('ChargeLimitController')->name('charge.limit.')->prefix('charge-limit')->group(function () {
         Route::get('create', 'create')->name('create');
         Route::post('save/{id?}', 'save')->name('save');
@@ -89,14 +155,15 @@ Route::middleware('admin')->group(function () {
     Route::controller('ManageUsersController')->name('users.')->prefix('users')->group(function () {
         Route::get('/', 'allUsers')->name('all');
         Route::get('active', 'activeUsers')->name('active');
-        Route::get('banned', 'bannedUsers')->name('banned');
         Route::get('email-verified', 'emailVerifiedUsers')->name('email.verified');
         Route::get('email-unverified', 'emailUnverifiedUsers')->name('email.unverified');
-        Route::get('mobile-unverified', 'mobileUnverifiedUsers')->name('mobile.unverified');
-        Route::get('kyc-unverified', 'kycUnverifiedUsers')->name('kyc.unverified');
-        Route::get('kyc-pending', 'kycPendingUsers')->name('kyc.pending');
         Route::get('mobile-verified', 'mobileVerifiedUsers')->name('mobile.verified');
         Route::get('with-balance', 'usersWithBalance')->name('with.balance');
+        Route::get('establishments', 'establishments')->name('establishments');
+        Route::get('establishments/pending', 'pendingEstablishments')->name('establishments.pending');
+        Route::get('establishment/{id}', 'establishmentDetail')->name('establishment.detail');
+        Route::post('establishment/{id}/approve', 'approveEstablishment')->name('establishment.approve');
+        Route::post('establishment/{id}/reject', 'rejectEstablishment')->name('establishment.reject');
 
         Route::get('detail/{id}', 'detail')->name('detail');
         Route::get('kyc-data/{id}', 'kycDetails')->name('kyc.details');

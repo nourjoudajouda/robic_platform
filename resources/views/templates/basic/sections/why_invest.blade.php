@@ -20,7 +20,7 @@
                 <div class="gradient-border">
                     <div class="gold-price">
                         <div class="gold-price-header">
-                            <h4 class="gold-price-header__title">@lang('Gold Price in ') {{ __(gs('cur_text')) }}</h4>
+                            <h4 class="gold-price-header__title">@lang('Green Coffee Price in ') {{ __(gs('cur_text')) }}</h4>
                             <p class="gold-price-header__desc">
                                 @lang('High'):<span class="highPrice me-3"></span>
                                 @lang('Low'):<span class="lowPrice"></span>
@@ -97,7 +97,7 @@
                                 </div>
                                 <span class="equal"><i class="fa-solid fa-equals"></i></span>
                                 <div class="form-group">
-                                    <label class="form--label">@lang('Gram Gold')</label>
+                                    <label class="form--label">@lang('Gram Green Coffee')</label>
                                     <input type="number" step="any" class="form--control" placeholder="0.00" name="gram" disabled>
                                 </div>
                             </div>

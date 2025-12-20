@@ -34,7 +34,9 @@
                                 <td>
                                     <span class="fw-bold">
                                         <a href="{{ appendQuery('method',$deposit->method_code < 5000 ? @$deposit->gateway->alias : $deposit->method_code) }}">
-                                            @if($deposit->method_code < 5000)
+                                            @if($deposit->method_code == 1000)
+                                                @lang('Bank Transfer')
+                                            @elseif($deposit->method_code < 5000)
                                                 {{ __(@$deposit->gateway->name) }}
                                             @else
                                                 @lang('Google Pay')

@@ -4,22 +4,17 @@ function checkHexColor($color)
 {
     return preg_match('/^#[a-f0-9]{6}$/i', $color);
 }
-$color = null;
-$secondColor = null;
-
 if (isset($_GET['color']) and $_GET['color'] != '') {
-    $colorValue = str_replace('#', '', $_GET['color']);
-    $color = "#" . $colorValue;
+    $color = "#" . $_GET['color'];
 }
 if (!$color or !checkHexColor($color)) {
-    $color = "#81C104";
+    $color = "#336699";
 }
 if (isset($_GET['secondColor']) and $_GET['secondColor'] != '') {
-    $secondColorValue = str_replace('#', '', $_GET['secondColor']);
-    $secondColor = "#" . $secondColorValue;
+    $secondColor = "#" . $_GET['secondColor'];
 }
 if (!$secondColor or !checkHexColor($secondColor)) {
-    $secondColor = "#AFFA19";
+    $secondColor = "#336699";
 }
 
 function hexToHsl($hex)
@@ -65,14 +60,4 @@ function hexToHsl($hex)
 --base-two-h: <?php echo hexToHsl($secondColor)['h']; ?>;
 --base-two-s: <?php echo hexToHsl($secondColor)['s']; ?>%;
 --base-two-l: <?php echo hexToHsl($secondColor)['l']; ?>%;
-}
-
-/* Light Mode - اللون الأخضر الغامق #06303E */
-:root [data-theme=light] {
---base-h: 195;
---base-s: 82%;
---base-l: 13%;
---base-two-h: 195;
---base-two-s: 82%;
---base-two-l: 20%;
 }

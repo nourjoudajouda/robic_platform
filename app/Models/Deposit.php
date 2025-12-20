@@ -8,10 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Deposit extends Model
 {
+    protected $fillable = [
+        'user_id', 'category_id', 'method_code', 'buy_info', 'amount', 'method_currency',
+        'charge', 'rate', 'final_amount', 'detail', 'btc_amount', 'btc_wallet', 'trx',
+        'payment_try', 'status', 'from_api', 'is_web', 'admin_feedback', 'success_url',
+        'failed_url', 'last_cron', 'transfer_image', 'description', 'other'
+    ];
 
     protected $casts = [
         'detail' => 'object',
         'buy_info' => 'object',
+        'other' => 'object',
     ];
 
     protected $hidden = ['detail'];
@@ -31,7 +38,9 @@ class Deposit extends Model
     }
 
     public function methodName(){
-        if ($this->method_code < 5000) {
+        if ($this->method_code == 1000) {
+            $methodName = 'Bank Transfer';
+        } elseif ($this->method_code < 5000) {
             $methodName = @$this->gatewayCurrency()->name;
         }else{
             $methodName = 'Google Pay';
@@ -44,7 +53,11 @@ class Deposit extends Model
         return new Attribute(function(){
             $html = '';
             if($this->status == Status::PAYMENT_PENDING){
+                if($this->method_code == 1000){
+                    $html = '<span class="badge badge--warning">'.trans('Waiting for admin approval').'</span>';
+                } else {
                 $html = '<span class="badge badge--warning">'.trans('Pending').'</span>';
+                }
             }
             elseif($this->status == Status::PAYMENT_SUCCESS && $this->method_code >= 1000 && $this->method_code <= 5000){
                 $html = '<span><span class="badge badge--success">'.trans('Approved').'</span><br>'.diffForHumans($this->updated_at).'</span>';
@@ -97,3 +110,7 @@ class Deposit extends Model
         return $query->where('status', Status::PAYMENT_INITIATE);
     }
 }
+
+
+
+

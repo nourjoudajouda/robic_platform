@@ -55,36 +55,21 @@
                             <div class="dashboard-card__top">
                                 <p class="dashboard-card__title mb-0">
                                     <span class="dashboard-card__title-icon">
-                                        <img src="{{ asset($activeTemplateTrue . 'images/icons/16.png') }}" alt="image">
+                                        <img src="{{ asset('/assets/images/coin.svg') }}" alt="image">
                                     </span>
                                     <span class="dashboard-card__title-text">
-                                        @lang('Total Gold Holdings')
+                                        @lang('Deposit Balance')
                                     </span>
                                 </p>
-                                @if ($assets->count())
-                                    <div class="customNiceSelect">
-                                        <select name="asset">
-                                            @foreach ($assets as $asset)
-                                                <option value="{{ $asset->id }}" data-quantity="{{ showAmount($asset->quantity, currencyFormat: false) }}" data-total_amount="{{ showAmount($asset->quantity * $asset->category->price) }}" data-price_change="{{ getAmount(($asset->quantity * $asset->category->price * $asset->category->change_90d) / 100) }}" data-percent_change="{{ $asset->category->change_90d }}">{{ $asset->category->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                @endif
                             </div>
-                            @if ($assets->count())
-                                <h2 class="dashboard-card__gold"><span class="goldQuantity"></span> <sub>@lang('Gram Gold')</sub></h2>
-                                <p class="dashboard-card__desc">
-                                    <span class="goldTotalAmount"></span>
-                                    <span class="text--success percentChangeBadge"><i class="fa-solid fa-caret-down"></i>
-                                        <span class="goldPriceChange"></span> <span class="goldPercentChange"></span>
-                                        <span>(@lang('90 days'))</span>
-                                    </span>
+                            <div class="dashboard-card__body text-center py-4">
+                                <a href="{{ route('user.deposit.index') }}" class="btn btn--base btn--lg" style="max-width: 210px;">
+                                    <i class="fas fa-wallet me-2"></i> @lang('Deposit Balance')
+                                </a>
+                                <p class="mt-3 mb-0 text-white-50 small">
+                                    <i class="fas fa-info-circle me-1"></i> @lang('Add funds to your wallet')
                                 </p>
-                            @else
-                                <x-empty-card empty-message="No asset found" style="2" />
-                            @endif
-
-
+                            </div>
                         </div>
                     </div>
                     <div class="dashboard-column__left-bottom">
@@ -110,7 +95,7 @@
                                         <img src="{{ asset($activeTemplateTrue . 'images/icons/18.png') }}" alt="image">
                                     </span>
                                     <span class="dashboard-card__title-text">
-                                        @lang('Gold price')
+                                        @lang('Green Coffee price')
                                     </span>
                                 </p>
                                 <div class="dashboard-card__top-right">
@@ -129,11 +114,11 @@
                 </div>
                 <div class="dashboard-column__right">
                     <div class="dashboard-buttons mb-3">
-                        <a href="{{ route('user.sell.form') }}" class="btn btn--danger btn--lg"><i class="fas fa-money-bill-trend-up"></i> @lang('Sell Gold')</a>
+                        <a href="{{ route('user.sell.form') }}" class="btn btn--danger btn--lg"><i class="fas fa-money-bill-trend-up"></i> @lang('Sell Green Coffee')</a>
                         @if (gs('redeem_option'))
-                            <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Redeem Gold')</a>
+                            <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Redeem Green Coffee')</a>
                         @else
-                            <a href="{{ route('user.gift.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-gift"></i> @lang('Gift Gold')</a>
+                            <a href="{{ route('user.gift.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-gift"></i> @lang('Gift Green Coffee')</a>
                         @endif
                     </div>
                     <div class="dashboard-card gradient-three gradient-four">
@@ -142,50 +127,14 @@
                                 <img src="{{ asset($activeTemplateTrue . 'images/icons/19.png') }}" alt="image">
                             </span>
                             <span class="dashboard-card__title-text">
-                                @lang('Buy Gold')
+                                @lang('Buy Green Coffee')
                             </span>
                         </p>
-                        <form action="{{ route('user.buy.store') }}" method="POST" class="dashboard-calculator-form">
-                            @csrf
-                            <div class="customNiceSelect">
-                                <select name="category_id">
-                                    @foreach ($categories as $category)
-                                        <option value="{{ $category->id }}" data-price="{{ getAmount($category->price) }}">{{ __($category->name) }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="calculator-switch">
-                                <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" name="goldCalculatorSwitch" id="goldCalculatorSwitch1" checked>
-                                    <label class="text" for="goldCalculatorSwitch1">@lang('Purchase in '){{ __(gs('cur_text')) }}</label>
-                                </div>
-                                <span class="calculator-switch__icon"><i class="fa-solid fa-right-left"></i></span>
-                                <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" name="goldCalculatorSwitch" id="goldCalculatorSwitch2">
-                                    <label class="text" for="goldCalculatorSwitch2">@lang('Purchase in Quantity')</label>
-                                </div>
-                            </div>
-                            <div class="inputs">
-                                <div class="form-group w-100">
-                                    <label class="form--label">{{ __(gs('cur_text')) }}</label>
-                                    <input type="text" class="form--control" placeholder="0.00" name="amount">
-                                </div>
-                                <span class="equal"><i class="fa-solid fa-equals"></i></span>
-                                <div class="form-group w-100">
-                                    <label class="form--label">@lang('Gram Gold')</label>
-                                    <input type="text" class="form--control" placeholder="0.00" name="gram">
-                                </div>
-                            </div>
-                            <div class="bottom">
-                                <button type="submit" class="btn btn--base w-100">@lang('Buy Now')</button>
-                                @if ($chargeLimit->fixed_charge || $chargeLimit->percent_charge || $chargeLimit->vat)
-                                    <p class="bottom__info">
-                                        <i class="fa-solid fa-circle-info me-1"></i>
-                                        <span class="text">{{ getChargeText($chargeLimit) }}</span>
-                                    </p>
-                                @endif
-                            </div>
-                        </form>
+                        <div class="text-center py-4">
+                            <a href="{{ route('user.buy.form') }}" class="btn btn--base btn--lg">
+                                <i class="fas fa-shopping-cart me-2"></i> @lang('Buy Green Coffee')
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -210,13 +159,13 @@
                     @forelse ($giftRedeems as $giftRedeem)
                         <li class="gift-withdraw-list__item">
                             <div class="status">
-                                <h6 class="status__title">{{ $giftRedeem->type == Status::GIFT_HISTORY ? 'Gift Gold' : 'Redeem Gold' }}</h6>
+                                <h6 class="status__title">{{ $giftRedeem->type == Status::GIFT_HISTORY ? 'Gift Green Coffee' : 'Redeem Green Coffee' }}</h6>
                                 <span class="status__date d-block">{{ $giftRedeem->created_at->format('M d, Y') }}</span>
                                 <span class="status__time d-block">{{ $giftRedeem->created_at->format('h:i A') }}</span>
                             </div>
                             <div class="content">
                                 <span class="content__title">@lang('Amount')</span>
-                                <p class="content__info">{{ showAmount($giftRedeem->quantity, currencyFormat: false) }} @lang('Gram')</p>
+                                <p class="content__info">{{ showAmount($giftRedeem->quantity, currencyFormat: false) }} {{ $giftRedeem->batch && $giftRedeem->batch->product && $giftRedeem->batch->product->unit ? $giftRedeem->batch->product->unit->symbol : 'Unit' }}</p>
                             </div>
                             @if ($giftRedeem->type == Status::GIFT_HISTORY)
                                 <div class="content">
@@ -286,8 +235,8 @@
                                                 echo $buySell->statusBadge;
                                             @endphp
                                         </td>
-                                        <td>{{ showAmount($buySell->quantity, currencyFormat: false) }} @lang('Gram')</td>
-                                        <td>{{ showAmount($buySell->quantity * $buySell->category->price) }}</td>
+                                        <td>{{ showAmount($buySell->quantity, currencyFormat: false) }} {{ $buySell->batch && $buySell->batch->product && $buySell->batch->product->unit ? $buySell->batch->product->unit->symbol : 'Unit' }}</td>
+                                        <td>{{ showAmount($buySell->amount) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -324,34 +273,10 @@
     @endif
 @endsection
 
-@include($activeTemplate . 'user.buy.amount_quantity_script')
-
 @push('script')
     <script>
         (function($) {
             "use strict";
-
-            $('[name=asset]').on('change', function() {
-                let selectedOption = $(this).find('option:selected');
-                let quantity = selectedOption.data('quantity');
-                let totalAmount = selectedOption.data('total_amount');
-                let priceChange = selectedOption.data('price_change');
-                let percentChange = selectedOption.data('percent_change');
-
-
-                $('.goldQuantity').text(quantity ?? '0.00');
-                $('.goldTotalAmount').text(totalAmount ?? '0.00');
-                $('.goldPriceChange').text(Math.abs(priceChange ?? 0));
-                $('.goldPercentChange').text(`${Math.abs(percentChange ?? 0)}%`);
-
-                if (percentChange >= 0) {
-                    $('.percentChangeBadge i').removeClass('fa-caret-down').addClass('fa-caret-up');
-                    $('.percentChangeBadge').removeClass('text--danger').addClass('text--success');
-                } else {
-                    $('.percentChangeBadge i').removeClass('fa-caret-up').addClass('fa-caret-down');
-                    $('.percentChangeBadge').removeClass('text--success').addClass('text--danger');
-                }
-            }).change();
 
             @if ($portfolioData['total_asset_quantity'] > 0)
                 var options = {
@@ -399,7 +324,7 @@
                 }, function(response) {
                     chart.updateOptions({
                         series: [{
-                            name: 'Gold Price',
+                            name: 'Green Coffee Price',
                             data: response.prices
                         }],
                         xaxis: {
@@ -471,3 +396,7 @@
         })(jQuery);
     </script>
 @endpush
+
+@push('style')
+@endpush
+

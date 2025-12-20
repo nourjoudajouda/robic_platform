@@ -27,16 +27,30 @@
                 <div class="gold-calculator">
                     <form action="{{ route('user.buy.store') }}" method="POST">
                         @csrf
+                        <input type="hidden" name="batch_id" value="{{ $selectedBatch->id }}" id="selected_batch_id">
                         <div class="gold-calculator__top">
                             <div class="gold-calculator__top-left">
                                 <div class="customNiceSelect">
-                                    <select name="category_id">
-                                        @foreach ($categories as $category)
-                                            <option value="{{ $category->id }}" data-price="{{ getAmount($category->price) }}">{{ $category->name }}</option>
+                                    <select name="batch_id" id="batch_select">
+                                        @foreach ($batches as $batch)
+                                            @php
+                                                $cheapestOrder = $batch->sellOrders->first(); // أرخص sell order
+                                                $displayPrice = $cheapestOrder ? $cheapestOrder->sell_price : $batch->sell_price;
+                                            @endphp
+                                            <option value="{{ $batch->id }}" 
+                                                data-price="{{ getAmount($displayPrice) }}"
+                                                data-unit="{{ $batch->product->unit->symbol ?? '' }}"
+                                                data-quantity="{{ showAmount($batch->units_count, 2, true, false, false) }}"
+                                                {{ $batch->id == $selectedBatch->id ? 'selected' : '' }}>
+                                                {{ $batch->product->name ?? 'N/A' }} - {{ showAmount($displayPrice, 2, true, false, false) }} {{ $batch->product->currency->code ?? gs('cur_sym') }} / {{ $batch->product->unit->symbol ?? '' }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <h4 class="gold-calculator__top-amount"> <span class="currentPrice"></span> {{ __(gs('cur_text')) }} /@lang('gram')</h4>
+                                <h4 class="gold-calculator__top-amount"> 
+                                    <span class="currentPrice">{{ showAmount($cheapestSellOrder->sell_price ?? $selectedBatch->sell_price, 2, true, false, false) }}</span> 
+                                    {{ $selectedBatch->product->currency->code ?? gs('cur_sym') }} / {{ $selectedBatch->product->unit->symbol ?? 'Unit' }}
+                                </h4>
                             </div>
                             <div class="calculator-switch">
                                 <div class="calculator-switch__item">
@@ -59,8 +73,8 @@
                                 <span class="equal"><i class="fa-solid fa-equals"></i></span>
                                 <div class="form-group position-relative has-icon">
                                     <span class="icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/23.png') }}" alt="image"></span>
-                                    <input type="number" step="any" class="form--control" placeholder="00.00" name="gram">
-                                    <label class="form--label">@lang('Gram')</label>
+                                    <input type="number" step="any" class="form--control" placeholder="00.00" name="quantity" id="quantity_input">
+                                    <label class="form--label">{{ $selectedBatch->product->unit->name ?? 'Quantity' }}</label>
                                 </div>
                             </div>
                             <button type="submit" class="btn btn--base w-100" disabled>@lang('Submit')</button>

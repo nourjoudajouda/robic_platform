@@ -35,11 +35,8 @@ Route::namespace('User\Auth')->name('user.')->middleware('guest')->group(functio
 
 Route::middleware('auth')->name('user.')->group(function () {
 
-    Route::get('user-data', 'User\UserController@userData')->name('data');
-    Route::post('user-data-submit', 'User\UserController@userDataSubmit')->name('data.submit');
-
-    //authorization
-    Route::middleware('registration.complete')->namespace('User')->controller('AuthorizationController')->group(function () {
+    //authorization - removed registration.complete middleware to allow direct access
+    Route::namespace('User')->controller('AuthorizationController')->group(function () {
         Route::get('authorization', 'authorizeForm')->name('authorization');
         Route::get('resend-verify/{type}', 'sendVerifyCode')->name('send.verify.code');
         Route::post('verify-email', 'emailVerification')->name('verify.email');
@@ -88,7 +85,12 @@ Route::middleware('auth')->name('user.')->group(function () {
 
             Route::controller('BuyController')->name('buy.')->prefix('buy')->group(function () {
                 Route::get('/', 'buyForm')->name('form');
+                Route::get('product/{productId}', 'buyFormWithProduct')->name('product');
+                Route::get('batch/{id}', 'buyFormWithBatch')->name('batch');
                 Route::post('store', 'buyStore')->name('store');
+                Route::post('pending/create', 'createPendingOrder')->name('pending.create');
+                Route::get('pending', 'pendingOrders')->name('pending');
+                Route::post('pending/{id}/cancel', 'cancelPendingOrder')->name('pending.cancel');
                 Route::get('payment', 'paymentForm')->name('payment.form');
                 Route::post('payment', 'paymentSubmit')->name('payment.submit');
                 Route::get('success', 'successPage')->name('success');

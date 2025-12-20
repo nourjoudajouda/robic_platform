@@ -8,9 +8,9 @@
     --body-font: "Open Sans", sans-serif;
     /* ========================= Theme Color Start ============================= */
     /* Base Color */
-    --base-h: 80;
-    --base-s: 96%;
-    --base-l: 39%;
+    --base-h: 38;
+    --base-s: 100%;
+    --base-l: 59%;
     --base: var(--base-h) var(--base-s) var(--base-l);
     --base-d-100: var(--base-h) var(--base-s) calc(var(--base-l) - var(--base-l) * 0.1);
     --base-d-200: var(--base-h) var(--base-s) calc(var(--base-l) - var(--base-l) * 0.2);
@@ -32,10 +32,10 @@
     --base-l-800: var(--base-h) calc(var(--base-s)) calc(var(--base-l) + (100% - var(--base-l)) * 0.8);
     --base-l-900: var(--base-h) calc(var(--base-s)) calc(var(--base-l) + (100% - var(--base-l)) * 0.9);
     --base-l-1000: var(--base-h) calc(var(--base-s)) calc(var(--base-l) + (100% - var(--base-l)) * 1);
-    /* Base Two Color - مشتق من اللون الأساسي بدرجة أفتح */
-    --base-two-h: 80;
-    --base-two-s: 96%;
-    --base-two-l: 54%;
+    /* Base Two Color */
+    --base-two-h: 49;
+    --base-two-s: 100%;
+    --base-two-l: 65%;
 
     
     --base-two: var(--base-two-h) var(--base-two-s) var(--base-two-l);
@@ -273,30 +273,8 @@
 }
 
 :root [data-theme=dark] {
-    --white: 200 9% 7%;
+    /* --white: 200 9% 7%; */
     --black: 210 40% 98%;
-}
-
-:root [data-theme=light] {
-    --white: 0 0% 100%;
-    --black: 0 0% 0%;
-    --heading-color: 0 0% 15%;
-    --body-color: 0 0% 30%;
-    --border-color: 0 0% 85%;
-    --border-color-two: 0 0% 80%;
-    --section-bg: 0 0% 98%;
-    --card-bg: 0 0% 100%;
-    --background-color: 0 0% 100%;
-    --box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.08);
-    /* اللون الأساسي للوضع الفاتح: الأخضر الغامق */
-    --base-h: 195;
-    --base-s: 82%;
-    --base-l: 13%;
-    --base: var(--base-h) var(--base-s) var(--base-l);
-    --base-two-h: 195;
-    --base-two-s: 82%;
-    --base-two-l: 20%;
-    --base-two: var(--base-two-h) var(--base-two-s) var(--base-two-l);
 }
 
 /* ========================= Css Variables End =========================== */
@@ -886,37 +864,6 @@ button:focus {
     height: 100%;
 }
 
-/* تحويل اللون الأصفر إلى الأخضر في dashboard-bg.png */
-.dashboard.bg-img {
-    position: relative;
-    isolation: isolate;
-}
-
-.dashboard.bg-img::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: var(--bg-image-url);
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center center;
-    filter: hue-rotate(20deg) saturate(1.4) brightness(0.85);
-    z-index: -1;
-    pointer-events: none;
-}
-
-.dashboard.bg-img[data-background-image*="dashboard-bg.png"] {
-    background: transparent !important;
-}
-
-.dashboard.bg-img > * {
-    position: relative;
-    z-index: 1;
-}
-
 .scroll-hide {
     position: absolute;
     overflow-y: hidden;
@@ -1059,8 +1006,8 @@ button:focus {
 .gradient-border::after {
     position: absolute;
     content: "";
-    background: -webkit-gradient(linear, left top, right top, from(#464d59), to(rgba(129, 193, 4, 0.5018382353)));
-    background: linear-gradient(90deg, #464d59 0%, rgba(129, 193, 4, 0.5018382353) 100%);
+    background: -webkit-gradient(linear, left top, right top, from(#464d59), to(rgba(255, 178, 44, 0.5018382353)));
+    background: linear-gradient(90deg, #464d59 0%, rgba(255, 178, 44, 0.5018382353) 100%);
     border-radius: 20px;
     width: calc(100% + 2px);
     height: calc(100% + 2px);
@@ -6025,14 +5972,15 @@ input[type=number]::-webkit-inner-spin-button {
 
 @media screen and (max-width: 1399px) {
     .dashboard .sidebar-logo {
-        padding: 15px 15px 15px;
+        padding: 10px 15px 10px;
+        /* margin: auto; */
         text-align: center;
     }
 }
 
 .dashboard .sidebar-logo img {
     max-width: 167px;
-    max-height: 80px;
+    max-height: 100px;
 }
 
 @media screen and (max-width: 1399px) {
@@ -6140,8 +6088,8 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .sidebar-menu-list__item::after {
     position: absolute;
     content: "";
-    background: -webkit-gradient(linear, left top, left bottom, from(rgba(110, 60, 27, 0)), color-stop(33%, #A8FA05), color-stop(49%, #C2FB50), color-stop(70%, #A8FA05), to(rgba(110, 60, 27, 0)));
-    background: linear-gradient(180deg, rgba(110, 60, 27, 0) 0%, #A8FA05 33%, #C2FB50 49%, #A8FA05 70%, rgba(110, 60, 27, 0) 100%);
+    background: -webkit-gradient(linear, left top, left bottom, from(rgba(110, 60, 27, 0)), color-stop(33%, #f8be3b), color-stop(49%, #fce2a6), color-stop(70%, #f8be3b), to(rgba(110, 60, 27, 0)));
+    background: linear-gradient(180deg, rgba(110, 60, 27, 0) 0%, #f8be3b 33%, #fce2a6 49%, #f8be3b 70%, rgba(110, 60, 27, 0) 100%);
     right: 0;
     top: 50%;
     -webkit-transform: translateY(-50%);
@@ -6166,8 +6114,8 @@ input[type=number]::-webkit-inner-spin-button {
 
 .dashboard .sidebar-menu-list__item.active>.sidebar-menu-list__link {
     background: hsl(var(--white)/0.05);
-    -webkit-box-shadow: 0px 0px 4px 0px rgba(129, 193, 4, 0.04), 0px 8px 16px 0px rgba(129, 193, 4, 0.08);
-    box-shadow: 0px 0px 4px 0px rgba(129, 193, 4, 0.04), 0px 8px 16px 0px rgba(129, 193, 4, 0.08);
+    -webkit-box-shadow: 0px 0px 4px 0px rgba(255, 222, 77, 0.04), 0px 8px 16px 0px rgba(255, 222, 77, 0.08);
+    box-shadow: 0px 0px 4px 0px rgba(255, 222, 77, 0.04), 0px 8px 16px 0px rgba(255, 222, 77, 0.08);
 }
 
 .dashboard .sidebar-menu-list__item.active>.sidebar-menu-list__link span {
@@ -6251,7 +6199,7 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .sidebar-menu-list__link::after {
     position: absolute;
     content: "";
-    background: #81C104;
+    background: #FFDE4D;
     border-radius: 218.75px;
     -webkit-filter: blur(70px);
     filter: blur(70px);
@@ -7127,7 +7075,6 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .dashboard-body__title-icon img {
     width: 100%;
     height: 100%;
-    filter: hue-rotate(20deg) saturate(1.2) brightness(1.1);
 }
 
 .dashboard .dashboard-body .icon-btn {
@@ -8231,8 +8178,8 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .dashboard-card.gradient-one::before {
     position: absolute;
     content: "";
-    background: -webkit-gradient(linear, left top, right top, from(rgba(110, 60, 27, 0)), color-stop(33%, #A8FA05), color-stop(49%, #C2FB50), color-stop(70%, #A8FA05), to(rgba(110, 60, 27, 0)));
-    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #A8FA05 33%, #C2FB50 49%, #A8FA05 70%, rgba(110, 60, 27, 0) 100%);
+    background: -webkit-gradient(linear, left top, right top, from(rgba(110, 60, 27, 0)), color-stop(33%, #f8be3b), color-stop(49%, #fce2a6), color-stop(70%, #f8be3b), to(rgba(110, 60, 27, 0)));
+    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #f8be3b 33%, #fce2a6 49%, #f8be3b 70%, rgba(110, 60, 27, 0) 100%);
     width: 87%;
     height: 1px;
     top: 0;
@@ -8271,8 +8218,8 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .dashboard-card.gradient-three::before {
     position: absolute;
     content: "";
-    background: -webkit-gradient(linear, left top, right top, from(rgba(110, 60, 27, 0)), color-stop(33%, #A8FA05), color-stop(49%, #C2FB50), color-stop(70%, #A8FA05), to(rgba(110, 60, 27, 0)));
-    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #A8FA05 33%, #C2FB50 49%, #A8FA05 70%, rgba(110, 60, 27, 0) 100%);
+    background: -webkit-gradient(linear, left top, right top, from(rgba(110, 60, 27, 0)), color-stop(33%, #f8be3b), color-stop(49%, #fce2a6), color-stop(70%, #f8be3b), to(rgba(110, 60, 27, 0)));
+    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #f8be3b 33%, #fce2a6 49%, #f8be3b 70%, rgba(110, 60, 27, 0) 100%);
     width: 87%;
     height: 1px;
     bottom: 0;
@@ -8633,7 +8580,6 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .dashboard-card__title-icon img {
     width: 100px;
     height: 100%;
-    filter: hue-rotate(20deg) saturate(1.2) brightness(1.1);
 }
 
 .dashboard .dashboard-card__tag {
@@ -8708,7 +8654,6 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .dashboard-card__tag-icon img {
     width: 100%;
     height: 100%;
-    filter: hue-rotate(20deg) saturate(1.3) brightness(1.1);
 }
 
 .dashboard .dashboard-card__link {
@@ -10868,8 +10813,8 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .price-tracker-tap__item::after {
     position: absolute;
     content: "";
-    background: -webkit-gradient(linear, left top, right top, from(rgba(110, 60, 27, 0)), color-stop(33%, #A8FA05), color-stop(49%, #C2FB50), color-stop(70%, #A8FA05), to(rgba(110, 60, 27, 0)));
-    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #A8FA05 33%, #C2FB50 49%, #A8FA05 70%, rgba(110, 60, 27, 0) 100%);
+    background: -webkit-gradient(linear, left top, right top, from(rgba(110, 60, 27, 0)), color-stop(33%, #f8be3b), color-stop(49%, #fce2a6), color-stop(70%, #f8be3b), to(rgba(110, 60, 27, 0)));
+    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #f8be3b 33%, #fce2a6 49%, #f8be3b 70%, rgba(110, 60, 27, 0) 100%);
     height: 1px;
     width: 80%;
     top: 0;
@@ -10963,11 +10908,6 @@ input[type=number]::-webkit-inner-spin-button {
     color: hsl(var(--base));
     display: inline-flex;
 }
-
-.withdraw-gold-item__icon img {
-    filter: hue-rotate(20deg) saturate(1.3) brightness(1.1);
-}
-
 @media screen and (max-width: 575px) {
     .dashboard .withdraw-form .withdraw-gold-item__title {
         font-size: 0.875rem;
@@ -11107,7 +11047,6 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .withdraw-form .customNiceSelect__icon img {
     width: 32px;
     height: 32px;
-    filter: hue-rotate(20deg) saturate(1.3) brightness(1.1);
 }
 
 @media (max-width: 1699px) {
@@ -11306,7 +11245,6 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .withdraw-option-item__icon img {
     width: 100%;
     height: 100%;
-    filter: hue-rotate(20deg) saturate(1.3) brightness(1.1);
 }
 
 .dashboard .withdraw-option-item__content {
@@ -11659,7 +11597,6 @@ input[type=number]::-webkit-inner-spin-button {
 .dashboard .gift-form .form-group .icon img {
     width: 32px;
     height: 32px;
-    filter: hue-rotate(20deg) saturate(1.3) brightness(1.1);
 }
 
 @media (max-width: 1699px) {
@@ -16886,7 +16823,7 @@ input[type=number]::-webkit-inner-spin-button {
 
 .empty-card__icon svg {
     width: 90px;
-    fill: hsl(var(--body-color) / 0.5);
+    fill: hsl(var(--white)/.6);
 }
 
 .empty-card-2 .empty-card__icon svg{
@@ -16911,7 +16848,7 @@ input[type=number]::-webkit-inner-spin-button {
 }
 
 .empty-card__text {
-    color: hsl(var(--body-color) / 0.6);
+    color: hsl(var(--white)/.6);
     margin-top: 10px;
     font-size: 20px;
 }
@@ -16952,7 +16889,7 @@ input[type=number]::-webkit-inner-spin-button {
 .account-item::before {
     position: absolute;
     content: "";
-    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #A8FA05 33%, #C2FB50 49%, #A8FA05 70%, rgba(110, 60, 27, 0) 100%);
+    background: linear-gradient(90deg, rgba(110, 60, 27, 0) 0%, #f8be3b 33%, #fce2a6 49%, #f8be3b 70%, rgba(110, 60, 27, 0) 100%);
     width: 87%;
     height: 1px;
     top: 0;

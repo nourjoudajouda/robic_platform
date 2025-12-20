@@ -99,7 +99,7 @@
 
                     chart.updateOptions({
                         series: [{
-                            name: 'Gold Price',
+                            name: 'Green Coffee Price',
                             data: response.prices.map(price => price.price)
                         }],
                         xaxis: {

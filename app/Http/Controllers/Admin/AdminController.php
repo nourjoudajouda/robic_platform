@@ -29,7 +29,6 @@ class AdminController extends Controller
         $widget['total_users']             = User::count();
         $widget['verified_users']          = User::active()->count();
         $widget['email_unverified_users']  = User::emailUnverified()->count();
-        $widget['mobile_unverified_users'] = User::mobileUnverified()->count();
 
         // user Browsing, Country, Operating Log
         $userLoginData = UserLogin::where('created_at', '>=', Carbon::now()->subDays(30))->get(['browser', 'os', 'country']);

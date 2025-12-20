@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Withdrawal extends Model
 {
+    protected $fillable = [
+        'method_id', 'user_id', 'amount', 'currency', 'rate', 'charge', 'trx',
+        'final_amount', 'after_charge', 'withdraw_information', 'status',
+        'admin_feedback', 'transfer_image'
+    ];
+
     protected $casts = [
         'withdraw_information' => 'object'
     ];

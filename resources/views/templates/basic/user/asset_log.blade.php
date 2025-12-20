@@ -9,7 +9,7 @@
                             <tr>
                                 <th>@lang('Date & Time')</th>
                                 <th>@lang('Type')</th>
-                                <th>@lang('Category')</th>
+                                <th>@lang('Product')</th>
                                 <th>@lang('Quantity')</th>
                                 <th>@lang('Amount')</th>
                                 <th>@lang('Charge')</th>
@@ -30,8 +30,8 @@
                                         </div>
                                     </td>
                                     <td>@php echo $assetLog->statusBadge @endphp</td>
-                                    <td>{{ $assetLog->category->name }}</td>
-                                    <td>{{ showAmount($assetLog->quantity, 4, currencyFormat: false) }} @lang('gram')</td>
+                                    <td>{{ $assetLog->batch && $assetLog->batch->product ? $assetLog->batch->product->name : 'N/A' }}</td>
+                                    <td>{{ showAmount($assetLog->quantity, 4, currencyFormat: false) }} {{ $assetLog->batch && $assetLog->batch->product && $assetLog->batch->product->unit ? $assetLog->batch->product->unit->symbol : 'Unit' }}</td>
                                     <td>{{ showAmount($assetLog->amount) }}</td>
                                     <td>{{ showAmount($assetLog->charge) }}</td>
                                     @if ($assetLogs->sum('vat') > 0)

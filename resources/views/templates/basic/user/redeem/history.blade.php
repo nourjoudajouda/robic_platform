@@ -21,7 +21,7 @@
                                 <tr>
                                     <td>{{ showDateTime($redeemHistory->created_at) }}</td>
                                     <td>{{ $redeemHistory->category->name }}</td>
-                                    <td>{{ showAmount($redeemHistory->quantity, currencyFormat: false) }} @lang('gram')</td>
+                                    <td>{{ showAmount($redeemHistory->quantity, currencyFormat: false) }} {{ $redeemHistory->batch && $redeemHistory->batch->product && $redeemHistory->batch->product->unit ? $redeemHistory->batch->product->unit->symbol : 'Unit' }}</td>
                                     <td>{{ showAmount($redeemHistory->amount) }}</td>
                                     <td>{{ showAmount($redeemHistory->charge) }}</td>
                                     <td>@php echo $redeemHistory->redeemData->statusBadge @endphp</td>
@@ -56,5 +56,5 @@
 @endsection
 
 @push('pageHeaderButton')
-    <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"> <i class="fas fa-truck"></i> @lang('Redeem Gold')</a>
+    <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"> <i class="fas fa-truck"></i> @lang('Redeem Green Coffee')</a>
 @endpush

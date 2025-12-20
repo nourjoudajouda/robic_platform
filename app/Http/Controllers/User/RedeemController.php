@@ -6,7 +6,7 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\ChargeLimit;
-use App\Models\GoldHistory;
+use App\Models\BeanHistory;
 use App\Models\RedeemData;
 use App\Models\RedeemUnit;
 use App\Models\Transaction;
@@ -158,12 +158,14 @@ class RedeemController extends Controller
 
         $trx = getTrx();
 
-        $redeemHistory              = new GoldHistory();
+        $redeemHistory              = new BeanHistory();
         $redeemHistory->user_id     = $user->id;
         $redeemHistory->asset_id    = $asset->id;
-        $redeemHistory->category_id = $asset->category_id;
-        $redeemHistory->amount      = $redeemData->amount;
+        $redeemHistory->batch_id    = $asset->batch_id;
         $redeemHistory->quantity    = $redeemData->total_quantity;
+        $redeemHistory->item_unit_id = $asset->batch && $asset->batch->product ? $asset->batch->product->unit_id : null;
+        $redeemHistory->amount      = $redeemData->amount;
+        $redeemHistory->currency_id = $asset->batch && $asset->batch->product ? $asset->batch->product->currency_id : null;
         $redeemHistory->charge      = $redeemData->charge;
         $redeemHistory->trx         = $trx;
         $redeemHistory->type        = Status::REDEEM_HISTORY;
@@ -192,7 +194,7 @@ class RedeemController extends Controller
         $transaction->post_balance = $user->balance;
         $transaction->charge       = 0;
         $transaction->trx_type     = '-';
-        $transaction->details      = 'Redeem ' . $asset->category->name;
+        $transaction->details      = 'Redeem Green Coffee';
         $transaction->trx          = $trx;
         $transaction->remark       = 'redeem_gold';
         $transaction->save();
@@ -217,7 +219,11 @@ class RedeemController extends Controller
     {
         $pageTitle     = 'Redeem Success';
         $redeemHistory = session()->get('redeem_history');
-        $redeemHistory = GoldHistory::latest()->first();
+        if ($redeemHistory) {
+            $redeemHistory = BeanHistory::with('batch.product.unit')->find($redeemHistory->id);
+        } else {
+            $redeemHistory = BeanHistory::with('batch.product.unit')->latest()->first();
+        }
 
         if (!$redeemHistory) {
             $notify[] = ['error', 'Invalid session data'];
@@ -229,7 +235,7 @@ class RedeemController extends Controller
     public function history()
     {
         $pageTitle       = 'Redeem History';
-        $redeemHistories = GoldHistory::redeem()->where('user_id', auth()->id())->with('category')->orderBy('id', 'desc')->paginate(getPaginate());
+        $redeemHistories = BeanHistory::redeem()->where('user_id', auth()->id())->with('batch.product')->orderBy('id', 'desc')->paginate(getPaginate());
 
         return view('Template::user.redeem.history', compact('pageTitle', 'redeemHistories'));
     }

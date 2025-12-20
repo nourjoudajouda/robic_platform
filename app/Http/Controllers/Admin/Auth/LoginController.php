@@ -66,8 +66,12 @@ class LoginController extends Controller
             return back()->withNotify($notify);
         }
 
-
+        try {
         Onumoti::getData();
+        } catch (\Exception $e) {
+            // Continue with login even if Onumoti fails
+            \Log::warning('Onumoti getData failed: ' . $e->getMessage());
+        }
 
         // If the class is using the ThrottlesLogins trait, we can automatically throttle
         // the login attempts for this application. We'll key this by the username and

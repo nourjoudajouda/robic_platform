@@ -6,6 +6,7 @@ use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Models\Withdrawal;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 
 class WithdrawalController extends Controller
@@ -63,7 +64,7 @@ class WithdrawalController extends Controller
             $withdrawals = $withdrawals->where('method_id', $request->method);
         }
         if (!$summary) {
-            return $withdrawals->with(['user', 'method'])->orderBy('id', 'desc')->paginate(getPaginate());
+            return $withdrawals->with('user')->orderBy('id', 'desc')->paginate(getPaginate());
         } else {
 
             $successful = clone $withdrawals;
@@ -75,7 +76,7 @@ class WithdrawalController extends Controller
             $rejectedSummary   = $rejected->where('status', Status::PAYMENT_REJECT)->sum('amount');
 
             return [
-                'data'    => $withdrawals->with(['user', 'method'])->orderBy('id', 'desc')->paginate(getPaginate()),
+                'data'    => $withdrawals->with('user')->orderBy('id', 'desc')->paginate(getPaginate()),
                 'summary' => [
                     'successful' => $successfulSummary,
                     'pending'    => $pendingSummary,
@@ -87,30 +88,70 @@ class WithdrawalController extends Controller
 
     public function details($id)
     {
-        $withdrawal = Withdrawal::where('id', $id)->where('status', '!=', Status::PAYMENT_INITIATE)->with(['user', 'method'])->firstOrFail();
+        $withdrawal = Withdrawal::where('id', $id)->where('status', '!=', Status::PAYMENT_INITIATE)->with('user')->firstOrFail();
         $pageTitle  = 'Withdrawal Details';
-        $details    = $withdrawal->withdraw_information ? json_encode($withdrawal->withdraw_information) : null;
+        
+        // Safely handle withdraw_information
+        $details = null;
+        if ($withdrawal->withdraw_information) {
+            try {
+                $details = json_encode($withdrawal->withdraw_information);
+            } catch (\Exception $e) {
+                $details = null;
+            }
+        }
 
         return view('admin.withdraw.detail', compact('pageTitle', 'withdrawal', 'details'));
     }
 
     public function approve(Request $request)
     {
-        $request->validate(['id' => 'required|integer']);
-        $withdraw                 = Withdrawal::where('id', $request->id)->where('status', Status::PAYMENT_PENDING)->with('user')->firstOrFail();
-        $withdraw->status         = Status::PAYMENT_SUCCESS;
+        $request->validate([
+            'id' => 'required|integer',
+            'transfer_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'details' => 'nullable|string|max:500'
+        ]);
+        
+        $withdraw = Withdrawal::where('id', $request->id)->where('status', Status::PAYMENT_PENDING)->with('user')->firstOrFail();
+        
+        // Handle transfer image upload
+        $transferImage = null;
+        if ($request->hasFile('transfer_image')) {
+            try {
+                $file = $request->file('transfer_image');
+                
+                // Validate file
+                if (!$file->isValid()) {
+                    $notify[] = ['error', 'Invalid file uploaded.'];
+                    return back()->withNotify($notify);
+                }
+                
+                // Get file extension
+                $extension = $file->getClientOriginalExtension();
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                
+                if (!in_array(strtolower($extension), $allowedExtensions)) {
+                    $notify[] = ['error', 'Invalid file type. Only JPG, PNG, and GIF are allowed.'];
+                    return back()->withNotify($notify);
+                }
+                
+                // Upload file using fileUploader (size = null means no resizing)
+                $transferImage = fileUploader($file, getFilePath('transfers'), null, null, null, null);
+            } catch (\Exception $e) {
+                $notify[] = ['error', 'Failed to upload transfer image: ' . $e->getMessage()];
+                return back()->withNotify($notify);
+            }
+        }
+        
+        $withdraw->status = Status::PAYMENT_SUCCESS;
         $withdraw->admin_feedback = $request->details;
+        $withdraw->transfer_image = $transferImage;
         $withdraw->save();
 
         notify($withdraw->user, 'WITHDRAW_APPROVE', [
-            'method_name'     => $withdraw->method->name,
-            'method_currency' => $withdraw->currency,
-            'method_amount'   => showAmount($withdraw->final_amount, currencyFormat: false),
-            'amount'          => showAmount($withdraw->amount, currencyFormat: false),
-            'charge'          => showAmount($withdraw->charge, currencyFormat: false),
-            'rate'            => showAmount($withdraw->rate, currencyFormat: false),
-            'trx'             => $withdraw->trx,
-            'admin_details'   => $request->details,
+            'amount' => showAmount($withdraw->amount, currencyFormat: false),
+            'trx' => $withdraw->trx,
+            'admin_details' => $request->details,
         ]);
 
         $notify[] = ['success', 'Withdrawal approved successfully'];
@@ -130,6 +171,19 @@ class WithdrawalController extends Controller
         $user->balance += $withdraw->amount;
         $user->save();
 
+        // Refund to wallet
+        $wallet = Wallet::where('user_id', $user->id)->first();
+        if (!$wallet) {
+            // Create wallet if it doesn't exist
+            $wallet = new Wallet();
+            $wallet->user_id = $user->id;
+            $wallet->balance = 0;
+            $wallet->status = Status::ENABLE;
+            $wallet->save();
+        }
+        $wallet->balance += $withdraw->amount;
+        $wallet->save();
+
         $transaction               = new Transaction();
         $transaction->user_id      = $withdraw->user_id;
         $transaction->amount       = $withdraw->amount;
@@ -142,7 +196,7 @@ class WithdrawalController extends Controller
         $transaction->save();
 
         notify($user, 'WITHDRAW_REJECT', [
-            'method_name'     => $withdraw->method->name,
+            'method_name'     => 'Bank Transfer',
             'method_currency' => $withdraw->currency,
             'method_amount'   => showAmount($withdraw->final_amount, currencyFormat: false),
             'amount'          => showAmount($withdraw->amount, currencyFormat: false),

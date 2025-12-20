@@ -86,7 +86,11 @@
 
                                     <td>
                                         @if ($deposit->method_code >= 1000 && $deposit->method_code <= 5000)
-                                            <a href="javascript:void(0)" class="dashboard-table-btn detailBtn" data-info="{{ json_encode($details) }}" @if ($deposit->status == Status::PAYMENT_REJECT) data-admin_feedback="{{ $deposit->admin_feedback }}" @endif>
+                                            <a href="javascript:void(0)" class="dashboard-table-btn detailBtn" 
+                                                data-info="{{ !empty($details) ? json_encode($details) : '[]' }}" 
+                                                @if ($deposit->status == Status::PAYMENT_REJECT && $deposit->admin_feedback) data-admin-feedback="{{ htmlspecialchars($deposit->admin_feedback, ENT_QUOTES, 'UTF-8') }}" @endif
+                                                @if ($deposit->transfer_image) data-transfer-image="{{ asset('transfers/' . $deposit->transfer_image) }}" @endif
+                                                @if ($deposit->description) data-description="{{ htmlspecialchars($deposit->description, ENT_QUOTES, 'UTF-8') }}" @endif>
                                                 @lang('Details')
                                             </a>
                                         @else
@@ -117,14 +121,12 @@
 
 
     {{-- APPROVE MODAL --}}
-    <div id="detailModal" class="modal custom--modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
+    <div id="detailModal" class="modal custom--modal fade" tabindex="-1" role="dialog" data-bs-backdrop="true" data-bs-keyboard="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">@lang('Details')</h5>
-                    <span type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="las la-times"></i>
-                    </span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <ul class="list-group userData">
@@ -147,53 +149,122 @@
     <script>
         (function($) {
             "use strict";
-            $('.detailBtn').on('click', function() {
-                var modal = $('#detailModal');
+            $(document).ready(function() {
+                // Remove any existing backdrop
+                function removeBackdrops() {
+                    $('.modal-backdrop').remove();
+                    $('body').removeClass('modal-open');
+                    $('body').css('overflow', '');
+                    $('body').css('padding-right', '');
+                }
+                
+                $('.detailBtn').on('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Remove any existing backdrops first
+                    removeBackdrops();
+                    
+                    try {
+                        var modalElement = document.getElementById('detailModal');
+                        if (!modalElement) {
+                            console.error('Modal element not found');
+                            return;
+                        }
+                        
+                        var $modal = $(modalElement);
 
                 var userData = $(this).data('info');
                 var html = '';
-                if (userData) {
-                    userData.forEach(element => {
-                        if (element.type != 'file') {
-                            html += `
-                            <li class="list-group-item d-flex justify-content-between align-items-center px-2">
-                                <span>${element.name}</span>
-                                <span">${element.value}</span>
-                            </li>`;
-                        } else {
-                            html += `
-                            <li class="list-group-item d-flex justify-content-between align-items-center px-2">
-                                <span>${element.name}</span>
-                                <span"><a href="${element.value}"><i class="fa-regular fa-file"></i> @lang('Attachment')</a></span>
-                            </li>`;
+                        
+                        // Parse JSON if it's a string
+                        if (typeof userData === 'string') {
+                            try {
+                                userData = JSON.parse(userData);
+                            } catch (e) {
+                                console.warn('Failed to parse userData:', e);
+                                userData = [];
+                            }
+                        }
+                        
+                        if (userData && Array.isArray(userData) && userData.length > 0) {
+                            userData.forEach(function(element) {
+                                if (element && element.type != 'file') {
+                                    html += '<li class="list-group-item d-flex justify-content-between align-items-center px-2">' +
+                                        '<span>' + (element.name || '') + '</span>' +
+                                        '<span>' + (element.value || '') + '</span>' +
+                                        '</li>';
+                                } else if (element && element.type == 'file') {
+                                    html += '<li class="list-group-item d-flex justify-content-between align-items-center px-2">' +
+                                        '<span>' + (element.name || '') + '</span>' +
+                                        '<span><a href="' + (element.value || '#') + '" target="_blank"><i class="fa-regular fa-file"></i> @lang("Attachment")</a></span>' +
+                                        '</li>';
                         }
                     });
                 }
 
-                modal.find('.userData').html(html);
+                        $modal.find('.userData').html(html || '<li class="list-group-item">@lang("No additional details available")</li>');
 
-                if ($(this).data('admin_feedback') != undefined) {
-                    var adminFeedback = `
-                        <div class="my-3">
-                            <strong>@lang('Admin Feedback')</strong>
-                            <p>${$(this).data('admin_feedback')}</p>
-                        </div>
-                    `;
-                } else {
-                    var adminFeedback = '';
+                        var feedbackHtml = '';
+                        var transferImage = $(this).data('transfer-image') || $(this).data('transfer_image');
+                        var adminFeedback = $(this).data('admin-feedback') || $(this).data('admin_feedback');
+                        
+                        if (transferImage) {
+                            feedbackHtml += '<div class="my-3">' +
+                                '<strong>@lang("Transfer Receipt")</strong>' +
+                                '<br>' +
+                                '<img src="' + transferImage + '" alt="Transfer Receipt" class="img-fluid mt-2" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;" onerror="this.style.display=\'none\'">' +
+                                '</div>';
+                        }
+
+                        if (adminFeedback) {
+                            feedbackHtml += '<div class="my-3">' +
+                                '<strong>@lang("Admin Feedback")</strong>' +
+                                '<p>' + adminFeedback + '</p>' +
+                                '</div>';
+                        } else if (!transferImage) {
+                            feedbackHtml = '<p class="text-muted">@lang("Waiting for admin approval")</p>';
                 }
 
-                modal.find('.feedback').html(adminFeedback);
+                        $modal.find('.feedback').html(feedbackHtml);
 
+                        // Use Bootstrap 5 modal
+                        var modal = new bootstrap.Modal(modalElement, {
+                            backdrop: true,
+                            keyboard: true,
+                            focus: true
+                        });
+                        
+                        // Clean up on hide
+                        modalElement.addEventListener('hidden.bs.modal', function() {
+                            removeBackdrops();
+                        }, { once: true });
+                        
+                        // Show modal
+                        modal.show();
+                    } catch (error) {
+                        console.error('Error opening modal:', error);
+                        removeBackdrops();
+                        alert('@lang("An error occurred while loading details. Please try again.")');
+                    }
+                });
+                
+                // Close modal on backdrop click
+                $(document).on('click', '.modal-backdrop', function() {
+                    $('#detailModal').modal('hide');
+                    removeBackdrops();
+                });
 
-                modal.modal('show');
+                // Initialize tooltips
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title], [data-title], [data-bs-title]'));
+                tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+                    try {
+                        new bootstrap.Tooltip(tooltipTriggerEl);
+                    } catch (e) {
+                        console.warn('Tooltip initialization failed:', e);
+                    }
+                });
             });
-
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title], [data-title], [data-bs-title]'))
-            tooltipTriggerList.map(function(tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            });
-
         })(jQuery);
     </script>
 @endpush

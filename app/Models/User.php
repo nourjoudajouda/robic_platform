@@ -21,6 +21,14 @@ class User extends Authenticatable
         'password', 'remember_token','ver_code','balance','kyc_data'
     ];
 
+    protected $fillable = [
+        'firstname', 'lastname', 'username', 'email', 'password', 'dial_code', 'mobile',
+        'ref_by', 'balance', 'image', 'country_name', 'country_code', 'city', 'state',
+        'zip', 'address', 'status', 'kyc_data', 'kyc_rejection_reason', 'kv', 'ev', 'sv',
+        'profile_complete', 'ver_code', 'ver_code_send_at', 'ts', 'tv', 'tsc', 'ban_reason',
+        'provider', 'provider_id', 'type', 'user_type', 'establishment_name', 'commercial_registration', 'establishment_info'
+    ];
+
     /**
      * The attributes that should be cast to native types.
      *
@@ -32,9 +40,9 @@ class User extends Authenticatable
         'ver_code_send_at' => 'datetime'
     ];
 
-    public function goldHistories()
+    public function beanHistories()
     {
-        return $this->hasMany(GoldHistory::class);
+        return $this->hasMany(BeanHistory::class);
     }
 
     public function loginLogs()
@@ -65,6 +73,11 @@ class User extends Authenticatable
     public function tickets()
     {
         return $this->hasMany(SupportTicket::class);
+    }
+
+    public function wallets()
+    {
+        return $this->hasMany(Wallet::class);
     }
 
     public function fullname(): Attribute
@@ -125,6 +138,22 @@ class User extends Authenticatable
     public function scopeWithBalance($query)
     {
         return $query->where('balance','>', 0);
+    }
+
+    public function scopeEstablishment($query)
+    {
+        return $query->where(function($q) {
+            $q->where('type', 'establishment')
+              ->orWhere('user_type', 'establishment');
+        });
+    }
+
+    public function scopePendingEstablishments($query)
+    {
+        return $query->where(function($q) {
+            $q->where('type', 'establishment')
+              ->orWhere('user_type', 'establishment');
+        })->where('status', Status::USER_BAN);
     }
 
     public function deviceTokens()

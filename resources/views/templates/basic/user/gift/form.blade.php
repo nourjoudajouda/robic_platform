@@ -12,7 +12,7 @@
                                 <span class="dashboard-card__tag-icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/29.png') }}" alt="image"></span>
                                 <span class="dashboard-card__tag-text">{{ __($asset->category->name) }}</span>
                             </div>
-                            <h4 class="dashboard-card__gold">{{ showAmount($asset->quantity, 4, currencyFormat: false) }} <sub>@lang('Gram')</sub></h4>
+                            <h4 class="dashboard-card__gold">{{ showAmount($asset->quantity, 4, currencyFormat: false) }} <sub>{{ $asset->batch && $asset->batch->product && $asset->batch->product->unit ? $asset->batch->product->unit->symbol : 'Unit' }}</sub></h4>
                             <p class="dashboard-card__desc">{{ showAmount($asset->quantity * $asset->category->price) }}</p>
                         </div>
                     @endforeach
@@ -39,7 +39,7 @@
                             <h5 class="buy-sell-payment__title">@lang('Overview')</h5>
                             <ul class="text-list">
                                 <li class="text-list__item">
-                                    <span class="text-list__item-title">@lang('Gold Quantity')</span>
+                                    <span class="text-list__item-title">@lang('Green Coffee Quantity')</span>
                                     <span class="text-list__item-value"><span class="quantity">0.00</span> @lang('Gram')</span>
                                 </li>
                                 <li class="text-list__item">

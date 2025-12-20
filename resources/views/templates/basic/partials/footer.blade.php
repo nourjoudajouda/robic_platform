@@ -42,8 +42,8 @@
                     <div class="footer-item">
                         <h5 class="footer-item__title">@lang('Useful Links')</h5>
                         <ul class="footer-menu">
-                            <li class="footer-menu__item"><a href="{{ route('user.buy.form') }}" class="footer-menu__link">@lang('Buy Gold')</a></li>
-                            <li class="footer-menu__item"><a href="{{ route('user.sell.form') }}" class="footer-menu__link">@lang('Sell Gold')</a></li>
+                            <li class="footer-menu__item"><a href="{{ route('user.buy.form') }}" class="footer-menu__link">@lang('Buy Green Coffee')</a></li>
+                            <li class="footer-menu__item"><a href="{{ route('user.sell.form') }}" class="footer-menu__link">@lang('Sell Green Coffee')</a></li>
                             @foreach ($policyPages as $policy)
                                 <li class="footer-menu__item"><a href="{{ route('policy.pages', $policy->slug) }}" class="footer-menu__link">{{ __($policy->data_values->title) }}</a></li>
                             @endforeach

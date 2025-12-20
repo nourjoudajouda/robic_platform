@@ -9,6 +9,7 @@ use App\Models\Deposit;
 use App\Models\NotificationLog;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\Wallet;
 use App\Models\Withdrawal;
 use App\Rules\FileTypeValidate;
 use Illuminate\Http\Request;
@@ -87,6 +88,85 @@ class ManageUsersController extends Controller
         return view('admin.users.list', compact('pageTitle', 'users'));
     }
 
+    public function establishments()
+    {
+        $pageTitle = 'Establishments';
+        $users     = $this->userData('establishment');
+        return view('admin.users.establishments', compact('pageTitle', 'users'));
+    }
+
+    public function pendingEstablishments()
+    {
+        $pageTitle = 'Pending Establishments';
+        $users     = $this->userData('pendingEstablishments');
+        return view('admin.users.pending_establishments', compact('pageTitle', 'users'));
+    }
+
+    public function approveEstablishment($id)
+    {
+        $user = User::where(function($q) {
+            $q->where('type', 'establishment')
+              ->orWhere('user_type', 'establishment');
+        })->findOrFail($id);
+
+        // Activate user account
+        $user->status = Status::USER_ACTIVE;
+        $user->ban_reason = null;
+        $user->save();
+
+        // Activate wallet
+        $wallet = Wallet::where('user_id', $user->id)->first();
+        if ($wallet) {
+            $wallet->status = Status::ENABLE;
+            $wallet->save();
+        }
+
+        // Send notification to user
+        notify($user, 'ESTABLISHMENT_APPROVED', []);
+
+        $notify[] = ['success', 'Establishment approved successfully'];
+        return back()->withNotify($notify);
+    }
+
+    public function rejectEstablishment(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $user = User::where(function($q) {
+            $q->where('type', 'establishment')
+              ->orWhere('user_type', 'establishment');
+        })->findOrFail($id);
+
+        $user->status = Status::USER_BAN;
+        $user->ban_reason = $request->reason;
+        $user->save();
+
+        // Send notification to user
+        notify($user, 'ESTABLISHMENT_REJECTED', [
+            'reason' => $request->reason,
+        ]);
+
+        $notify[] = ['success', 'Establishment rejected successfully'];
+        return back()->withNotify($notify);
+    }
+
+    public function establishmentDetail($id)
+    {
+        $user = User::where(function($q) {
+            $q->where('type', 'establishment')
+              ->orWhere('user_type', 'establishment');
+        })->findOrFail($id);
+        $pageTitle = 'Establishment Detail - ' . ($user->establishment_name ?? $user->username);
+
+        $totalDeposit     = Deposit::where('user_id', $user->id)->successful()->sum('amount');
+        $totalWithdrawals = Withdrawal::where('user_id', $user->id)->approved()->sum('amount');
+        $totalAssetAmount = $user->assets->sum(fn($asset) => $asset->quantity * $asset->category->price);
+
+        return view('admin.users.establishment_detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalAssetAmount'));
+    }
+
     protected function userData($scope = null)
     {
         if ($scope) {
@@ -127,7 +207,7 @@ class ManageUsersController extends Controller
         notify($user, 'KYC_APPROVE', []);
 
         $notify[] = ['success', 'KYC approved successfully'];
-        return to_route('admin.users.kyc.pending')->withNotify($notify);
+        return to_route('admin.users.detail', $user->id)->withNotify($notify);
     }
 
     public function kycReject(Request $request, $id)
@@ -145,7 +225,7 @@ class ManageUsersController extends Controller
         ]);
 
         $notify[] = ['success', 'KYC rejected successfully'];
-        return to_route('admin.users.kyc.pending')->withNotify($notify);
+        return to_route('admin.users.detail', $user->id)->withNotify($notify);
     }
 
     public function update(Request $request, $id)

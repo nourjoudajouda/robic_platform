@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إنشاء حساب - روبيك، منصتك الأولى لتداول البن الأخضر</title>
+    
+    <!-- Bootstrap 5 RTL CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Arabic -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/home/css/register.css">
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Register Section -->
+        <section class="register-section">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-7 col-md-8">
+                        <div class="register-card">
+                            <div class="register-header">
+                                <img src="assets/images/logo_icon/logo-footer.png" alt="ROBIC Logo" class="register-logo">
+                                <h2 class="register-subtitle">إنشاء حساب في<br> <span class="header-title">روبيك، منصتك الأولى لتداول البن الأخضر</span></h2>
+                            </div>
+
+                            <!-- Account Type Tabs -->
+                            <div class="account-type-tabs">
+                                <button type="button" class="tab-btn active" data-tab="individual">
+                                    حساب فرد
+                                </button>
+                                <button type="button" class="tab-btn" data-tab="establishment">
+                                    حساب منشأة
+                                </button>
+                            </div>
+
+                            <!-- Individual Account Form -->
+                            <form class="register-form active" id="individualForm" data-form="individual" autocomplete="off">
+                                <div class="form-group">
+                                    <label for="fullName" class="form-label">الاسم كاملاً</label>
+                                    <input type="text" class="form-control" id="fullName" placeholder="ادخل اسمك كاملاً هنا" autocomplete="off" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="email" class="form-label">البريد الإلكتروني</label>
+                                    <input type="email" class="form-control" id="email" placeholder="ادخل البريد الإلكتروني" autocomplete="off" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="phone" class="form-label">رقم الهاتف</label>
+                                    <div class="phone-input-wrapper">
+                                        <input type="tel" class="form-control phone-number" id="phone" placeholder="ادخل رقم الهاتف هنا" autocomplete="off" required>
+                                        <select class="phone-code-select" id="phoneCode" autocomplete="off" required>
+                                            <option value="+966" data-flag="🇸🇦">🇸🇦 +966</option>
+                                            <option value="+971" data-flag="🇦🇪">🇦🇪 +971</option>
+                                            <option value="+965" data-flag="🇰🇼">🇰🇼 +965</option>
+                                            <option value="+974" data-flag="🇶🇦">🇶🇦 +974</option>
+                                            <option value="+973" data-flag="🇧🇭">🇧🇭 +973</option>
+                                            <option value="+968" data-flag="🇴🇲">🇴🇲 +968</option>
+                                            <option value="+961" data-flag="🇱🇧">🇱🇧 +961</option>
+                                            <option value="+962" data-flag="🇯🇴">🇯🇴 +962</option>
+                                            <option value="+20" data-flag="🇪🇬">🇪🇬 +20</option>
+                                            <option value="+212" data-flag="🇲🇦">🇲🇦 +212</option>
+                                            <option value="+213" data-flag="🇩🇿">🇩🇿 +213</option>
+                                            <option value="+216" data-flag="🇹🇳">🇹🇳 +216</option>
+                                            <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
+                                            <option value="+44" data-flag="🇬🇧">🇬🇧 +44</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="password" class="form-label">كلمة المرور</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" class="form-control" id="password" placeholder="أدخل كلمة المرور هنا" autocomplete="new-password" required>
+                                        <button type="button" class="password-toggle" data-target="password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="confirmPassword" class="form-label">تأكيد كلمة المرور</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" class="form-control" id="confirmPassword" placeholder="يرجى تأكيد كلمة المرور هنا" autocomplete="new-password" required>
+                                        <button type="button" class="password-toggle" data-target="confirmPassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-register">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    إنشاء حساب
+                                </button>
+
+                                <div class="login-link">
+                                    <p>لديك حساب؟ <a href="home.html">تسجل دخول الآن</a></p>
+                                </div>
+                            </form>
+
+                            <!-- Establishment Account Form -->
+                            <form class="register-form" id="establishmentForm" data-form="establishment" autocomplete="off">
+                                <div class="form-group">
+                                    <label for="establishmentName" class="form-label">اسم المنشأة</label>
+                                    <input type="text" class="form-control" id="establishmentName" placeholder="ادخل اسم المنشأة هنا" autocomplete="off" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="establishmentEmail" class="form-label">البريد الإلكتروني</label>
+                                    <input type="email" class="form-control" id="establishmentEmail" placeholder="ادخل البريد الإلكتروني الخاص بالمنشأة هنا" autocomplete="off" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="establishmentPhone" class="form-label">رقم الهاتف</label>
+                                    <div class="phone-input-wrapper">
+                                        <input type="tel" class="form-control phone-number" id="establishmentPhone" placeholder="ادخل رقم هاتف المنشأة هذا" autocomplete="off" required>
+                                        <select class="phone-code-select" id="establishmentPhoneCode" autocomplete="off" required>
+                                            <option value="+966" data-flag="🇸🇦">🇸🇦 +966</option>
+                                            <option value="+971" data-flag="🇦🇪">🇦🇪 +971</option>
+                                            <option value="+965" data-flag="🇰🇼">🇰🇼 +965</option>
+                                            <option value="+974" data-flag="🇶🇦">🇶🇦 +974</option>
+                                            <option value="+973" data-flag="🇧🇭">🇧🇭 +973</option>
+                                            <option value="+968" data-flag="🇴🇲">🇴🇲 +968</option>
+                                            <option value="+961" data-flag="🇱🇧">🇱🇧 +961</option>
+                                            <option value="+962" data-flag="🇯🇴">🇯🇴 +962</option>
+                                            <option value="+20" data-flag="🇪🇬">🇪🇬 +20</option>
+                                            <option value="+212" data-flag="🇲🇦">🇲🇦 +212</option>
+                                            <option value="+213" data-flag="🇩🇿">🇩🇿 +213</option>
+                                            <option value="+216" data-flag="🇹🇳">🇹🇳 +216</option>
+                                            <option value="+1" data-flag="🇺🇸">🇺🇸 +1</option>
+                                            <option value="+44" data-flag="🇬🇧">🇬🇧 +44</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="commercialRegistration" class="form-label">السجل التجاري للمنشأة</label>
+                                    <div class="file-upload-wrapper">
+                                        <input type="file" class="file-input" id="commercialRegistration" accept=".pdf,.jpg,.jpeg,.png" autocomplete="off" required>
+                                        <label for="commercialRegistration" class="file-upload-label">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <span>يرجى رفع السجل التجاري للمنشأة هنا</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="establishmentPassword" class="form-label">كلمة المرور</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" class="form-control" id="establishmentPassword" placeholder="ادخل كلمة المرور هذا" autocomplete="new-password" required>
+                                        <button type="button" class="password-toggle" data-target="establishmentPassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="establishmentConfirmPassword" class="form-label">تأكيد كلمة المرور</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" class="form-control" id="establishmentConfirmPassword" placeholder="يوم تأكيد كلمة المرور هذا" autocomplete="new-password" required>
+                                        <button type="button" class="password-toggle" data-target="establishmentConfirmPassword">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-register">
+                                    <i class="fas fa-user-plus me-2"></i>
+                                    إنشاء حساب
+                                </button>
+
+                                <div class="login-link">
+                                    <p>لديك حساب؟ <a href="home.html">تسجيل دخول الآن</a></p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4 mb-md-0">
+                    <div class="footer-widget">
+                        <div class="footer-logo">
+                            <a href="#" class="logo-link">
+                                <img src="assets/images/logo_icon/logo-footer.png" alt="ROBIC Logo" class="logo-img">
+                            </a>
+                        </div>
+                        <h4 class="footer-title">روييـك, عالاصل دوّر</h4>
+                        <p class="footer-description">استثمر في البن الأخضر... مستقبلك التجاري يبدأ من الحبة الأولى</p>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
+                    <div class="footer-widget">
+                        <h5 class="footer-subtitle">روابط سريعة</h5>
+                        <ul class="footer-links">
+                            <li><a href="home.html">الرئيسية</a></li>
+                            <li><a href="#">سياسة الاستخدام</a></li>
+                            <li><a href="#">سياسة الشراء</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+                    <div class="footer-widget">
+                        <h5 class="footer-subtitle">السياسات</h5>
+                        <ul class="footer-links">
+                            <li><a href="#">سياسة الخصوصية</a></li>
+                            <li><a href="#">سياسة الاسترجاع</a></li>
+                            <li><a href="#">المدونة</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="footer-widget">
+                        <h5 class="footer-subtitle">تواصل معنا</h5>
+                        <ul class="footer-contact">
+                            <li><i class="fas fa-envelope"></i> info@robic.com</li>
+                            <li><i class="fas fa-phone"></i> +966 12 345 6789</li>
+                            <li><i class="fas fa-map-marker-alt"></i> المملكة العربية السعودية</li>
+                        </ul>
+                        <div class="social-links">
+                            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
+                        <p class="copyright">&copy; 2024 روييـك, عالاصل دوّر. جميع الحقوق محفوظة.</p>
+                    </div>
+                    <div class="col-lg-6 col-md-12">
+                        <div class="payment-methods">
+                            <a href="#" class="payment-method" title="Payment Card">
+                                <img src="assets/images/frontend/payment_methods/wallet.svg" alt="Payment Card">
+                            </a>
+                            <a href="#" class="payment-method" title="urpay">
+                                <img src="assets/images/frontend/payment_methods/urpay.svg" alt="urpay">
+                            </a>
+                            <a href="#" class="payment-method" title="mada">
+                                <img src="assets/images/frontend/payment_methods/mada.svg" alt="mada">
+                            </a>
+                            <a href="#" class="payment-method" title="Mastercard">
+                                <img src="assets/images/frontend/payment_methods/mastercard.svg" alt="Mastercard">
+                            </a>
+                            <a href="#" class="payment-method" title="VISA">
+                                <img src="assets/images/frontend/payment_methods/visa.svg" alt="VISA">
+                            </a>
+                            <a href="#" class="payment-method" title="Apple Pay">
+                                <img src="assets/images/frontend/payment_methods/apple-pay.svg" alt="Apple Pay">
+                            </a>
+                            <a href="#" class="payment-method" title="stc pay">
+                                <img src="assets/images/frontend/payment_methods/stc-pay.svg" alt="stc pay">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Custom JS -->
+    <script src="assets/home/js/register.js"></script>
+</body>
+</html>

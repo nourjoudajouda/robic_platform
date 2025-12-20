@@ -7,7 +7,7 @@
         <div class="col-lg-4 col-md-4 mb-30">
             <div class="card overflow-hidden box--shadow1">
                 <div class="card-body">
-                    <h5 class="mb-20 text-muted">@lang('Withdraw Via') {{__(@$withdrawal->method->name)}}</h5>
+                    <h5 class="mb-20 text-muted">@lang('Withdraw Via') @lang('Bank Transfer')</h5>
                     <ul class="list-group">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             @lang('Date')
@@ -26,7 +26,7 @@
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             @lang('Method')
-                            <span class="fw-bold">{{__($withdrawal->method->name)}}</span>
+                            <span class="fw-bold">@lang('Bank Transfer')</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             @lang('Amount')
@@ -34,23 +34,8 @@
                         </li>
 
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @lang('Charge')
-                            <span class="fw-bold">{{ showAmount($withdrawal->charge ) }}</span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @lang('After Charge')
-                            <span class="fw-bold">{{ showAmount($withdrawal->after_charge ) }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @lang('Rate')
-                            <span class="fw-bold">1 {{__(gs('cur_text'))}}
-                                = {{ showAmount($withdrawal->rate ) }}</span>
-                        </li>
-
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @lang('Payable')
-                            <span class="fw-bold">{{ showAmount($withdrawal->final_amount) }}</span>
+                            @lang('Currency')
+                            <span class="fw-bold">{{ __($withdrawal->currency) }}</span>
                         </li>
 
                         <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -64,6 +49,18 @@
                            <p>{{$withdrawal->admin_feedback}}</p>
                         </li>
                         @endif
+                        @if($withdrawal->transfer_image)
+                            <li class="list-group-item">
+                                <strong>@lang('Transfer Receipt')</strong>
+                                <br>
+                                <a href="{{ asset('transfers/' . $withdrawal->transfer_image) }}" target="_blank" class="btn btn-sm btn-outline--primary mt-2">
+                                    <i class="las la-eye"></i> @lang('View Image')
+                                </a>
+                                <a href="{{ asset('transfers/' . $withdrawal->transfer_image) }}" download class="btn btn-sm btn-outline--info mt-2">
+                                    <i class="las la-download"></i> @lang('Download')
+                                </a>
+                        </li>
+                        @endif
                     </ul>
                 </div>
             </div>
@@ -72,28 +69,55 @@
 
             <div class="card overflow-hidden box--shadow1">
                 <div class="card-body">
-                    <h5 class="card-title border-bottom pb-2">@lang('User Withdraw Information')</h5>
+                    <h5 class="card-title border-bottom pb-2">@lang('Withdrawal Information')</h5>
 
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h6>@lang('Amount')</h6>
+                            <p>{{ showAmount($withdrawal->amount) }}</p>
+                        </div>
+                    </div>
 
-                    @if($details != null)
-                        @foreach(json_decode($details) as $val)
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h6>@lang('Transaction Number')</h6>
+                            <p>{{ $withdrawal->trx }}</p>
+                        </div>
+                    </div>
+
+                    @if($withdrawal->admin_feedback)
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <h6>@lang('Admin Notes')</h6>
+                                <p>{{ $withdrawal->admin_feedback }}</p>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($details != null && $details != 'null' && $details != '')
+                        @php
+                            $decodedDetails = json_decode($details);
+                        @endphp
+                        @if($decodedDetails && is_array($decodedDetails) && count($decodedDetails) > 0)
+                            @foreach($decodedDetails as $val)
                             <div class="row mt-4">
                                 <div class="col-md-12">
                                     <h6>{{__($val->name)}}</h6>
-                                    @if($val->type == 'checkbox')
+                                        @if(isset($val->type) && $val->type == 'checkbox')
                                         {{ implode(',',$val->value) }}
-                                    @elseif($val->type == 'file')
+                                        @elseif(isset($val->type) && $val->type == 'file')
                                         @if($val->value)
                                             <a href="{{ route('admin.download.attachment',encrypt(getFilePath('verify').'/'.$val->value)) }}"><i class="fa-regular fa-file"></i>  @lang('Attachment') </a>
                                         @else
                                             @lang('No File')
                                         @endif
                                     @else
-                                    <p>{{__($val->value)}}</p>
+                                        <p>{{__($val->value ?? '')}}</p>
                                     @endif
                                 </div>
                             </div>
                         @endforeach
+                        @endif
                     @endif
 
 
@@ -128,15 +152,25 @@
                         <i class="las la-times"></i>
                     </button>
                 </div>
-                <form action="{{ route('admin.withdraw.data.approve') }}" method="POST">
+                <form action="{{ route('admin.withdraw.data.approve') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id" value="{{ $withdrawal->id }}">
                     <div class="modal-body">
                         <p>@lang('Have you sent') <span class="fw-bold text--success">{{ showAmount($withdrawal->final_amount,currencyFormat:false) }} {{$withdrawal->currency}}</span>?</p>
-                        <textarea name="details" class="form-control" value="{{ old('details') }}" rows="3" placeholder="@lang('Provide the details. eg: transaction number')" required></textarea>
+                        
+                        <div class="form-group mt-3">
+                            <label>@lang('Transfer Receipt Image') <span class="text--danger">*</span></label>
+                            <input type="file" name="transfer_image" class="form-control" accept="image/*" required>
+                            <small class="form-text text-muted">@lang('Upload the bank transfer receipt image')</small>
+                        </div>
+                        
+                        <div class="form-group mt-3">
+                            <label>@lang('Details')</label>
+                            <textarea name="details" class="form-control" rows="3" placeholder="@lang('Optional: Provide additional details. eg: transaction number')">{{ old('details') }}</textarea>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn--primary w-100 h-45">@lang('Submit')</button>
+                        <button type="submit" class="btn btn--primary w-100 h-45">@lang('Approve & Submit')</button>
                     </div>
                 </form>
             </div>

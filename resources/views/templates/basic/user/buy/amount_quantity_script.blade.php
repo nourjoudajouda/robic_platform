@@ -3,41 +3,53 @@
     <script>
         (function($) {
             "use strict";
-            let price = 0;
-            let gram = 0;
+            // sell_price = سعر الوحدة الواحدة من batch_sell_order
+            let pricePerItem = {{ $cheapestSellOrder->sell_price ?? $selectedBatch->sell_price }};
+            let quantity = 0; // الكمية بالوحدة
             let amount = 0;
 
-            $('select[name="category_id"]').on('change', function() {
-                price = $(this).find('option:selected').data('price');
-                $('.currentPrice').text(price);
+            // تحديث السعر عند تغيير المنتج
+            $('select[name="batch_id"]').on('change', function() {
+                pricePerItem = $(this).find('option:selected').data('price');
+                $('.currentPrice').text(pricePerItem);
+                $('#selected_batch_id').val($(this).val());
                 if (amount > 0) {
-                    gram = amount / price;
-                    $('[name="gram"]').val(gram.toFixed(4));
+                    // المبلغ ÷ سعر الوحدة = الكمية بالوحدات
+                    quantity = amount / pricePerItem;
+                    $('[name="quantity"]').val(quantity.toFixed(4));
                 }
-            }).trigger('change');
+            });
 
+            // تحديث الكمية عند تغيير المبلغ
             $('[name="amount"]').on('keyup', function() {
                 amount = $(this).val() * 1;
-                gram = amount / price;
-                $('[name="gram"]').val(gram.toFixed(4));      
+                if (pricePerItem > 0) {
+                    // المبلغ ÷ سعر الوحدة = الكمية بالوحدات
+                    quantity = amount / pricePerItem;
+                    $('[name="quantity"]').val(quantity.toFixed(4));
+                }
                 handleSubmitButton();
             });
 
-            $('[name="gram"]').on('keyup', function() {
-                let gram = $(this).val();
-                let amount = gram * price;
-                $('[name="amount"]').val(amount.toFixed(2));
+            // تحديث المبلغ عند تغيير الكمية
+            $('[name="quantity"]').on('keyup', function() {
+                quantity = $(this).val() * 1; // الكمية بالوحدات
+                if (pricePerItem > 0) {
+                    // الكمية بالوحدات × سعر الوحدة = المبلغ
+                    amount = quantity * pricePerItem;
+                    $('[name="amount"]').val(amount.toFixed(2));
+                }
                 handleSubmitButton();
             });
 
             let minAmount = {{ $chargeLimit->min_amount }};
             let maxAmount = {{ $chargeLimit->max_amount }};
 
-            $('[name="amount"], [name="gram"]').on('focusout', function() {                
+            $('[name="amount"], [name="quantity"]').on('focusout', function() {                
                 let amount = $('[name="amount"]').val() * 1;
                 if (amount <= 0) {
                     $('[name="amount"]').val('');
-                    $('[name="gram"]').val('');
+                    $('[name="quantity"]').val('');
                     return false;
                 }
 
@@ -51,9 +63,10 @@
                 }
 
                 amount = amount.toFixed(2);
-                gram = amount / price;
+                // المبلغ ÷ سعر الوحدة = الكمية بالوحدات
+                quantity = amount / pricePerItem;
                 $('[name="amount"]').val(amount);
-                $('[name="gram"]').val(gram.toFixed(4));
+                $('[name="quantity"]').val(quantity.toFixed(4));
             });
 
             function handleSubmitButton(){

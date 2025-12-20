@@ -7,47 +7,100 @@ use App\Http\Controllers\Controller;
 use App\Lib\FormProcessor;
 use App\Models\AdminNotification;
 use App\Models\Asset;
+use App\Models\Batch;
 use App\Models\Deposit;
 use App\Models\GatewayCurrency;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\UserSellOrder;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
     public function deposit()
     {
-        $gatewayCurrency = GatewayCurrency::whereHas('method', function ($gate) {
-            $gate->where('status', Status::ENABLE);
-        })->with('method')->orderby('name')->get();
-        $pageTitle = 'Deposit Methods';
-        return view('Template::user.payment.deposit', compact('gatewayCurrency', 'pageTitle'));
+        $pageTitle = 'Deposit Balance';
+        $bankTransfer        = config('robic.bank_transfer', []);
+        $depositInstructions = config('robic.deposit_instructions', []);
+
+        return view('Template::user.payment.deposit', compact('pageTitle', 'bankTransfer', 'depositInstructions'));
     }
 
     public function depositInsert(Request $request)
     {
         $request->validate([
             'amount'   => 'required|numeric|gt:0',
-            'gateway'  => 'required',
-            'currency' => 'required',
+            'transfer_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'description' => 'nullable|string|max:1000',
         ]);
 
         $user = auth()->user();
-        $gate = GatewayCurrency::whereHas('method', function ($gate) {
-            $gate->where('status', Status::ENABLE);
-        })->where('method_code', $request->gateway)->where('currency', $request->currency)->first();
-        if (!$gate) {
-            $notify[] = ['error', 'Invalid gateway'];
+        
+        // Handle transfer image upload
+        $transferImage = null;
+        if ($request->hasFile('transfer_image')) {
+            try {
+                $file = $request->file('transfer_image');
+                
+                // Validate file
+                if (!$file->isValid()) {
+                    $notify[] = ['error', 'Invalid file uploaded.'];
             return back()->withNotify($notify);
         }
 
-        if ($gate->min_amount > $request->amount || $gate->max_amount < $request->amount) {
-            $notify[] = ['error', 'Please follow deposit limit'];
+                // Get file extension
+                $extension = $file->getClientOriginalExtension();
+                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+                
+                if (!in_array(strtolower($extension), $allowedExtensions)) {
+                    $notify[] = ['error', 'Invalid file type. Only JPG, PNG, and GIF are allowed.'];
             return back()->withNotify($notify);
         }
 
-        self::insertDeposit($gate, $request->amount);
-        return to_route('user.deposit.confirm');
+                // Upload file using fileUploader (size = null means no resizing)
+                $transferImage = fileUploader($file, getFilePath('transfers'), null, null, null, null);
+            } catch (\Exception $e) {
+                $notify[] = ['error', 'Failed to upload transfer image: ' . $e->getMessage()];
+                return back()->withNotify($notify);
+            }
+        }
+
+        // Create deposit with transfer image
+        $deposit = new Deposit();
+        $deposit->user_id = $user->id;
+        $deposit->method_code = 1000; // Manual transfer method code
+        $deposit->method_currency = gs('cur_text');
+        $deposit->amount = $request->amount;
+        $deposit->charge = 0;
+        $deposit->rate = 1;
+        $deposit->final_amount = $request->amount;
+        $deposit->btc_amount = 0;
+        $deposit->btc_wallet = "";
+        $deposit->trx = getTrx();
+        $deposit->status = Status::PAYMENT_PENDING;
+        $deposit->transfer_image = $transferImage;
+        $deposit->description = $request->description;
+        $deposit->success_url = route('user.deposit.history');
+        $deposit->failed_url = route('user.deposit.history');
+        $deposit->save();
+
+        // Send notification to admin
+        $adminNotification = new AdminNotification();
+        $adminNotification->user_id = $user->id;
+        $adminNotification->title = 'New deposit request - ' . showAmount($request->amount);
+        $adminNotification->click_url = urlPath('admin.deposit.details', $deposit->id);
+        $adminNotification->save();
+
+        // Notify user
+        notify($user, 'DEPOSIT_REQUEST', [
+            'amount' => showAmount($request->amount),
+            'trx' => $deposit->trx,
+            'message' => 'Your deposit request is pending admin approval'
+        ]);
+
+        $notify[] = ['success', 'Deposit request submitted successfully. Waiting for admin approval.'];
+        return redirect()->route('user.deposit.history')->withNotify($notify);
     }
 
     public static function insertDeposit($gate, $amount, $buyInfo = null)
@@ -69,10 +122,11 @@ class PaymentController extends Controller
         $data->trx             = getTrx();
 
         if ($buyInfo) {
-            $data->category_id = $buyInfo['other']['category_id'];
+            $data->category_id = $buyInfo['other']['category_id'] ?? null;
             $data->buy_info    = $buyInfo['data'];
-            $data->success_url = $buyInfo['other']['success_url'];
-            $data->failed_url  = $buyInfo['other']['failed_url'];
+            $data->other       = $buyInfo['other'] ?? null; // حفظ other data للشراء من عدة orders
+            $data->success_url = $buyInfo['other']['success_url'] ?? route('user.deposit.history');
+            $data->failed_url  = $buyInfo['other']['failed_url'] ?? route('user.deposit.history');
         } else {
             $data->success_url = route('user.deposit.history');
             $data->failed_url  = route('user.deposit.history');
@@ -140,6 +194,19 @@ class PaymentController extends Controller
             $user->balance += $deposit->amount;
             $user->save();
 
+            // Update wallet balance
+            $wallet = Wallet::where('user_id', $user->id)->first();
+            if (!$wallet) {
+                // Create wallet if it doesn't exist
+                $wallet = new Wallet();
+                $wallet->user_id = $user->id;
+                $wallet->balance = 0;
+                $wallet->status = Status::ENABLE;
+                $wallet->save();
+            }
+            $wallet->balance += $deposit->amount;
+            $wallet->save();
+
             $methodName = $deposit->methodName();
 
             $transaction               = new Transaction();
@@ -153,8 +220,54 @@ class PaymentController extends Controller
             $transaction->remark       = 'deposit';
             $transaction->save();
 
+            // معالجة الشراء من عدة orders أو order واحد
             if ($deposit->category_id) {
+                // الطريقة القديمة - شراء من batch واحد
                 Asset::buyGold($user, $deposit->category, $deposit->buy_info->amount, $deposit->amount, $deposit->buy_info->quantity, $deposit->buy_info->charge, $deposit->buy_info->vat, $methodName);
+            } elseif (isset($deposit->other->order_type) && $deposit->other->order_type == 'multiple' && isset($deposit->other->multiple_orders)) {
+                // الشراء من عدة orders
+                Asset::buyFromMultipleOrders(
+                    $user,
+                    $deposit->other->product_id,
+                    $deposit->other->multiple_orders,
+                    $deposit->buy_info->amount,
+                    $deposit->buy_info->quantity,
+                    $deposit->buy_info->charge,
+                    $deposit->buy_info->vat,
+                    $methodName
+                );
+            } elseif (isset($deposit->other->order_type) && $deposit->other->order_type == 'user' && isset($deposit->other->sell_order_id)) {
+                // الشراء من user_sell_order
+                $userSellOrder = \App\Models\UserSellOrder::find($deposit->other->sell_order_id);
+                if ($userSellOrder) {
+                    Asset::buyFromUserSellOrder(
+                        $user,
+                        $userSellOrder,
+                        $deposit->buy_info->amount,
+                        $deposit->amount,
+                        $deposit->buy_info->quantity,
+                        $deposit->buy_info->charge,
+                        $deposit->buy_info->vat,
+                        $methodName
+                    );
+                }
+            } elseif (isset($deposit->other->order_type) && $deposit->other->order_type == 'batch' && isset($deposit->other->sell_order_id)) {
+                // الشراء من batch_sell_order
+                $batch = Batch::find($deposit->other->batch_id);
+                $sellOrder = \App\Models\BatchSellOrder::find($deposit->other->sell_order_id);
+                if ($batch && $sellOrder) {
+                    Asset::buyGold(
+                        $user,
+                        $batch,
+                        $sellOrder,
+                        $deposit->buy_info->amount,
+                        $deposit->amount,
+                        $deposit->buy_info->quantity,
+                        $deposit->buy_info->charge,
+                        $deposit->buy_info->vat,
+                        $methodName
+                    );
+                }
             }
 
             if (!$isManual) {

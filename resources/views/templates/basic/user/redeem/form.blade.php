@@ -12,7 +12,7 @@
                                 <span class="dashboard-card__tag-icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/29.png') }}" alt="image"></span>
                                 <span class="dashboard-card__tag-text">{{ __($asset->category->name) }}</span>
                             </div>
-                            <h4 class="dashboard-card__gold">{{ showAmount($asset->quantity, 4, currencyFormat: false) }} <sub>@lang('Gram')</sub></h4>
+                            <h4 class="dashboard-card__gold">{{ showAmount($asset->quantity, 4, currencyFormat: false) }} <sub>{{ $asset->batch && $asset->batch->product && $asset->batch->product->unit ? $asset->batch->product->unit->symbol : 'Unit' }}</sub></h4>
                             <p class="dashboard-card__desc">{{ showAmount($asset->quantity * $asset->category->price) }}</p>
                         </div>
                     @endforeach
@@ -23,7 +23,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
-                                <label for="" class="form--label">@lang('Gold in Bar')</label>
+                                <label for="" class="form--label">@lang('Green Coffee in Bar')</label>
                                 @foreach ($redeemUnits->where('type', Status::REDEEM_UNIT_BAR) as $redeemUnit)
                                     <div class="withdraw-gold-item mb-3">
                                         <h6 class="withdraw-gold-item__title"><span class="withdraw-gold-item__icon"> <img src="{{ asset($activeTemplateTrue . 'images/icons/45.png') }}" alt="image"> </span> {{ showAmount($redeemUnit->quantity, 2, currencyFormat: false) }} @lang('Gram Gold')</h6>

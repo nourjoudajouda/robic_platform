@@ -1,236 +1,213 @@
 @extends($activeTemplate . 'layouts.master')
 @section('content')
     <div class="row justify-content-center">
-        <div class="col-lg-9">
-            <form action="{{ route('user.deposit.insert') }}" method="post" class="deposit-form">
-                @csrf
-                <input type="hidden" name="currency">
-                <div class="gateway-card">
-                    <div class="row justify-content-center gy-sm-4 gy-3">
-                        <div class="col-12">
-                            <h5 class="payment-card-title">@lang('Deposit')</h5>
+        <div class="col-xl-12 col-lg-11">
+            <div class="row g-4">
+                {{-- Left: Bank transfer details --}}
+                <div class="col-lg-6">
+                    <div class="dashboard-card h-100">
+                        <div class="dashboard-card__top">
+                            <h4 class="dashboard-card__title">
+                                <i class="las la-university me-1"></i> {{ __('Bank Transfer Details') }}
+                            </h4>
                         </div>
-                        <div class="col-lg-6">
-                            <div class="payment-system-list is-scrollable gateway-option-list">
-                                @foreach ($gatewayCurrency as $data)
-                                    <label for="{{ titleToKey($data->name) }}" class="payment-item @if ($loop->index > 4) d-none @endif gateway-option">
-                                        <div class="payment-item__info">
-                                            <span class="payment-item__check"></span>
-                                            <span class="payment-item__name">{{ __($data->name) }}</span>
+                        <div class="dashboard-card__body">
+                            @if(!empty($bankTransfer))
+                                <div class="row g-3">
+                                    @if(!empty($bankTransfer['bank_name']))
+                                        <div class="col-md-6">
+                                            <label class="form--label mb-1">{{ __('Bank Name') }}</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control form--control" value="{{ $bankTransfer['bank_name'] }}" readonly>
+                                                <button type="button" class="input-group-text copyInput" data-copy-value="{{ $bankTransfer['bank_name'] }}" title="{{ __('Copy') }}">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <div class="payment-item__thumb">
-                                            <img class="payment-item__thumb-img" src="{{ getImage(getFilePath('gateway') . '/' . $data->method->image) }}" alt="@lang('payment-thumb')">
+                                    @endif
+
+                                    @if(!empty($bankTransfer['account_name']))
+                                        <div class="col-md-6">
+                                            <label class="form--label mb-1">{{ __('Account Name') }}</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control form--control" value="{{ $bankTransfer['account_name'] }}" readonly>
+                                                <button type="button" class="input-group-text copyInput" data-copy-value="{{ $bankTransfer['account_name'] }}" title="{{ __('Copy') }}">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                        <input class="payment-item__radio gateway-input" id="{{ titleToKey($data->name) }}" hidden data-gateway='@json($data)' type="radio" name="gateway" value="{{ $data->method_code }}" @checked(old('gateway', $loop->first) == $data->method_code) data-min-amount="{{ showAmount($data->min_amount) }}" data-max-amount="{{ showAmount($data->max_amount) }}">
-                                    </label>
-                                @endforeach
-                                @if ($gatewayCurrency->count() > 4)
-                                    <button type="button" class="payment-item__btn more-gateway-option">
-                                        <p class="payment-item__btn-text">@lang('Show All Payment Options')</p>
-                                        <span class="payment-item__btn__icon"><i class="fas fa-chevron-down"></i></span>
-                                    </button>
-                                @endif
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="payment-system-list p-3">
-                                <div class="deposit-info">
-                                    <div class="deposit-info__title">
-                                        <p class="text mb-0">@lang('Amount')</p>
-                                    </div>
-                                    <div class="deposit-info__input">
-                                        <div class="deposit-info__input-group input-group">
-                                            <span class="deposit-info__input-group-text px-3">{{ gs('cur_sym') }}</span>
-                                            <input type="text" class="form-control form--control amount" name="amount" placeholder="@lang('00.00')" value="{{ old('amount') }}" autocomplete="off">
+                                    @endif
+
+                                    @if(!empty($bankTransfer['account_number']))
+                                        <div class="col-md-6">
+                                            <label class="form--label mb-1">{{ __('Account Number') }}</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control form--control" value="{{ $bankTransfer['account_number'] }}" readonly>
+                                                <button type="button" class="input-group-text copyInput" data-copy-value="{{ $bankTransfer['account_number'] }}" title="{{ __('Copy') }}">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                                <hr>
-                                <div class="deposit-info">
-                                    <div class="deposit-info__title">
-                                        <p class="text has-icon"> @lang('Limit')
-                                            <span></span>
-                                        </p>
-                                    </div>
-                                    <div class="deposit-info__input">
-                                        <p class="text"><span class="gateway-limit">@lang('0.00')</span>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="deposit-info">
-                                    <div class="deposit-info__title">
-                                        <p class="text has-icon">@lang('Processing Charge')
-                                            <span data-bs-toggle="tooltip" title="@lang('Processing charge for payment gateways')" class="proccessing-fee-info"><i class="las la-info-circle"></i> </span>
-                                        </p>
-                                    </div>
-                                    <div class="deposit-info__input">
-                                        <p class="text"><span class="processing-fee">@lang('0.00')</span>
-                                            {{ __(gs('cur_text')) }}
-                                        </p>
-                                    </div>
-                                </div>
+                                    @endif
 
-                                <div class="deposit-info total-amount pt-3">
-                                    <div class="deposit-info__title">
-                                        <p class="text">@lang('Total')</p>
-                                    </div>
-                                    <div class="deposit-info__input">
-                                        <p class="text"><span class="final-amount">@lang('0.00')</span>
-                                            {{ __(gs('cur_text')) }}</p>
-                                    </div>
-                                </div>
+                                    @if(!empty($bankTransfer['iban']))
+                                        <div class="col-md-6">
+                                            <label class="form--label mb-1">{{ __('IBAN') }}</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control form--control" value="{{ $bankTransfer['iban'] }}" readonly>
+                                                <button type="button" class="input-group-text copyInput" data-copy-value="{{ $bankTransfer['iban'] }}" title="{{ __('Copy') }}">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endif
 
-                                <div class="deposit-info gateway-conversion d-none total-amount pt-2">
-                                    <div class="deposit-info__title">
-                                        <p class="text">@lang('Conversion')
-                                        </p>
-                                    </div>
-                                    <div class="deposit-info__input">
-                                        <p class="text"></p>
-                                    </div>
-                                </div>
-                                <div class="deposit-info conversion-currency d-none total-amount pt-2">
-                                    <div class="deposit-info__title">
-                                        <p class="text">
-                                            @lang('In') <span class="gateway-currency"></span>
-                                        </p>
-                                    </div>
-                                    <div class="deposit-info__input">
-                                        <p class="text">
-                                            <span class="in-currency"></span>
-                                        </p>
+                                    @if(!empty($bankTransfer['swift']))
+                                        <div class="col-md-6">
+                                            <label class="form--label mb-1">{{ __('SWIFT') }}</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control form--control" value="{{ $bankTransfer['swift'] }}" readonly>
+                                                <button type="button" class="input-group-text copyInput" data-copy-value="{{ $bankTransfer['swift'] }}" title="{{ __('Copy') }}">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endif
 
+                                    @if(!empty($bankTransfer['currency']))
+                                        <div class="col-md-6">
+                                            <label class="form--label mb-1">{{ __('Currency') }}</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control form--control" value="{{ $bankTransfer['currency'] }}" readonly>
+                                                <button type="button" class="input-group-text copyInput" data-copy-value="{{ $bankTransfer['currency'] }}" title="{{ __('Copy') }}">
+                                                    <i class="fas fa-copy"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+
+                            @if(!empty($bankTransfer['reference_hint']))
+                                <div class="mt-3">
+                                    <div class="alert alert--warning mb-0">
+                                        <i class="las la-info-circle me-1"></i>
+                                        {{ __($bankTransfer['reference_hint']) }}
                                     </div>
                                 </div>
-                                <div class="d-none crypto-message mb-3">
-                                    @lang('Conversion with') <span class="gateway-currency"></span> @lang('and final value will Show on next step')
+                            @endif
+
+                            @if(!empty($depositInstructions) && is_array($depositInstructions))
+                                <div class="mt-3">
+                                    <h6 class="mb-2" style="color: hsl(var(--heading-color));">
+                                        <i class="las la-clipboard-list me-1"></i> {{ __('Instructions') }}
+                                    </h6>
+                                    <ul class="mb-0" style="padding-left: 18px;">
+                                        @foreach($depositInstructions as $line)
+                                            <li style="color: hsl(var(--body-color)); margin-bottom: 6px;">{{ __($line) }}</li>
+                                        @endforeach
+                                    </ul>
                                 </div>
-                                <button type="submit" class="btn btn--base w-100" disabled>
-                                    @lang('Confirm Deposit')
-                                </button>
-                                <div class="info-text pt-3">
-                                    <p class="text">@lang('Ensuring your funds grow safely through our secure deposit process with world-class payment options.')</p>
-                                </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
-            </form>
+
+                {{-- Right: Deposit form --}}
+                <div class="col-lg-6">
+                    <div class="dashboard-card h-100">
+                        <div class="dashboard-card__top">
+                            <h4 class="dashboard-card__title">@lang('Deposit Balance')</h4>
+                        </div>
+                        <div class="dashboard-card__body">
+                            <form action="{{ route('user.deposit.insert') }}" method="post" enctype="multipart/form-data">
+                                @csrf
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>@lang('Amount') <span class="text--danger">*</span></label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">{{ gs('cur_sym') }}</span>
+                                                <input type="number" step="0.01" name="amount" class="form-control form--control"
+                                                    placeholder="0.00" value="{{ old('amount') }}" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>@lang('Transfer Receipt Image') <span class="text--danger">*</span></label>
+                                            <input type="file" name="transfer_image" class="form-control form--control" accept="image/*" required>
+                                            <small class="form-text text-muted">@lang('Upload a clear image of your bank transfer receipt')</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label>@lang('Description')</label>
+                                            <textarea name="description" class="form-control form--control" rows="4" placeholder="@lang('Optional: Add any additional notes or information about this deposit')">{{ old('description') }}</textarea>
+                                            <small class="form-text text-muted">@lang('You can add any additional information or notes about this deposit')</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="alert alert--info">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            @lang('After uploading the transfer receipt, your request will be reviewed by the admin. You will be notified once your deposit is approved.')
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group mt-4">
+                                    <button type="submit" class="btn btn--base w-100">
+                                        <i class="fas fa-upload me-2"></i> @lang('Submit Deposit Request')
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 @endsection
-
 
 @section('pageTitleIcon')
     <img src="{{ asset($activeTemplateTrue . 'images/icons/39.png') }}" alt="image">
 @endsection
 
-
 @push('pageHeaderButton')
-    <a href="{{ route('user.deposit.history') }}" class="btn btn--base btn--lg"> <i class="las la-history"></i> @lang('Deposit History')</a>
+    <a href="{{ route('user.deposit.history') }}" class="btn btn--base btn--lg"> 
+        <i class="las la-history"></i> @lang('Deposit History')
+    </a>
 @endpush
 
 @push('script')
     <script>
-        "use strict";
-        (function($) {
+        (function($){
+            "use strict";
+            $('.copyInput').on('click', async function () {
+                const value = $(this).data('copy-value') ?? '';
+                if (!value) return;
 
-            var amount = parseFloat($('.amount').val() || 0);
-            var gateway, minAmount, maxAmount;
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(String(value));
+                    } else {
+                        const $temp = $('<textarea>');
+                        $('body').append($temp);
+                        $temp.val(String(value)).select();
+                        document.execCommand('copy');
+                        $temp.remove();
+                    }
 
-
-            $('.amount').on('input', function(e) {
-                amount = parseFloat($(this).val());
-                if (!amount) {
-                    amount = 0;
+                    const $btn = $(this);
+                    const $icon = $btn.find('i');
+                    const oldClass = $icon.attr('class');
+                    $icon.attr('class', 'fas fa-check');
+                    setTimeout(() => $icon.attr('class', oldClass), 1200);
+                } catch (e) {
+                    // ignore
                 }
-                calculation();
             });
-
-            $('.gateway-input').on('change', function(e) {
-                gatewayChange();
-            });
-
-            function gatewayChange() {
-                let gatewayElement = $('.gateway-input:checked');
-                let methodCode = gatewayElement.val();
-
-                gateway = gatewayElement.data('gateway');
-                minAmount = gatewayElement.data('min-amount');
-                maxAmount = gatewayElement.data('max-amount');
-
-                let processingFeeInfo =
-                    `${parseFloat(gateway.percent_charge).toFixed(2)}% with ${parseFloat(gateway.fixed_charge).toFixed(2)} {{ __(gs('cur_text')) }} charge for payment gateway processing fees`
-                $(".proccessing-fee-info").attr("data-bs-original-title", processingFeeInfo);
-                calculation();
-            }
-
-            gatewayChange();
-
-            $(".more-gateway-option").on("click", function(e) {
-                let paymentList = $(".gateway-option-list");
-                paymentList.find(".gateway-option").removeClass("d-none");
-                $(this).addClass('d-none');
-                paymentList.animate({
-                    scrollTop: (paymentList.height() - 60)
-                }, 'slow');
-            });
-
-            function calculation() {
-                if (!gateway) return;
-                $(".gateway-limit").text(minAmount + " - " + maxAmount);
-
-                let percentCharge = 0;
-                let fixedCharge = 0;
-                let totalPercentCharge = 0;
-
-                if (amount) {
-                    percentCharge = parseFloat(gateway.percent_charge);
-                    fixedCharge = parseFloat(gateway.fixed_charge);
-                    totalPercentCharge = parseFloat(amount / 100 * percentCharge);
-                }
-
-                let totalCharge = parseFloat(totalPercentCharge + fixedCharge);
-                let totalAmount = parseFloat((amount || 0) + totalPercentCharge + fixedCharge);
-
-                $(".final-amount").text(totalAmount.toFixed(2));
-                $(".processing-fee").text(totalCharge.toFixed(2));
-                $("input[name=currency]").val(gateway.currency);
-                $(".gateway-currency").text(gateway.currency);
-
-                if (amount < Number(gateway.min_amount) || amount > Number(gateway.max_amount)) {
-                    $(".deposit-form button[type=submit]").attr('disabled', true);
-                } else {
-                    $(".deposit-form button[type=submit]").removeAttr('disabled');
-                }
-
-                if (gateway.currency != "{{ gs('cur_text') }}" && gateway.method.crypto != 1) {
-                    $('.deposit-form').addClass('adjust-height')
-
-                    $(".gateway-conversion, .conversion-currency").removeClass('d-none');
-                    $(".gateway-conversion").find('.deposit-info__input .text').html(
-                        `1 {{ __(gs('cur_text')) }} = <span class="rate">${parseFloat(gateway.rate).toFixed(2)}</span>  <span class="method_currency">${gateway.currency}</span>`
-                    );
-                    $('.in-currency').text(parseFloat(totalAmount * gateway.rate).toFixed(gateway.method.crypto == 1 ? 8 : 2))
-                } else {
-                    $(".gateway-conversion, .conversion-currency").addClass('d-none');
-                    $('.deposit-form').removeClass('adjust-height')
-                }
-
-                if (gateway.method.crypto == 1) {
-                    $('.crypto-message').removeClass('d-none');
-                } else {
-                    $('.crypto-message').addClass('d-none');
-                }
-            }
-
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-            var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl)
-            })
-            $('.gateway-input').change();
         })(jQuery);
     </script>
 @endpush
-
-

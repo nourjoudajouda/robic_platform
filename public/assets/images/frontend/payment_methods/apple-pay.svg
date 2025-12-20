@@ -1,0 +1,5 @@
+<svg width="80" height="50" viewBox="0 0 80 50" xmlns="http://www.w3.org/2000/svg">
+  <rect width="80" height="50" rx="8" fill="white"/>
+  <path d="M20 15 C20 12, 22 10, 25 10 C26 10, 27 11, 28 12 C29 11, 30 10, 31 10 C34 10, 36 12, 36 15 C36 18, 33 22, 28 25 C28 25, 28 25, 28 25 L28 35 L24 35 L24 25 C19 22, 20 18, 20 15 Z" fill="black"/>
+  <text x="40" y="35" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="black">Pay</text>
+</svg>

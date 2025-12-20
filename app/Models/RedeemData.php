@@ -19,6 +19,13 @@ class RedeemData extends Model
     {
         return $this->belongsTo(GoldHistory::class);
     }
+    
+    public function beanHistory()
+    {
+        // استخدام bean_history_id إذا كان موجوداً، وإلا استخدم gold_history_id
+        $foreignKey = \Schema::hasColumn($this->getTable(), 'bean_history_id') ? 'bean_history_id' : 'gold_history_id';
+        return $this->belongsTo(BeanHistory::class, $foreignKey);
+    }
 
     public function statusBadge(): Attribute
     {

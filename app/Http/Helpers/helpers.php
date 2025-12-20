@@ -18,7 +18,7 @@ use Laramin\Utility\VugiChugi;
 
 function systemDetails()
 {
-    $system['name'] = 'visergold';
+    $system['name'] = 'robic';
     $system['version'] = '1.0';
     $system['build_version'] = '5.1.4';
     return $system;
@@ -106,21 +106,28 @@ function getAmount($amount, $length = 2)
     return $amount + 0;
 }
 
-function showAmount($amount, $decimal = 2, $separate = true, $exceptZeros = false, $currencyFormat = true)
+function showAmount($amount, $decimal = 2, $separate = true, $exceptZeros = true, $currencyFormat = true)
 {
     $separator = '';
     if ($separate) {
         $separator = ',';
     }
+    
+    // استخدام decimal كبير أولاً ثم إزالة الأصفار الزائدة
     $printAmount = number_format($amount, $decimal, '.', $separator);
+    
+    // إزالة الأصفار الزائدة تلقائياً
     if ($exceptZeros) {
         $exp = explode('.', $printAmount);
-        if ($exp[1] * 1 == 0) {
+        if (isset($exp[1]) && $exp[1] * 1 == 0) {
             $printAmount = $exp[0];
         } else {
             $printAmount = rtrim($printAmount, '0');
+            // إزالة الفاصلة العشرية إذا لم يبق شيء بعدها
+            $printAmount = rtrim($printAmount, '.');
         }
     }
+    
     if ($currencyFormat) {
         if (gs('currency_format') == Status::CUR_BOTH) {
             return gs('cur_sym').$printAmount.' '.__(gs('cur_text'));
@@ -585,4 +592,32 @@ function getChargeText($chargeLimit) {
     $text .= ' ' . __('will be applicable');
     
     return $text;
+}
+
+// Permission Helper Functions
+function adminHasPermission($permission)
+{
+    $admin = auth()->guard('admin')->user();
+    if (!$admin) {
+        return false;
+    }
+    return $admin->hasPermission($permission);
+}
+
+function adminHasRole($role)
+{
+    $admin = auth()->guard('admin')->user();
+    if (!$admin) {
+        return false;
+    }
+    return $admin->hasRole($role);
+}
+
+function adminHasAnyRole(array $roles)
+{
+    $admin = auth()->guard('admin')->user();
+    if (!$admin) {
+        return false;
+    }
+    return $admin->hasAnyRole($roles);
 }

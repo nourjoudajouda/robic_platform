@@ -28,7 +28,7 @@
   font-size: 1em;
   padding: 5px 5px;
   color: #fff;
-  background-color: #AFFA19;
+  background-color: #FF7000;
   border-radius: 3px;
   opacity: 0;
   will-change: opacity, transform;
@@ -556,48 +556,4 @@ button .spinner-border {
 
 .cursor-pointer{
   cursor: pointer;
-}
-
-/* تغيير لون جميع الأيقونات الذهبية/الصفراء إلى الأخضر الفستقي #81C104 */
-.dashboard .dashboard-card__title-icon img,
-.dashboard .dashboard-body__title-icon img,
-.dashboard .dashboard-card__tag-icon img,
-.dashboard .withdraw-option-item__icon img,
-.dashboard .gift-form .form-group .icon img,
-.dashboard .withdraw-form .customNiceSelect__icon img,
-.withdraw-gold-item__icon img,
-.btn.login-with .icon img,
-img[src*="icons/"] {
-    filter: hue-rotate(20deg) saturate(1.4) brightness(0.95);
-}
-
-/* للتأكد من تطبيق الفلتر على جميع صور الأيقونات */
-.dashboard img[src*="icons/"],
-img[src*="icons/16.png"],
-img[src*="icons/17.png"],
-img[src*="icons/18.png"],
-img[src*="icons/19.png"],
-img[src*="icons/20.png"],
-img[src*="icons/21.png"],
-img[src*="icons/22.png"],
-img[src*="icons/23.png"],
-img[src*="icons/29.png"],
-img[src*="icons/30.png"],
-img[src*="icons/31.png"],
-img[src*="icons/32.png"],
-img[src*="icons/33.png"],
-img[src*="icons/34.png"],
-img[src*="icons/35.png"],
-img[src*="icons/36.png"],
-img[src*="icons/37.png"],
-img[src*="icons/38.png"],
-img[src*="icons/39.png"],
-img[src*="icons/40.png"],
-img[src*="icons/41.png"],
-img[src*="icons/42.png"],
-img[src*="icons/43.png"],
-img[src*="icons/44.png"],
-img[src*="icons/45.png"],
-img[src*="icons/46.png"] {
-    filter: hue-rotate(20deg) saturate(1.4) brightness(0.95) !important;
 }

@@ -27,13 +27,13 @@
                 </ul>
                 <div class="buy-sell-confirmation">
                     <h4 class="buy-sell-confirmation__title">
-                        @lang('Congratulations! You’ve successfully sold your gold.')
+                        @lang('Congratulations! You've successfully sold your Green Coffee.')
                     </h4>
                     <div class="buy-sell-confirmation__bottom">
                         <ul class="text-list">
                             <li class="text-list__item">
-                                <span class="text-list__item-title">@lang('Gold Quantity')</span>
-                                <span class="text-list__item-value">{{ showAmount($sellHistory->quantity, 4, currencyFormat:false) }} @lang('Gram')</span>
+                                <span class="text-list__item-title">@lang('Green Coffee Quantity')</span>
+                                <span class="text-list__item-value">{{ showAmount($sellHistory->quantity, 4, currencyFormat:false) }} {{ $sellHistory->batch && $sellHistory->batch->product && $sellHistory->batch->product->unit ? $sellHistory->batch->product->unit->symbol : 'Unit' }}</span>
                             </li>
                             <li class="text-list__item">
                                 <span class="text-list__item-title">@lang('Amount')</span>

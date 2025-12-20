@@ -5,9 +5,8 @@ namespace App\Http\Controllers\User;
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
 use App\Models\Asset;
-use App\Models\Category;
 use App\Models\ChargeLimit;
-use App\Models\GoldHistory;
+use App\Models\BeanHistory;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,7 +17,7 @@ class GiftController extends Controller
     public function giftForm()
     {
         $pageTitle   = 'Gift Form';
-        $assets      = Asset::where('user_id', '=', auth()->id())->get();
+        $assets      = Asset::where('user_id', '=', auth()->id())->with('batch.product.unit')->get();
         $chargeLimit = ChargeLimit::where('slug', 'gift')->first();
         return view('Template::user.gift.form', compact('pageTitle', 'assets', 'chargeLimit'));
     }
@@ -55,9 +54,12 @@ class GiftController extends Controller
             return back()->withNotify($notify);
         }
 
-        $asset    = Asset::where('user_id', $user->id)->findOrFail($request->asset_id);
-        $category = Category::find($asset->category_id);
-        $quantity = $request->amount / $category->price;
+        $asset    = Asset::where('user_id', $user->id)->with('batch')->findOrFail($request->asset_id);
+        if (!$asset->batch) {
+            $notify[] = ['error', 'Invalid asset'];
+            return back()->withNotify($notify);
+        }
+        $quantity = $request->amount / $asset->batch->sell_price;
 
         if ($quantity > $asset->quantity) {
             $notify[] = ['error', 'Insufficient gold asset'];
@@ -77,12 +79,12 @@ class GiftController extends Controller
         $user->balance -= $charge;
         $user->save();
 
-        $recipientAsset = Asset::where('user_id', $recipientUser->id)->where('category_id', $category->id)->first();
+        $recipientAsset = Asset::where('user_id', $recipientUser->id)->where('batch_id', $asset->batch_id)->first();
 
         if (!$recipientAsset) {
             $recipientAsset              = new Asset();
             $recipientAsset->user_id     = $recipientUser->id;
-            $recipientAsset->category_id = $category->id;
+            $recipientAsset->batch_id    = $asset->batch_id;
         }
 
         $recipientAsset->quantity += $quantity;
@@ -90,13 +92,15 @@ class GiftController extends Controller
 
         $trx = getTrx();
 
-        $giftHistory               = new GoldHistory();
+        $giftHistory               = new BeanHistory();
         $giftHistory->user_id      = $user->id;
         $giftHistory->asset_id     = $asset->id;
         $giftHistory->recipient_id = $recipientUser->id;
-        $giftHistory->category_id  = $category->id;
-        $giftHistory->quantity     = $quantity;
+        $giftHistory->batch_id     = $asset->batch_id;
+        $giftHistory->quantity    = $quantity;
+        $giftHistory->item_unit_id = $asset->batch && $asset->batch->product ? $asset->batch->product->unit_id : null;
         $giftHistory->amount       = $request->amount;
+        $giftHistory->currency_id  = $asset->batch && $asset->batch->product ? $asset->batch->product->currency_id : null;
         $giftHistory->charge       = $charge;
         $giftHistory->trx          = $trx;
         $giftHistory->type         = Status::GIFT_HISTORY;
@@ -108,7 +112,7 @@ class GiftController extends Controller
         $transaction->post_balance = $user->balance;
         $transaction->charge       = 0;
         $transaction->trx_type     = '-';
-        $transaction->details      = 'Gift charge of ' . $category->name . ' to ' . $recipientUser->username;
+        $transaction->details      = 'Gift charge of Green Coffee to ' . $recipientUser->username;
         $transaction->trx          = $trx;
         $transaction->remark       = 'gift_gold';
         $transaction->save();
@@ -157,7 +161,7 @@ class GiftController extends Controller
     public function history()
     {
         $pageTitle     = 'Gift History';
-        $giftHistories = GoldHistory::gift()->where('user_id', auth()->id())->with('category')->orderBy('id', 'desc')->paginate(getPaginate());
+        $giftHistories = BeanHistory::gift()->where('user_id', auth()->id())->with('batch.product')->orderBy('id', 'desc')->paginate(getPaginate());
         return view('Template::user.gift.history', compact('pageTitle', 'giftHistories'));
     }
 }

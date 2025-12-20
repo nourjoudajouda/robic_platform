@@ -17,6 +17,12 @@ class RegistrationStep
     public function handle(Request $request, Closure $next)
     {
         $user = auth()->user();
+        
+        // Skip check if profile is complete or if accessing authorization routes
+        if ($user->profile_complete || $request->is('user/authorization*') || $request->is('user/resend-verify*') || $request->is('user/verify-*')) {
+            return $next($request);
+        }
+        
         if (!$user->profile_complete) {
             if ($request->is('api/*')) {
                 $notify[] = 'Please complete your profile to go next';
@@ -26,7 +32,8 @@ class RegistrationStep
                     'message'=>['error'=>$notify],
                 ]);
             }else{
-                return to_route('user.data');
+                // Redirect to dashboard instead of user-data page
+                return to_route('user.home');
             }
         }
         return $next($request);

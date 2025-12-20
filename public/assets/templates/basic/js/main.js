@@ -65,16 +65,9 @@
     // ========================== Small Device Header Menu On Click Dropdown menu collapse Stop Js End =====================
 
     // ========================== Add Attribute For Bg Image Js Start =====================
-    $('.bg-img').each(function() {
-      var bgImage = $(this).data('background-image');
-      if (bgImage) {
-        var bg = 'url(' + bgImage + ')';
-        $(this).css('background', bg);
-        // إذا كانت الصورة هي dashboard-bg.png، نضيف CSS variable للفلتر
-        if (bgImage.indexOf('dashboard-bg.png') !== -1) {
-          $(this).css('--bg-image-url', bg);
-        }
-      }
+    $('.bg-img').css('background', function () {
+      var bg = 'url(' + $(this).data('background-image') + ')';
+      return bg;
     });
     // ========================== Add Attribute For Bg Image Js End =====================
 

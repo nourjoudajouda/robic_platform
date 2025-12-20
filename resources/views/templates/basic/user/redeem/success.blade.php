@@ -13,8 +13,8 @@
                             <span class="text-list__item-value">{{ __($redeemHistory->category->name) }}</span>
                         </li>
                         <li class="text-list__item">
-                            <span class="text-list__item-title">@lang('Gold Quantity')</span>
-                            <span class="text-list__item-value">{{ showAmount($redeemHistory->quantity, currencyFormat: false) }} @lang('Gram')</span>
+                            <span class="text-list__item-title">@lang('Green Coffee Quantity')</span>
+                            <span class="text-list__item-value">{{ showAmount($redeemHistory->quantity, currencyFormat: false) }} {{ $redeemHistory->batch && $redeemHistory->batch->product && $redeemHistory->batch->product->unit ? $redeemHistory->batch->product->unit->symbol : 'Unit' }}</span>
                         </li>
                         <li class="text-list__item">
                             <span class="text-list__item-title">@lang('Charge')</span>

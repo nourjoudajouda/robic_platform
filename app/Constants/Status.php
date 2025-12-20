@@ -53,4 +53,16 @@ class Status
     const REDEEM_STATUS_SHIPPED    = 2;
     const REDEEM_STATUS_DELIVERED  = 3;
     const REDEEM_STATUS_CANCELLED  = 4;
+
+    // Batch Sell Order Status
+    const SELL_ORDER_ACTIVE   = 1;
+    const SELL_ORDER_INACTIVE = 0;
+    const SELL_ORDER_SOLD     = 2;
+    const SELL_ORDER_CANCELLED = 3;
+
+    // Pending Buy Order Status
+    const PENDING_BUY_ORDER   = 1;
+    const PENDING_BUY_FULFILLED = 2;
+    const PENDING_BUY_CANCELLED = 3;
+    const PENDING_BUY_EXPIRED = 4;
 }

@@ -4,7 +4,7 @@
         <div class="col-xl-4 col-md-6 mb-30">
             <div class="card overflow-hidden box--shadow1">
                 <div class="card-body">
-                    <h5 class="mb-20 text-muted">@lang('Deposit Via') @if($deposit->method_code < 5000) {{ __(@$deposit->gateway->name) }} @else @lang('Google Pay') @endif</h5>
+                    <h5 class="mb-20 text-muted">@lang('Deposit Via') @if($deposit->method_code == 1000) @lang('Bank Transfer') @elseif($deposit->method_code < 5000) {{ __(@$deposit->gateway->name) }} @else @lang('Google Pay') @endif</h5>
                     <ul class="list-group">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             @lang('Date')
@@ -62,15 +62,50 @@
                                 <p>{{__($deposit->admin_feedback)}}</p>
                             </li>
                         @endif
+                        @if($deposit->transfer_image)
+                            <li class="list-group-item">
+                                <strong>@lang('Transfer Receipt')</strong>
+                                <br>
+                                <a href="{{ asset('transfers/' . $deposit->transfer_image) }}" target="_blank" class="btn btn-sm btn-outline--primary mt-2">
+                                    <i class="las la-eye"></i> @lang('View Image')
+                                </a>
+                                <a href="{{ asset('transfers/' . $deposit->transfer_image) }}" download class="btn btn-sm btn-outline--info mt-2">
+                                    <i class="las la-download"></i> @lang('Download')
+                                </a>
+                            </li>
+                        @endif
+                        @if($deposit->description)
+                            <li class="list-group-item">
+                                <strong>@lang('Description')</strong>
+                                <br>
+                                <p class="mb-0 mt-2">{{ $deposit->description }}</p>
+                            </li>
+                        @endif
                     </ul>
                 </div>
             </div>
         </div>
-        @if($details || $deposit->status == Status::PAYMENT_PENDING)
+        @if($details || $deposit->status == Status::PAYMENT_PENDING || $deposit->transfer_image)
         <div class="col-xl-8 col-md-6 mb-30">
             <div class="card overflow-hidden box--shadow1">
                 <div class="card-body">
                     <h5 class="card-title border-bottom pb-2">@lang('User Deposit Information')</h5>
+                    @if($deposit->transfer_image)
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <h6>@lang('Transfer Receipt Image')</h6>
+                                <img src="{{ asset('transfers/' . $deposit->transfer_image) }}" alt="Transfer Receipt" class="img-fluid" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                        </div>
+                    @endif
+                    @if($deposit->description)
+                        <div class="row mt-4">
+                            <div class="col-md-12">
+                                <h6>@lang('Description')</h6>
+                                <p class="text-muted">{{ $deposit->description }}</p>
+                            </div>
+                        </div>
+                    @endif
                     @if($details != null)
                         @foreach(json_decode($details) as $val)
                             @if($deposit->method_code >= 1000)

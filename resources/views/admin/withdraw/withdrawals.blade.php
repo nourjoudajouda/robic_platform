@@ -32,7 +32,7 @@
                             @endphp
                             <tr>
                                 <td>
-                                    <span class="fw-bold"><a href="{{ appendQuery('method',@$withdraw->method->id) }}"> {{ __(@$withdraw->method->name) }}</a></span>
+                                    <span class="fw-bold">@lang('Bank Transfer')</span>
                                     <br>
                                     <small>{{ $withdraw->trx }}</small>
                                 </td>

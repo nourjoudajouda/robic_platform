@@ -54,11 +54,6 @@
                                         <a href="{{ route('admin.users.detail', $user->id) }}" class="btn btn-sm btn-outline--primary">
                                             <i class="las la-desktop"></i> @lang('Details')
                                         </a>
-                                        @if (request()->routeIs('admin.users.kyc.pending'))
-                                        <a href="{{ route('admin.users.kyc.details', $user->id) }}" target="_blank" class="btn btn-sm btn-outline--dark">
-                                            <i class="las la-user-check"></i>@lang('KYC Data')
-                                        </a>
-                                        @endif
                                     </div>
                                 </td>
 

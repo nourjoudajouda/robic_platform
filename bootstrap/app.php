@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\CheckStatus;
 use App\Http\Middleware\Demo;
 use App\Http\Middleware\KycMiddleware;
@@ -66,6 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.guest' => RedirectIfAdmin::class,
 
             'check.status' => CheckStatus::class,
+            'check.permission' => CheckPermission::class,
             'demo' => Demo::class,
             'kyc' => KycMiddleware::class,
             'registration.complete' => RegistrationStep::class,

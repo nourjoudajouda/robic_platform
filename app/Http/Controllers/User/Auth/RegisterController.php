@@ -8,6 +8,7 @@ use App\Lib\Intended;
 use App\Models\AdminNotification;
 use App\Models\User;
 use App\Models\UserLogin;
+use App\Models\Wallet;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
@@ -47,19 +48,21 @@ class RegisterController extends Controller
             $passwordValidation = $passwordValidation->mixedCase()->numbers()->symbols()->uncompromised();
         }
 
-        $agree = 'nullable';
-        if (gs('agree')) {
-            $agree = 'required';
-        }
-
-        $validate     = Validator::make($data, [
+        // Validation rules - lastname not required for establishment
+        $rules = [
             'firstname' => 'required',
-            'lastname'  => 'required',
             'email'     => 'required|string|email|unique:users',
             'password'  => ['required', 'confirmed', $passwordValidation],
             'captcha'   => 'sometimes|required',
-            'agree'     => $agree
-        ],[
+            'agree'     => 'nullable'
+        ];
+
+        // Add lastname validation only for individual accounts
+        if (!isset($data['form_type']) || $data['form_type'] != 'establishment') {
+            $rules['lastname'] = 'required';
+        }
+
+        $validate = Validator::make($data, $rules, [
             'firstname.required'=>'The first name field is required',
             'lastname.required'=>'The last name field is required'
         ]);
@@ -82,9 +85,27 @@ class RegisterController extends Controller
             return back()->withNotify($notify);
         }
 
+        // Prepare data array - exclude file to avoid serialization issues
+        $data = $request->except(['commercial_registration']);
+        
+        // Handle commercial registration file upload for establishment
+        if (isset($data['form_type']) && $data['form_type'] == 'establishment' && $request->hasFile('commercial_registration')) {
+            $file = $request->file('commercial_registration');
+            // Save in public/users folder
+            $path = public_path(getFilePath('users'));
+            // Create directory if doesn't exist
+            if (!file_exists($path)) {
+                mkdir($path, 0755, true);
+            }
+            // Generate unique filename
+            $filename = uniqid() . time() . '.' . $file->getClientOriginalExtension();
+            // Move file to public/users
+            $file->move($path, $filename);
+            // Store only filename (path is public/users)
+            $data['commercial_registration_path'] = $filename;
+        }
 
-
-        event(new Registered($user = $this->create($request->all())));
+        event(new Registered($user = $this->create($data)));
 
         $this->guard()->login($user);
 
@@ -106,16 +127,72 @@ class RegisterController extends Controller
         //User Create
         $user            = new User();
         $user->email     = strtolower($data['email']);
-        $user->firstname = $data['firstname'];
-        $user->lastname  = $data['lastname'];
         $user->password  = Hash::make($data['password']);
         $user->ref_by    = $referUser ? $referUser->id : 0;
+        
+        // Determine user type from form data
+        if (isset($data['form_type']) && $data['form_type'] == 'establishment') {
+            $user->type = 'establishment';
+            $user->user_type = 'establishment';
+            $user->firstname = $data['firstname']; // اسم المنشأة
+            $user->lastname = ''; // لا يوجد lastname للمنشأة
+        } else {
+            $user->type = 'individual';
+            $user->user_type = 'individual';
+            $user->firstname = $data['firstname'];
+            $user->lastname = $data['lastname'];
+        }
+        
+        // Save mobile and dial_code if provided
+        if (isset($data['mobile']) && !empty($data['mobile'])) {
+            $user->mobile = $data['mobile'];
+        }
+        if (isset($data['country_code']) && !empty($data['country_code'])) {
+            $user->dial_code = $data['country_code'];
+        }
+        
+        // Handle establishment-specific fields
+        if ($user->type == 'establishment') {
+            // Use firstname as establishment_name if provided
+            if (isset($data['firstname'])) {
+                $user->establishment_name = $data['firstname'];
+            }
+            if (isset($data['establishment_info'])) {
+                $user->establishment_info = $data['establishment_info'];
+            }
+            // Handle commercial registration file upload
+            if (isset($data['commercial_registration_path'])) {
+                $user->commercial_registration = $data['commercial_registration_path'];
+            }
+        }
+        
         $user->kv = gs('kv') ? Status::NO : Status::YES;
         $user->ev = gs('ev') ? Status::NO : Status::YES;
         $user->sv = gs('sv') ? Status::NO : Status::YES;
         $user->ts = Status::DISABLE;
         $user->tv = Status::ENABLE;
+        $user->profile_complete = Status::YES; // Set profile as complete to skip user-data page
+        
+        // For establishment accounts, set status to DISABLE until admin approval
+        if ($user->type == 'establishment') {
+            $user->status = Status::USER_BAN; // Disable account until admin approval
+        } else {
+            $user->status = Status::USER_ACTIVE; // Individual accounts are active by default
+        }
+        
         $user->save();
+
+        // Create empty wallet for the user
+        $wallet = new Wallet();
+        $wallet->user_id = $user->id;
+        $wallet->balance = 0;
+        // For establishment accounts, set wallet status to DISABLE until admin approval
+        if ($user->type == 'establishment') {
+            $wallet->status = Status::DISABLE;
+        } else {
+            $wallet->status = Status::ENABLE;
+        }
+        $wallet->save();
 
         $adminNotification            = new AdminNotification();
         $adminNotification->user_id   = $user->id;

@@ -85,6 +85,14 @@ class FileInfo
             'size' => '36x36',
         ];
 
+        $data['users'] = [
+            'path' => 'users',
+        ];
+
+        $data['transfers'] = [
+            'path' => 'transfers',
+        ];
+
         return $data;
 	}
 

@@ -12,7 +12,7 @@
                         <form>
                             <div class="d-flex flex-wrap gap-4">
                                 <div class="flex-grow-1">
-                                    <label>@lang('Username/Category')</label>
+                                    <label>@lang('Username/Product')</label>
                                     <input type="search" name="search" value="{{ request()->search }}" class="form-control">
                                 </div>
                                 <div class="flex-grow-1">
@@ -50,7 +50,7 @@
                                     @endif
                                     <th>@lang('Date & Time')</th>
                                     <th>@lang('Trx')</th>
-                                    <th>@lang('Category')</th>
+                                    <th>@lang('Product')</th>
                                     <th>@lang('Quantity')</th>
                                     <th>@lang('Amount & Charge')</th>
                                     @if (request()->routeIs('admin.gold.history.buy'))
@@ -80,11 +80,17 @@
                                         <td>{{ showDateTime($goldHistory->created_at) }}<br>{{ diffForHumans($goldHistory->created_at) }}</td>
                                         <td>{{ $goldHistory->trx }}</td>
                                         <td>
-                                            {{ __($goldHistory->category->name) }}
-                                            <br>
-                                            {{ $goldHistory->category->karat }} @lang('Karat')
+                                            @if($goldHistory->batch && $goldHistory->batch->product)
+                                                {{ __($goldHistory->batch->product->name) }}
+                                                @if($goldHistory->batch->quality_grade)
+                                                    <br>
+                                                    <small class="text-muted">{{ $goldHistory->batch->quality_grade }}</small>
+                                                @endif
+                                            @else
+                                                @lang('N/A')
+                                            @endif
                                         </td>
-                                        <td>{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }} @lang('gram')</td>
+                                        <td>{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }} {{ $goldHistory->itemUnit->symbol ?? ($goldHistory->batch && $goldHistory->batch->product && $goldHistory->batch->product->unit ? $goldHistory->batch->product->unit->symbol : 'Unit') }}</td>
                                         <td>
                                             {{ showAmount($goldHistory->amount) }}
                                             <br>
@@ -169,7 +175,7 @@
 
 @if (!request()->routeIs('admin.gold.history.redeem'))
     @push('breadcrumb-plugins')
-        <x-search-form placeholder="Username/Category" dateSearch='yes' />
+        <x-search-form placeholder="Username/Product" dateSearch='yes' />
     @endpush
 @endif
 

@@ -1,0 +1,5 @@
+<svg width="80" height="50" viewBox="0 0 80 50" xmlns="http://www.w3.org/2000/svg">
+  <rect width="80" height="50" rx="8" fill="white"/>
+  <path d="M 30 15 L 30 20 L 35 20 L 35 25 L 30 25 L 30 30 L 40 30 L 40 25 L 35 25 L 35 20 L 40 20 L 40 15 Z" fill="#005BAF"/>
+  <text x="40" y="42" font-family="Arial, sans-serif" font-size="12" fill="#005BAF">urpay</text>
+</svg>

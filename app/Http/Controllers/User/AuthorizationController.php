@@ -94,16 +94,26 @@ class AuthorizationController extends Controller
 
         $user = auth()->user();
 
-        if ($user->ver_code == $request->code) {
+        // Handle code as array (from OTP input fields) or string
+        $code = $request->code;
+        if (is_array($code)) {
+            $code = implode('', $code);
+        }
+        $code = str_replace(' ', '', $code); // Remove any spaces
+
+        if ($user->ver_code == $code) {
             $user->ev = Status::VERIFIED;
             $user->ver_code = null;
             $user->ver_code_send_at = null;
             $user->save();
 
+            $notify[] = ['success', 'Email verified successfully'];
             $redirection = Intended::getRedirection();
-            return $redirection ? $redirection : to_route('user.home');
+            return ($redirection ? $redirection : to_route('user.home'))->withNotify($notify);
         }
-        throw ValidationException::withMessages(['code' => 'Verification code didn\'t match!']);
+        
+        $notify[] = ['error', 'Verification code didn\'t match!'];
+        return back()->withNotify($notify)->withInput();
     }
 
     public function mobileVerification(Request $request)
@@ -112,17 +122,28 @@ class AuthorizationController extends Controller
             'code' => 'required',
         ]);
 
-
         $user = auth()->user();
-        if ($user->ver_code == $request->code) {
+        
+        // Handle code as array (from OTP input fields) or string
+        $code = $request->code;
+        if (is_array($code)) {
+            $code = implode('', $code);
+        }
+        $code = str_replace(' ', '', $code); // Remove any spaces
+        
+        if ($user->ver_code == $code) {
             $user->sv = Status::VERIFIED;
             $user->ver_code = null;
             $user->ver_code_send_at = null;
             $user->save();
+            
+            $notify[] = ['success', 'Mobile number verified successfully'];
             $redirection = Intended::getRedirection();
-            return $redirection ? $redirection : to_route('user.home');
+            return ($redirection ? $redirection : to_route('user.home'))->withNotify($notify);
         }
-        throw ValidationException::withMessages(['code' => 'Verification code didn\'t match!']);
+        
+        $notify[] = ['error', 'Verification code didn\'t match!'];
+        return back()->withNotify($notify)->withInput();
     }
 
     public function g2faVerification(Request $request)

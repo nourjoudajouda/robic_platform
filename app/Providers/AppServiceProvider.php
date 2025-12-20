@@ -50,11 +50,7 @@ class AppServiceProvider extends ServiceProvider
 
         view()->composer('admin.partials.sidenav', function ($view) {
             $view->with([
-                'bannedUsersCount'           => User::banned()->count(),
                 'emailUnverifiedUsersCount'  => User::emailUnverified()->count(),
-                'mobileUnverifiedUsersCount' => User::mobileUnverified()->count(),
-                'kycUnverifiedUsersCount'    => User::kycUnverified()->count(),
-                'kycPendingUsersCount'       => User::kycPending()->count(),
                 'pendingTicketCount'         => SupportTicket::whereIN('status', [Status::TICKET_OPEN, Status::TICKET_REPLY])->count(),
                 'pendingDepositsCount'       => Deposit::pending()->count(),
                 'pendingWithdrawCount'       => Withdrawal::pending()->count(),

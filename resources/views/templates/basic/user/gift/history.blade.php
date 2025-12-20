@@ -21,7 +21,7 @@
                                     <td>{{ showDateTime($giftHistory->created_at) }}</td>
                                     <td>{{ $giftHistory->recipient->username }}</td>
                                     <td>{{ $giftHistory->category->name }}</td>
-                                    <td>{{ showAmount($giftHistory->quantity, 4, currencyFormat: false) }} @lang('gram')</td>
+                                    <td>{{ showAmount($giftHistory->quantity, 4, currencyFormat: false) }} {{ $giftHistory->batch && $giftHistory->batch->product && $giftHistory->batch->product->unit ? $giftHistory->batch->product->unit->symbol : 'Unit' }}</td>
                                     <td>{{ showAmount($giftHistory->amount) }}</td>
                                     <td>{{ showAmount($giftHistory->charge) }}</td>
                                 </tr>
@@ -51,5 +51,5 @@
 
 
 @push('pageHeaderButton')
-    <a href="{{ route('user.gift.form') }}" class="btn btn--warning btn--lg"> <i class="fas fa-gift"></i> @lang('Gift Gold')</a>
+    <a href="{{ route('user.gift.form') }}" class="btn btn--warning btn--lg"> <i class="fas fa-gift"></i> @lang('Gift Green Coffee')</a>
 @endpush

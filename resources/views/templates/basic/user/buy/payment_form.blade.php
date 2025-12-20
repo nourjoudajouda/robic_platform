@@ -4,7 +4,7 @@
     <div class="row justify-content-center">
         <div class="col-xxl-8 col-lg-10">
             <div class="buy-sell-card">
-                <ul class="buy-sell-list">
+                 <ul class="buy-sell-list">
                     <li class="buy-sell-list__item active">
                         <span class="buy-sell-list__item-link">
                             <span class="buy-sell-list__item-number d-block">1</span>
@@ -29,11 +29,11 @@
                         <h5 class="buy-sell-payment__title">@lang('Overview')</h5>
                         <ul class="text-list">
                             <li class="text-list__item">
-                                <span class="text-list__item-title">@lang('Gold Quantity')</span>
-                                <span class="text-list__item-value">{{ showAmount($buyData->quantity, 4, currencyFormat: false) }} @lang('Gram')</span>
+                                <span class="text-list__item-title">@lang('Green Coffee Quantity')</span>
+                                <span class="text-list__item-value">{{ showAmount($buyData->quantity, 4, true, false, false) }} {{ $product && $product->unit ? $product->unit->symbol : ($batch && $batch->product && $batch->product->unit ? $batch->product->unit->symbol : 'Unit') }}</span>
                             </li>
                             <li class="text-list__item">
-                                <span class="text-list__item-title">@lang('Gold Value')</span>
+                                <span class="text-list__item-title">@lang('Green Coffee Value')</span>
                                 <span class="text-list__item-value">{{ showAmount($buyData->amount) }}</span>
                             </li>
                             @if ($buyData->charge > 0)
@@ -44,7 +44,7 @@
                             @endif
                             @if ($buyData->vat > 0)
                                 <li class="text-list__item">
-                                    <span class="text-list__item-title">@lang('VAT') ({{ showAmount($chargeLimit->vat, currencyFormat: false) }}%)</span>
+                                    <span class="text-list__item-title">@lang('VAT') ({{ showAmount($chargeLimit->vat, 2, true, false, false) }}%)</span>
                                     <span class="text-list__item-value">{{ showAmount($buyData->vat) }}</span>
                                 </li>
                             @endif
@@ -87,7 +87,7 @@
                             @csrf
                             <input type="hidden" name="currency" value="{{ gs('cur_text') }}">
                             <input type="hidden" name="amount" class="amount" value="{{ $buyData->total_amount }}">
-                            <input type="hidden" name="category_id" value="{{ $buyData->category_id }}">
+                            <input type="hidden" name="batch_id" value="{{ $buyData->batch_id }}">
                             <div class="form-group">
                                 <div class="form--radio">
                                     <label class="form-check-label" for="main-balance">

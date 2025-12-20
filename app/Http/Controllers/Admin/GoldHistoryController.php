@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Constants\Status;
 use App\Http\Controllers\Controller;
-use App\Models\GoldHistory;
+use App\Models\BeanHistory;
 use App\Models\RedeemData;
 use App\Models\Transaction;
 
@@ -13,32 +13,32 @@ class GoldHistoryController extends Controller
     public function buy($userId = 0)
     {
         $pageTitle     = 'Buy History';
-        $goldHistories = GoldHistory::buy();
+        $goldHistories = BeanHistory::buy();
         if ($userId) {
             $goldHistories->where('user_id', $userId);
         }
-        $goldHistories = $goldHistories->with('category', 'user')->searchable(['user:username', 'category:name'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        $goldHistories = $goldHistories->with('batch.product', 'user', 'itemUnit', 'currency')->searchable(['user:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
         return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
     }
 
     public function sell()
     {
         $pageTitle     = 'Sell History';
-        $goldHistories = GoldHistory::sell()->with('category', 'user')->searchable(['user:username', 'category:name'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        $goldHistories = BeanHistory::sell()->with('batch.product', 'user', 'itemUnit', 'currency')->searchable(['user:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
         return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
     }
 
     public function redeem()
     {
         $pageTitle     = 'Redeem History';
-        $goldHistories = GoldHistory::redeem()->with('category', 'user', 'redeemData')->searchable(['user:username', 'category:name'])->filter(['redeemData:status'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        $goldHistories = BeanHistory::redeem()->with('batch.product', 'user', 'redeemData', 'itemUnit', 'currency')->searchable(['user:username'])->filter(['redeemData:status'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
         return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
     }
 
     public function gift()
     {
         $pageTitle     = 'Gift History';
-        $goldHistories = GoldHistory::gift()->with('category', 'user', 'recipient')->searchable(['user:username', 'category:name', 'recipient:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        $goldHistories = BeanHistory::gift()->with('batch.product', 'user', 'recipient', 'itemUnit', 'currency')->searchable(['user:username', 'recipient:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
         return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
     }
 
@@ -61,7 +61,7 @@ class GoldHistoryController extends Controller
 
         $sentence      = collect($redeem->order_details->items)->pluck('text')->toArray();
         $sentence      = count($sentence) > 1 ? implode(', ', array_slice($sentence, 0, -1)) . ' and ' . end($sentence) : $sentence[0];
-        $redeemHistory = $redeem->goldHistory;
+        $redeemHistory = $redeem->beanHistory;
 
         if ($status == Status::REDEEM_STATUS_SHIPPED || $status == Status::REDEEM_STATUS_DELIVERED) {
             if ($status == Status::REDEEM_STATUS_SHIPPED) {
@@ -75,8 +75,9 @@ class GoldHistoryController extends Controller
             }
             $redeem->save();
 
+            $productName = $redeemHistory->batch && $redeemHistory->batch->product ? $redeemHistory->batch->product->name : 'Green Coffee';
             notify($redeemHistory->user, $mailTemplate, [
-                'category' => $redeemHistory->category->name,
+                'category' => $productName,
                 'quantity' => showAmount($redeemHistory->quantity, currencyFormat: false),
                 'amount'   => showAmount($redeemHistory->amount),
                 'charge'   => showAmount($redeemHistory->charge),
@@ -91,18 +92,20 @@ class GoldHistoryController extends Controller
         $redeem->status = Status::REDEEM_STATUS_CANCELLED;
         $redeem->save();
 
-        $goldHistory = $redeem->goldHistory;
-        $user        = $goldHistory->user;
-        $user->balance += $goldHistory->charge;
+        $beanHistory = $redeem->beanHistory;
+        $user        = $beanHistory->user;
+        $user->balance += $beanHistory->charge;
         $user->save();
 
-        $asset = $goldHistory->asset;
-        $asset->quantity += $goldHistory->quantity;
-        $asset->save();
+        $asset = $beanHistory->asset;
+        if ($asset) {
+            $asset->quantity += $beanHistory->quantity;
+            $asset->save();
+        }
 
         $transaction               = new Transaction();
         $transaction->user_id      = $user->id;
-        $transaction->amount       = $goldHistory->charge;
+        $transaction->amount       = $beanHistory->charge;
         $transaction->post_balance = $user->balance;
         $transaction->charge       = 0;
         $transaction->trx_type     = '+';
@@ -111,12 +114,13 @@ class GoldHistoryController extends Controller
         $transaction->remark       = 'redeem_cancelled';
         $transaction->save();
 
+        $productName = $beanHistory->batch && $beanHistory->batch->product ? $beanHistory->batch->product->name : 'Green Coffee';
         notify($user, 'REDEEM_CANCELLED', [
-            'category' => $goldHistory->category->name,
-            'quantity' => showAmount($goldHistory->quantity, currencyFormat: false),
-            'amount'   => showAmount($goldHistory->amount),
-            'charge'   => showAmount($goldHistory->charge),
-            'trx'      => $goldHistory->trx,
+            'category' => $productName,
+            'quantity' => showAmount($beanHistory->quantity, currencyFormat: false),
+            'amount'   => showAmount($beanHistory->amount),
+            'charge'   => showAmount($beanHistory->charge),
+            'trx'      => $beanHistory->trx,
             'details'  => $sentence,
         ]);
 

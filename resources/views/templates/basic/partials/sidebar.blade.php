@@ -33,13 +33,13 @@
             <li class="sidebar-menu-list__item">
                 <a href="{{ route('user.buy.form') }}" class="sidebar-menu-list__link {{ menuActive('user.buy*') }}">
                     <span class="icon"><i class="fa-solid fa-circle-dollar-to-slot"></i></span>
-                    <span class="text">@lang('Buy Gold')</span>
+                    <span class="text">@lang('Buy Green Coffee')</span>
                 </a>
             </li>
             <li class="sidebar-menu-list__item">
                 <a href="{{ route('user.sell.form') }}" class="sidebar-menu-list__link {{ menuActive('user.sell*') }}">
                     <span class="icon"><i class="fa-solid fa-money-bill-trend-up"></i></span>
-                    <span class="text">@lang('Sell Gold')</span>
+                    <span class="text">@lang('Sell Green Coffee')</span>
                 </a>
             </li>
             @if (gs('redeem_option'))
@@ -53,7 +53,7 @@
             <li class="sidebar-menu-list__item">
                 <a href="{{ route('user.gift.form') }}" class="sidebar-menu-list__link {{ menuActive('user.gift*') }}">
                     <span class="icon"><i class="fa-solid fa-gift"></i></span>
-                    <span class="text">@lang('Gift Gold')</span>
+                    <span class="text">@lang('Gift Green Coffee')</span>
                 </a>
             </li>
             <li class="sidebar-menu-list__item">

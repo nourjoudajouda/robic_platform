@@ -11,7 +11,7 @@ use App\Models\Category;
 use App\Models\ChargeLimit;
 use App\Models\DeviceToken;
 use App\Models\Form;
-use App\Models\GoldHistory;
+use App\Models\BeanHistory;
 use App\Models\HistoricalPrice;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -26,15 +26,15 @@ class UserController extends Controller
         $pageTitle     = 'Dashboard';
         $user          = auth()->user();
         $portfolioData = $this->getPortfolioData();
-        $assets        = Asset::with('category')->where('user_id', $user->id)->get();
-        $assetValue    = $assets->sum(fn($asset) => $asset->quantity * $asset->category->price);
+        $assets        = Asset::with('batch.product')->where('user_id', $user->id)->where('quantity', '>', 0)->get();
+        // القيمة الحالية بسعر السوق
+        $assetValue    = $assets->sum(fn($asset) => $asset->quantity * ($asset->batch->sell_price ?? 0));
         $chargeLimit   = ChargeLimit::where('slug', 'buy')->first();
-        $categories    = Category::active()->get();
 
-        $giftRedeems = GoldHistory::redeemOrGift()->where('user_id', $user->id)->orderBy('id', 'desc')->limit(5)->get();
-        $buySells    = GoldHistory::buyOrSell()->where('user_id', $user->id)->orderBy('id', 'desc')->limit(6)->get();
+        $giftRedeems = BeanHistory::redeemOrGift()->where('user_id', $user->id)->with('batch.product.unit')->orderBy('id', 'desc')->limit(5)->get();
+        $buySells    = BeanHistory::buyOrSell()->where('user_id', $user->id)->with('batch.product.unit')->orderBy('id', 'desc')->limit(6)->get();
 
-        return view('Template::user.dashboard', compact('pageTitle', 'portfolioData', 'assets', 'assetValue', 'user', 'chargeLimit', 'categories', 'giftRedeems', 'buySells'));
+        return view('Template::user.dashboard', compact('pageTitle', 'portfolioData', 'assets', 'assetValue', 'user', 'chargeLimit', 'giftRedeems', 'buySells'));
     }
 
     public function getPriceHistory()
@@ -269,17 +269,49 @@ class UserController extends Controller
         $pageTitle = 'Portfolio';
         $user      = auth()->user();
 
-        $assets        = Asset::with('category')->where('user_id', $user->id)->get();
-        $assetLogs     = GoldHistory::where('user_id', $user->id)->limit(5)->orderBy('id', 'desc')->get();
+        // جلب جميع الـ assets للمستخدم
+        $allAssets = Asset::with('batch.product.unit', 'batch.product.currency', 'product.unit', 'product.currency')
+            ->where('user_id', $user->id)
+            ->where('quantity', '>', 0)
+            ->get();
+        
+        // تجميع الـ assets حسب product_id
+        $groupedAssets = $allAssets->groupBy('product_id')->map(function($productAssets) {
+            $firstAsset = $productAssets->first();
+            $product = $firstAsset->product ?? $firstAsset->batch->product;
+            
+            // جلب آخر سعر سوق من market_price_history
+            $latestMarketPrice = \App\Models\MarketPriceHistory::where('product_id', $firstAsset->product_id)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            $currentMarketPrice = $latestMarketPrice ? $latestMarketPrice->market_price : 0;
+            
+            return (object)[
+                'product_id' => $firstAsset->product_id,
+                'product' => $product,
+                'total_quantity' => $productAssets->sum('quantity'),
+                'total_value' => $productAssets->sum(function($asset) {
+                    // استخدام buy_price (سعر الشراء) وليس sell_price (السعر الحالي)
+                    return $asset->quantity * ($asset->buy_price ?? 0);
+                }),
+                'current_market_value' => $productAssets->sum('quantity') * $currentMarketPrice,
+                'current_market_price' => $currentMarketPrice, // حفظ السعر للعرض
+                'batches' => $productAssets, // كل الـ batches للمنتج
+                'batches_count' => $productAssets->count(),
+            ];
+        });
+        
+        $assetLogs     = BeanHistory::where('user_id', $user->id)->with('batch.product.unit')->limit(5)->orderBy('id', 'desc')->get();
         $portfolioData = $this->getPortfolioData();
 
-        return view('Template::user.portfolio', compact('pageTitle', 'assets', 'portfolioData', 'assetLogs'));
+        return view('Template::user.portfolio', compact('pageTitle', 'groupedAssets', 'portfolioData', 'assetLogs'));
     }
 
     public function assetLogs()
     {
         $pageTitle = 'Asset Logs';
-        $assetLogs = GoldHistory::where('user_id', auth()->user()->id);
+        $assetLogs = BeanHistory::where('user_id', auth()->user()->id);
         if (request()->has('asset_id')) {
             $assetLogs = $assetLogs->where('asset_id', request()->asset_id);
         }
@@ -289,7 +321,7 @@ class UserController extends Controller
         if (request()->data == 'buy-sell') {
             $assetLogs = $assetLogs->buyOrSell();
         }
-        $assetLogs = $assetLogs->orderBy('id', 'desc')->paginate(getPaginate());
+        $assetLogs = $assetLogs->with(['batch.product.unit', 'batch.product.currency', 'itemUnit', 'currency'])->orderBy('id', 'desc')->paginate(getPaginate());
         return view('Template::user.asset_log', compact('pageTitle', 'assetLogs'));
     }
 
@@ -334,19 +366,32 @@ class UserController extends Controller
     private function getPortfolioData()
     {
         $user                  = auth()->user();
-        $assetData             = Asset::with('category')->where('user_id', $user->id)->get();
-        $assetCategoryName     = $assetData->pluck('category.name');
-        $totalAssetQuantity    = $assetData->sum('quantity');
-        $assetCategoryQuantity = $assetData->pluck('quantity');
+        $assetData             = Asset::with('batch.product', 'product')->where('user_id', $user->id)->where('quantity', '>', 0)->get();
+        
+        // تجميع الـ assets حسب product_id لحساب النسب بشكل صحيح
+        $groupedByProduct = $assetData->groupBy('product_id')->map(function($productAssets) {
+            $firstAsset = $productAssets->first();
+            $product = $firstAsset->product ?? $firstAsset->batch->product;
+            return [
+                'name' => $product->name ?? 'N/A',
+                'quantity' => $productAssets->sum('quantity'),
+            ];
+        });
+        
+        $assetProductName      = $groupedByProduct->pluck('name');
+        $totalAssetQuantity    = $groupedByProduct->sum('quantity');
+        $assetProductQuantity  = $groupedByProduct->pluck('quantity');
+        
         if ($totalAssetQuantity > 0) {
-            $assetCategoryQuantity = $assetCategoryQuantity->map(function ($quantity) use ($totalAssetQuantity) {
+            $assetProductQuantity = $assetProductQuantity->map(function ($quantity) use ($totalAssetQuantity) {
                 return getAmount($quantity / $totalAssetQuantity * 100);
             });
         }
+        
         return [
-            'assets_category_name'    => $assetCategoryName,
+            'assets_category_name'    => $assetProductName,
             'total_asset_quantity'    => $totalAssetQuantity,
-            'asset_category_quantity' => $assetCategoryQuantity,
+            'asset_category_quantity' => $assetProductQuantity,
         ];
     }
 }

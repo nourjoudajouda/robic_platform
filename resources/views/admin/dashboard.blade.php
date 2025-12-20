@@ -13,9 +13,6 @@
         <div class="col-xxl-3 col-sm-6">
             <x-widget style="6" link="{{ route('admin.users.email.unverified') }}" icon="lar la-envelope" title="Email Unverified Users" value="{{ $widget['email_unverified_users'] }}" bg="danger" />
         </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.users.mobile.unverified') }}" icon="las la-comment-slash" title="Mobile Unverified Users" value="{{ $widget['mobile_unverified_users'] }}" bg="warning" />
-        </div><!-- dashboard-w1 end -->
     </div><!-- row end-->
 
     <div class="row mt-2 gy-4">
