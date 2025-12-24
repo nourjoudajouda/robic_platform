@@ -162,6 +162,16 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <!-- ApexCharts -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    
+    <!-- Chart Settings -->
+    <script>
+        window.chartSettings = {
+            priceFrom: {{ gs('chart_price_from') ?? 0 }},
+            priceTo: {{ gs('chart_price_to') ?? 20 }},
+            apiUrl: "{{ route('market.prices') }}"
+        };
+    </script>
+    
     <!-- Custom JS -->
     <script src="{{ asset('assets/home/js/script.js') }}"></script>
 </body>

@@ -57,7 +57,6 @@ class BatchController extends Controller
             'product_id' => 'required|exists:products,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'units_count' => 'required|numeric|min:0',
-            'sell_price' => 'required|numeric|min:0',
             'quality_grade' => 'nullable|string|max:255',
             'quality_grade_custom' => 'nullable|string|max:255',
             'origin_country' => 'nullable|string|max:255',
@@ -78,7 +77,6 @@ class BatchController extends Controller
         $batch->warehouse_id = $request->warehouse_id;
         $batch->units_count = $request->units_count;
         $batch->unit_id = $product->unit_id; // من المنتج
-        $batch->sell_price = $request->sell_price;
         $batch->currency_id = $product->currency_id; // من المنتج
         $batch->batch_code = $this->generateBatchCode();
         // Handle quality_grade (if "Other" is selected, use custom value)
@@ -114,7 +112,6 @@ class BatchController extends Controller
             'product_id' => 'required|exists:products,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'units_count' => 'required|numeric|min:0',
-            'sell_price' => 'required|numeric|min:0',
             'quality_grade' => 'nullable|string|max:255',
             'quality_grade_custom' => 'nullable|string|max:255',
             'origin_country' => 'nullable|string|max:255',
@@ -135,7 +132,6 @@ class BatchController extends Controller
         $batch->warehouse_id = $request->warehouse_id;
         $batch->units_count = $request->units_count;
         $batch->unit_id = $product->unit_id; // من المنتج
-        $batch->sell_price = $request->sell_price;
         $batch->currency_id = $product->currency_id; // من المنتج
         // batch_code لا يتم تعديله
         // Handle quality_grade (if "Other" is selected, use custom value)

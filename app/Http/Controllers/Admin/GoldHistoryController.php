@@ -30,8 +30,8 @@ class GoldHistoryController extends Controller
 
     public function redeem()
     {
-        $pageTitle     = 'Redeem History';
-        $goldHistories = BeanHistory::redeem()->with('batch.product', 'user', 'redeemData', 'itemUnit', 'currency')->searchable(['user:username'])->filter(['redeemData:status'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        $pageTitle     = 'Shipping & Receiving History';
+        $goldHistories = BeanHistory::redeem()->with('product.unit', 'user', 'redeemData.shippingMethod', 'itemUnit', 'currency')->searchable(['user:username'])->filter(['redeemData:status'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
         return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
     }
 
@@ -59,9 +59,13 @@ class GoldHistoryController extends Controller
             return back()->withNotify($notify);
         }
 
-        $sentence      = collect($redeem->order_details->items)->pluck('text')->toArray();
-        $sentence      = count($sentence) > 1 ? implode(', ', array_slice($sentence, 0, -1)) . ' and ' . end($sentence) : $sentence[0];
         $redeemHistory = $redeem->beanHistory;
+        
+        // إنشاء وصف للطلب من البيانات الجديدة
+        $productName = $redeemHistory->product ? $redeemHistory->product->name : 'Green Coffee';
+        $quantity = showAmount($redeemHistory->quantity, 4, currencyFormat: false);
+        $unit = $redeemHistory->product && $redeemHistory->product->unit ? $redeemHistory->product->unit->symbol : 'kg';
+        $sentence = $quantity . ' ' . $unit . ' of ' . $productName;
 
         if ($status == Status::REDEEM_STATUS_SHIPPED || $status == Status::REDEEM_STATUS_DELIVERED) {
             if ($status == Status::REDEEM_STATUS_SHIPPED) {
@@ -75,7 +79,6 @@ class GoldHistoryController extends Controller
             }
             $redeem->save();
 
-            $productName = $redeemHistory->batch && $redeemHistory->batch->product ? $redeemHistory->batch->product->name : 'Green Coffee';
             notify($redeemHistory->user, $mailTemplate, [
                 'category' => $productName,
                 'quantity' => showAmount($redeemHistory->quantity, currencyFormat: false),
@@ -94,13 +97,30 @@ class GoldHistoryController extends Controller
 
         $beanHistory = $redeem->beanHistory;
         $user        = $beanHistory->user;
+        
+        // إرجاع تكلفة الشحن إلى رصيد المستخدم
         $user->balance += $beanHistory->charge;
         $user->save();
 
-        $asset = $beanHistory->asset;
+        // إرجاع الكمية إلى assets المستخدم
+        // البحث عن أي asset موجود للمنتج والمستخدم، أو إنشاء واحد جديد
+        $asset = \App\Models\Asset::where('user_id', $user->id)
+            ->where('product_id', $beanHistory->product_id)
+            ->first();
+            
         if ($asset) {
             $asset->quantity += $beanHistory->quantity;
             $asset->save();
+        } else {
+            // إنشاء asset جديد إذا لم يكن موجوداً
+            // (هذه حالة نادرة، لكن للأمان)
+            \App\Models\Asset::create([
+                'user_id' => $user->id,
+                'product_id' => $beanHistory->product_id,
+                'batch_id' => $beanHistory->batch_id,
+                'warehouse_id' => $beanHistory->batch ? $beanHistory->batch->warehouse_id : null,
+                'quantity' => $beanHistory->quantity,
+            ]);
         }
 
         $transaction               = new Transaction();
@@ -109,12 +129,11 @@ class GoldHistoryController extends Controller
         $transaction->post_balance = $user->balance;
         $transaction->charge       = 0;
         $transaction->trx_type     = '+';
-        $transaction->details      = 'Refund for cancelled redeem request';
+        $transaction->details      = 'Refund for cancelled shipping request';
         $transaction->trx          = getTrx();
         $transaction->remark       = 'redeem_cancelled';
         $transaction->save();
 
-        $productName = $beanHistory->batch && $beanHistory->batch->product ? $beanHistory->batch->product->name : 'Green Coffee';
         notify($user, 'REDEEM_CANCELLED', [
             'category' => $productName,
             'quantity' => showAmount($beanHistory->quantity, currencyFormat: false),

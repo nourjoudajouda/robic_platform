@@ -63,6 +63,20 @@
                                     <textarea name="address" class="form-control" rows="3">{{ old('address', $warehouse->address) }}</textarea>
                                 </div>
                             </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Latitude')</label>
+                                    <input type="number" step="0.00000001" name="latitude" class="form-control" value="{{ old('latitude', $warehouse->latitude) }}" placeholder="24.7136">
+                                    <small class="text-muted">@lang('Warehouse location latitude for shipping calculations')</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Longitude')</label>
+                                    <input type="number" step="0.00000001" name="longitude" class="form-control" value="{{ old('longitude', $warehouse->longitude) }}" placeholder="46.6753">
+                                    <small class="text-muted">@lang('Warehouse location longitude for shipping calculations')</small>
+                                </div>
+                            </div>
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label>@lang('Status') <span class="text--danger">*</span></label>

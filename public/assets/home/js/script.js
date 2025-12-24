@@ -174,55 +174,81 @@
             return;
         }
 
-        // أوقات السوق من 8 ص إلى 4 م
-        const times = ['8 ص', '9 ص', '10 ص', '11 ص', '12 ص', '1 م', '2 م', '3 م', '4 م'];
+        // الحصول على نطاق الأسعار من الإعدادات
+        const priceFrom = window.chartSettings ? parseFloat(window.chartSettings.priceFrom) : 0;
+        const priceTo = window.chartSettings ? parseFloat(window.chartSettings.priceTo) : 20;
+        const apiUrl = window.chartSettings ? window.chartSettings.apiUrl : '/market-prices';
 
-        // بيانات الأسعار لأنواع القهوة المختلفة
-        // برازيلي - أزرق داكن - من 11 إلى 18 ريال
-        const brazilian = [12, 13, 14, 12, 15, 16, 14, 17, 18];
+        // جلب البيانات الحقيقية من API
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success' && result.data.length > 0) {
+                    renderChart(result.data, priceFrom, priceTo);
+                } else {
+                    console.warn('لا توجد بيانات أسعار متاحة');
+                    renderEmptyChart(priceFrom, priceTo);
+                }
+            })
+            .catch(error => {
+                console.error('خطأ في جلب بيانات الأسعار:', error);
+                renderEmptyChart(priceFrom, priceTo);
+            });
+    }
+
+    /**
+     * Generate colors for chart lines
+     */
+    function generateColors(count) {
+        const colors = [
+            '#1e3a8a', // أزرق داكن
+            '#166534', // أخضر داكن
+            '#22c55e', // أخضر
+            '#eab308', // أصفر
+            '#f97316', // برتقالي
+            '#06b6d4', // أزرق فاتح
+            '#ec4899', // وردي
+            '#8b5cf6', // بنفسجي
+            '#14b8a6', // تركواز
+            '#f59e0b', // كهرماني
+        ];
+        return colors.slice(0, count);
+    }
+
+    /**
+     * Render chart with real data
+     */
+    function renderChart(productsData, priceFrom, priceTo) {
+        const chartElement = document.getElementById('priceChart');
         
-        // كيني - أخضر داكن - من 9 إلى 15 ريال
-        const kenyan = [10, 11, 12, 10, 13, 14, 12, 13, 14];
+        console.log('Products Data:', productsData);
         
-        // هندي - أخضر فاتح - من 8 إلى 14 ريال
-        const indian = [9, 10, 11, 9, 12, 13, 11, 12, 13];
+        // جميع الساعات في اليوم (24 ساعة)
+        const hours = [];
+        for (let i = 0; i < 24; i++) {
+            if (i === 0) {
+                hours.push('12 ص');
+            } else if (i < 12) {
+                hours.push(i + ' ص');
+            } else if (i === 12) {
+                hours.push('12 م');
+            } else {
+                hours.push((i - 12) + ' م');
+            }
+        }
+
+        // تحويل بيانات المنتجات إلى series
+        const series = productsData.map(product => ({
+            name: product.name,
+            data: product.data
+        }));
         
-        // كولمبي - أصفر - من 6 إلى 12 ريال
-        const colombian = [7, 8, 9, 7, 10, 11, 9, 10, 11];
-        
-        // فيتنامي - برتقالي - من 3 إلى 8 ريال
-        const vietnamese = [4, 5, 6, 4, 7, 8, 6, 7, 7];
-        
-        // اندونيسي - أزرق فاتح - من 2 إلى 6 ريال
-        const indonesian = [3, 4, 5, 3, 5, 6, 4, 5, 5];
+        console.log('Series:', series);
+        console.log('Series length:', series.length);
+        console.log('First product name:', series[0]?.name);
 
         const options = {
-            series: [
-                {
-                    name: 'برازيلي',
-                    data: brazilian
-                },
-                {
-                    name: 'كيني',
-                    data: kenyan
-                },
-                {
-                    name: 'هندي',
-                    data: indian
-                },
-                {
-                    name: 'كولمبي',
-                    data: colombian
-                },
-                {
-                    name: 'فيتنامي',
-                    data: vietnamese
-                },
-                {
-                    name: 'اندونيسي',
-                    data: indonesian
-                }
-            ],
+            series: series,
             chart: {
                 type: 'line',
                 height: 400,
@@ -233,12 +259,28 @@
                         zoomin: true,
                         zoomout: true,
                         pan: true,
-                        reset: true
+                        reset: true,
+                        download: true
+                    },
+                    export: {
+                        csv: {
+                            filename: 'market-prices',
+                            headerCategory: 'الوقت',
+                            dateFormatter(timestamp) {
+                                return new Date(timestamp).toLocaleDateString('ar-SA')
+                            }
+                        },
+                        svg: {
+                            filename: 'market-prices-chart',
+                        },
+                        png: {
+                            filename: 'market-prices-chart',
+                        }
                     }
                 },
                 fontFamily: 'Cairo, sans-serif'
             },
-            colors: ['#1e3a8a', '#166534', '#22c55e', '#eab308', '#f97316', '#06b6d4'], // ألوان الخطوط
+            colors: generateColors(series.length), // ألوان ديناميكية حسب عدد المنتجات
             dataLabels: {
                 enabled: false
             },
@@ -247,7 +289,7 @@
                 width: 3
             },
             xaxis: {
-                categories: times,
+                categories: hours,
                 title: {
                     text: 'وقت السوق',
                     style: {
@@ -274,8 +316,171 @@
                         fontWeight: 600
                     }
                 },
-                min: 2,
-                max: 18,
+                min: priceFrom,
+                max: priceTo,
+                tickAmount: 8,
+                labels: {
+                    style: {
+                        colors: '#666',
+                        fontFamily: 'Cairo, sans-serif'
+                    },
+                    formatter: function (val) {
+                        return val.toFixed(0) + ' ريال';
+                    }
+                }
+            },
+            tooltip: {
+                theme: 'light',
+                y: {
+                    formatter: function (val) {
+                        return val.toFixed(2) + ' ريال';
+                    }
+                },
+                style: {
+                    fontFamily: 'Cairo, sans-serif'
+                }
+            },
+            legend: {
+                show: true,
+                showForSingleSeries: true,
+                position: 'top',
+                horizontalAlign: 'center',
+                floating: false,
+                fontFamily: 'Cairo, sans-serif',
+                fontSize: '16px',
+                fontWeight: 700,
+                labels: {
+                    colors: '#000',
+                    useSeriesColors: false
+                },
+                markers: {
+                    width: 16,
+                    height: 16,
+                    radius: 4,
+                    strokeWidth: 0,
+                    offsetX: -5
+                },
+                itemMargin: {
+                    horizontal: 15,
+                    vertical: 8
+                },
+                offsetY: 10
+            },
+            grid: {
+                borderColor: '#e0e0e0',
+                strokeDashArray: 4,
+                xaxis: {
+                    lines: {
+                        show: true
+                    }
+                },
+                yaxis: {
+                    lines: {
+                        show: true
+                    }
+                }
+            },
+            markers: {
+                size: 5,
+                strokeColors: '#fff',
+                strokeWidth: 2,
+                hover: {
+                    size: 7
+                }
+            }
+        };
+
+        console.log('Chart Options:', options);
+        
+        const chart = new ApexCharts(chartElement, options);
+        chart.render();
+
+        // إضافة تأثير عند تحميل الصفحة
+        setTimeout(() => {
+            chartElement.style.opacity = '1';
+        }, 500);
+    }
+
+    /**
+     * Render empty chart (fallback)
+     */
+    function renderEmptyChart(priceFrom, priceTo) {
+        const chartElement = document.getElementById('priceChart');
+        
+        // جميع الساعات في اليوم (24 ساعة)
+        const hours = [];
+        for (let i = 0; i < 24; i++) {
+            if (i === 0) {
+                hours.push('12 ص');
+            } else if (i < 12) {
+                hours.push(i + ' ص');
+            } else if (i === 12) {
+                hours.push('12 م');
+            } else {
+                hours.push((i - 12) + ' م');
+            }
+        }
+
+        const emptyData = Array(24).fill(0);
+
+        const options = {
+            series: [{
+                name: 'لا توجد بيانات',
+                data: emptyData
+            }],
+            chart: {
+                type: 'line',
+                height: 400,
+                toolbar: {
+                    show: true,
+                    tools: {
+                        zoom: true,
+                        zoomin: true,
+                        zoomout: true,
+                        pan: true,
+                        reset: true
+                    }
+                },
+                fontFamily: 'Cairo, sans-serif'
+            },
+            colors: ['#cccccc'],
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                curve: 'smooth',
+                width: 3
+            },
+            xaxis: {
+                categories: hours,
+                title: {
+                    text: 'ساعات اليوم',
+                    style: {
+                        color: '#666',
+                        fontFamily: 'Cairo, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: 600
+                    }
+                },
+                labels: {
+                    style: {
+                        colors: '#666',
+                        fontFamily: 'Cairo, sans-serif'
+                    }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'أسعار البن الأخضر في السوق بالريال / كيلو',
+                    style: {
+                        color: '#666',
+                        fontFamily: 'Cairo, sans-serif',
+                        fontSize: '14px',
+                        fontWeight: 600
+                    }
+                },
+                min: priceFrom,
+                max: priceTo,
                 tickAmount: 8,
                 labels: {
                     style: {
@@ -299,11 +504,27 @@
                 }
             },
             legend: {
+                show: true,
+                showForSingleSeries: true,
                 position: 'top',
                 horizontalAlign: 'center',
+                floating: false,
                 fontFamily: 'Cairo, sans-serif',
-                fontSize: '14px',
-                fontWeight: 600
+                fontSize: '16px',
+                fontWeight: 700,
+                labels: {
+                    colors: '#000',
+                    useSeriesColors: false
+                },
+                markers: {
+                    width: 16,
+                    height: 16,
+                    radius: 4
+                },
+                itemMargin: {
+                    horizontal: 15,
+                    vertical: 8
+                }
             },
             grid: {
                 borderColor: '#e0e0e0',
@@ -326,16 +547,21 @@
                 hover: {
                     size: 6
                 }
+            },
+            noData: {
+                text: 'لا توجد بيانات أسعار متاحة',
+                align: 'center',
+                verticalAlign: 'middle',
+                style: {
+                    color: '#666',
+                    fontSize: '16px',
+                    fontFamily: 'Cairo, sans-serif'
+                }
             }
         };
 
         const chart = new ApexCharts(chartElement, options);
         chart.render();
-
-        // إضافة تأثير عند تحميل الصفحة
-        setTimeout(() => {
-            chartElement.style.opacity = '1';
-        }, 500);
     }
 
     /**
@@ -386,3 +612,4 @@
     });
 
 })();
+

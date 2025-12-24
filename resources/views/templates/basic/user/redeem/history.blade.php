@@ -8,10 +8,10 @@
                         <thead>
                             <tr>
                                 <th>@lang('Date Time')</th>
-                                <th>@lang('Category')</th>
+                                <th>@lang('Product')</th>
                                 <th>@lang('Quantity')</th>
                                 <th>@lang('Amount')</th>
-                                <th>@lang('Charge')</th>
+                                <th>@lang('Shipping Cost')</th>
                                 <th>@lang('Status')</th>
                                 <th>@lang('Action')</th>
                             </tr>
@@ -20,13 +20,23 @@
                             @forelse($redeemHistories as $redeemHistory)
                                 <tr>
                                     <td>{{ showDateTime($redeemHistory->created_at) }}</td>
-                                    <td>{{ $redeemHistory->category->name }}</td>
-                                    <td>{{ showAmount($redeemHistory->quantity, currencyFormat: false) }} {{ $redeemHistory->batch && $redeemHistory->batch->product && $redeemHistory->batch->product->unit ? $redeemHistory->batch->product->unit->symbol : 'Unit' }}</td>
+                                    <td>{{ $redeemHistory->product ? $redeemHistory->product->name : 'N/A' }}</td>
+                                    <td>{{ showAmount($redeemHistory->quantity, currencyFormat: false) }} {{ $redeemHistory->product && $redeemHistory->product->unit ? $redeemHistory->product->unit->symbol : 'Unit' }}</td>
                                     <td>{{ showAmount($redeemHistory->amount) }}</td>
                                     <td>{{ showAmount($redeemHistory->charge) }}</td>
                                     <td>@php echo $redeemHistory->redeemData->statusBadge @endphp</td>
                                     <td>
-                                        <button class="dashboard-table-btn detailsBtn" data-order_details='@json($redeemHistory->redeemData->order_details->items)' data-pickup_point='@json($redeemHistory->redeemData->pickupPoint)' data-address="{{ $redeemHistory->redeemData->delivery_address }}">@lang('Details')</button>
+                                        <button class="dashboard-table-btn detailsBtn" 
+                                            data-product_name="{{ $redeemHistory->product ? $redeemHistory->product->name : 'N/A' }}"
+                                            data-quantity="{{ showAmount($redeemHistory->quantity, 4, currencyFormat: false) }}"
+                                            data-unit="{{ $redeemHistory->product && $redeemHistory->product->unit ? $redeemHistory->product->unit->symbol : 'Unit' }}"
+                                            data-shipping_cost="{{ showAmount($redeemHistory->charge) }}"
+                                            data-delivery_type="{{ $redeemHistory->redeemData->delivery_type }}"
+                                            data-delivery_address="{{ $redeemHistory->redeemData->delivery_address }}"
+                                            data-shipping_method="{{ $redeemHistory->redeemData->shippingMethod ? $redeemHistory->redeemData->shippingMethod->name : 'N/A' }}"
+                                            data-distance="{{ $redeemHistory->redeemData->distance ? showAmount($redeemHistory->redeemData->distance, 2, currencyFormat: false) : 'N/A' }}">
+                                            @lang('Details')
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
@@ -56,5 +66,5 @@
 @endsection
 
 @push('pageHeaderButton')
-    <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"> <i class="fas fa-truck"></i> @lang('Redeem Green Coffee')</a>
+    <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"> <i class="fas fa-truck"></i> @lang('Shipping and receiving')</a>
 @endpush

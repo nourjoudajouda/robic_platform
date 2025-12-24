@@ -116,10 +116,13 @@
                     <div class="dashboard-buttons mb-3">
                         <a href="{{ route('user.sell.form') }}" class="btn btn--danger btn--lg"><i class="fas fa-money-bill-trend-up"></i> @lang('Sell Green Coffee')</a>
                         @if (gs('redeem_option'))
-                            <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Redeem Green Coffee')</a>
+                            <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Shipping and receiving')</a>
+                        @endif
+                        {{-- Gift feature disabled
                         @else
                             <a href="{{ route('user.gift.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-gift"></i> @lang('Gift Green Coffee')</a>
                         @endif
+                        --}}
                     </div>
                     <div class="dashboard-card gradient-three gradient-four">
                         <p class="dashboard-card__title">
@@ -149,7 +152,7 @@
                             <img src="{{ asset($activeTemplateTrue . 'images/icons/20.png') }}" alt="image">
                         </span>
                         <span class="dashboard-card__title-text">
-                            @lang(gs('redeem_option') ? 'Recent Redeem & Gift History' : 'Recent Gift History')
+                            @lang(gs('redeem_option') ? 'Recent Shipping History' : 'No History')
                         </span>
                     </p>
                     <a href="{{ route('user.asset.logs') }}?data=redeem-gift" class="btn btn--base btn--sm">@lang('View All')</a>
@@ -157,9 +160,13 @@
 
                 <ul class="gift-withdraw-list">
                     @forelse ($giftRedeems as $giftRedeem)
+                        {{-- Skip gift history records --}}
+                        @if ($giftRedeem->type == Status::GIFT_HISTORY)
+                            @continue
+                        @endif
                         <li class="gift-withdraw-list__item">
                             <div class="status">
-                                <h6 class="status__title">{{ $giftRedeem->type == Status::GIFT_HISTORY ? 'Gift Green Coffee' : 'Redeem Green Coffee' }}</h6>
+                                <h6 class="status__title">@lang('Shipping and receiving')</h6>
                                 <span class="status__date d-block">{{ $giftRedeem->created_at->format('M d, Y') }}</span>
                                 <span class="status__time d-block">{{ $giftRedeem->created_at->format('h:i A') }}</span>
                             </div>
@@ -167,31 +174,21 @@
                                 <span class="content__title">@lang('Amount')</span>
                                 <p class="content__info">{{ showAmount($giftRedeem->quantity, currencyFormat: false) }} {{ $giftRedeem->batch && $giftRedeem->batch->product && $giftRedeem->batch->product->unit ? $giftRedeem->batch->product->unit->symbol : 'Unit' }}</p>
                             </div>
-                            @if ($giftRedeem->type == Status::GIFT_HISTORY)
-                                <div class="content">
-                                    <span class="content__title">@lang('Recipient')</span>
-                                    <p class="content__info">{{ @$giftRedeem->recipient->email }}</p>
-                                </div>
-                                <div class="gift-withdraw-list__item-badges">
-                                    <span class="badge badge--success">@lang('Completed')</span>
-                                </div>
-                            @else
-                                <div class="content">
-                                    <span class="content__title">@lang('Delivery Address')</span>
-                                    <p class="content__info">{{ __(strLimit(substr($giftRedeem->redeemData->delivery_address, 9), 15)) }}</p>
-                                </div>
-                                <div class="gift-withdraw-list__item-badges">
-                                    @php
-                                        echo $giftRedeem->redeemData->statusBadge;
-                                    @endphp
-                                </div>
-                            @endif
+                            <div class="content">
+                                <span class="content__title">@lang('Delivery Address')</span>
+                                <p class="content__info">{{ __(strLimit(substr($giftRedeem->redeemData->delivery_address, 9), 15)) }}</p>
+                            </div>
+                            <div class="gift-withdraw-list__item-badges">
+                                @php
+                                    echo $giftRedeem->redeemData->statusBadge;
+                                @endphp
+                            </div>
                         </li>
                     @empty
                         @if (gs('redeem_option'))
-                            <x-empty-card empty-message="No redeem & gift found" />
+                            <x-empty-card empty-message="No redeem history found" />
                         @else
-                            <x-empty-card empty-message="No gift found" />
+                            <x-empty-card empty-message="No history found" />
                         @endif
                     @endforelse
                 </ul>

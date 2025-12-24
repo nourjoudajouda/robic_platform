@@ -20,9 +20,7 @@
                                     <th>@lang('Quality Grade')</th>
                                     <th>@lang('Origin Country')</th>
                                     <th>@lang('Units Count')</th>
-                                    <th>@lang('Sell Price')</th>
                                     <th>@lang('Buy Price')</th>
-                                    <th>@lang('Profit')</th>
                                     <th>@lang('Status')</th>
                                     <th>@lang('Exp Date')</th>
                                     <th>@lang('Created At')</th>
@@ -39,22 +37,7 @@
                                         <td>{{ $batch->quality_grade ?? 'N/A' }}</td>
                                         <td>{{ $batch->origin_country ?? 'N/A' }}</td>
                                         <td>{{ showAmount($batch->units_count, currencyFormat: false) }} {{ $batch->unit->symbol ?? '' }}</td>
-                                        <td>{{ showAmount($batch->sell_price * $batch->units_count, currencyFormat: false) }} {{ $batch->currency->symbol ?? '' }}</td>
                                         <td>{{ $batch->buy_price ? showAmount($batch->buy_price * $batch->units_count, currencyFormat: false) . ' ' . ($batch->currency->symbol ?? '') : '-' }}</td>
-                                        <td>
-                                            @php
-                                                $totalSell = $batch->sell_price * $batch->units_count;
-                                                $totalBuy = $batch->buy_price ? ($batch->buy_price * $batch->units_count) : 0;
-                                                $profit = $totalSell - $totalBuy;
-                                            @endphp
-                                            @if($batch->buy_price)
-                                                <span class="badge {{ $profit >= 0 ? 'bg--success' : 'bg--danger' }}">
-                                                    {{ showAmount($profit, currencyFormat: false) }} {{ $batch->currency->symbol ?? '' }}
-                                                </span>
-                                            @else
-                                                <span class="text-muted">-</span>
-                                            @endif
-                                        </td>
                                         <td>
                                             @php echo $batch->statusBadge; @endphp
                                         </td>

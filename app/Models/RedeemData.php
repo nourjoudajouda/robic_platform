@@ -15,16 +15,14 @@ class RedeemData extends Model
         'order_details'    => 'object'
     ];
 
-    public function goldHistory()
-    {
-        return $this->belongsTo(GoldHistory::class);
-    }
-    
     public function beanHistory()
     {
-        // استخدام bean_history_id إذا كان موجوداً، وإلا استخدم gold_history_id
-        $foreignKey = \Schema::hasColumn($this->getTable(), 'bean_history_id') ? 'bean_history_id' : 'gold_history_id';
-        return $this->belongsTo(BeanHistory::class, $foreignKey);
+        return $this->belongsTo(BeanHistory::class, 'bean_history_id');
+    }
+    
+    public function shippingMethod()
+    {
+        return $this->belongsTo(ShippingMethod::class);
     }
 
     public function statusBadge(): Attribute

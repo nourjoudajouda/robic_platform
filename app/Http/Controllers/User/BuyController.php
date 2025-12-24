@@ -63,85 +63,116 @@ class BuyController extends Controller
             return $a['price'] <=> $b['price'];
         });
         
-        // دالة لحساب سعر السوق (Market Price) = المتوسط الموزون للكميات المتاحة
-        $computeMarketPrice = function($book) {
-            $totalQty = 0;
-            $totalAmount = 0;
-            foreach ($book as $o) {
-                $totalQty += $o['qty'];
-                $totalAmount += $o['qty'] * $o['price'];
+        if (empty($orderBook)) {
+            return [
+                'success' => false,
+                'message' => 'No available quantity',
+                'available_quantity' => 0,
+                'average_price' => 0,
+                'total_amount' => 0,
+                'orders' => [],
+                'first_price' => 0,
+                'pending_quantity' => $requestedQuantity,
+                'total_market_quantity' => 0,
+            ];
+        }
+        
+        // حساب الكمية الكلية المتوفرة في السوق
+        $totalMarketQuantity = array_sum(array_column($orderBook, 'qty'));
+        
+        // أرخص سعر متوفر
+        $cheapestPrice = $orderBook[0]['price'];
+        
+        // حساب الكمية المتوفرة بأرخص سعر فقط
+        $quantityAtCheapestPrice = 0;
+        foreach ($orderBook as $order) {
+            if (abs($order['price'] - $cheapestPrice) < 0.01) { // نفس السعر تقريباً
+                $quantityAtCheapestPrice += $order['qty'];
+            } else {
+                break; // توقف عند أول سعر مختلف
             }
-            return $totalQty > 0 ? $totalAmount / $totalQty : 0;
-        };
+        }
         
         $remainingQuantity = $requestedQuantity;
         $totalAmount = 0;
         $ordersToBuy = [];
-        $priceChanges = [];
-        $prevPrice = null;
+        $fulfilledQuantity = 0;
+        $pendingQuantity = 0;
         
-        // حساب سعر السوق الأولي
-        $firstPrice = $computeMarketPrice($orderBook);
-        
-        // حلقة الشراء: نأخذ من أرخص order ونعيد حساب سعر السوق بعد كل كمية
-        while ($remainingQuantity > 0 && count($orderBook) > 0) {
-            // حساب سعر السوق الحالي (المتوسط الموزون للكميات المتبقية)
-            $currentMarket = $computeMarketPrice($orderBook);
-            
-            // أخذ الكمية من أرخص order
-            $top = $orderBook[0];
-            $qtyToTake = min($remainingQuantity, $top['qty']);
-            
-            // تسجيل تغير السعر إن وجد
-            if ($prevPrice !== null && $currentMarket !== $prevPrice) {
-                $priceChanges[] = [
-                    'from_price' => $prevPrice,
-                    'to_price' => $currentMarket,
-                    'quantity_at_old_price' => array_sum(array_column($ordersToBuy, 'quantity')),
-                    'quantity_at_new_price' => $qtyToTake,
-                ];
+        // نشتري فقط من أرخص سعر
+        if ($quantityAtCheapestPrice >= $requestedQuantity) {
+            // الكمية المطلوبة متوفرة بالكامل بأرخص سعر
+            foreach ($orderBook as $order) {
+                if (abs($order['price'] - $cheapestPrice) < 0.01 && $remainingQuantity > 0) {
+                    $qtyToTake = min($remainingQuantity, $order['qty']);
+                    
+                    $ordersToBuy[] = [
+                        'type' => $order['type'],
+                        'order_id' => $order['id'],
+                        'quantity' => $qtyToTake,
+                        'price' => $cheapestPrice,
+                    ];
+                    
+                    $totalAmount += $qtyToTake * $cheapestPrice;
+                    $remainingQuantity -= $qtyToTake;
+                    $fulfilledQuantity += $qtyToTake;
+                }
             }
             
-            // حفظ بيانات الشراء بسعر السوق الحالي (وليس سعر الـ order)
-            $ordersToBuy[] = [
-                'type' => $top['type'],
-                'order_id' => $top['id'],
-                'quantity' => $qtyToTake,
-                'price' => $currentMarket, // سعر السوق الحالي
-            ];
-            
-            $totalAmount += $qtyToTake * $currentMarket;
-            $remainingQuantity -= $qtyToTake;
-            $prevPrice = $currentMarket;
-            
-            // خصم الكمية المأخوذة من الـ order
-            $orderBook[0]['qty'] -= $qtyToTake;
-            if ($orderBook[0]['qty'] <= 0) {
-                array_shift($orderBook); // إزالة الـ order إذا نفدت كميته
-            }
-        }
-        
-        if ($remainingQuantity > 0) {
-            $fulfilledQuantity = $requestedQuantity - $remainingQuantity;
             return [
-                'success' => false,
-                'message' => 'Insufficient quantity available',
-                'available_quantity' => $fulfilledQuantity,
-                'average_price' => $fulfilledQuantity > 0 ? $totalAmount / $fulfilledQuantity : 0,
+                'success' => true,
+                'average_price' => $cheapestPrice,
                 'total_amount' => $totalAmount,
                 'orders' => $ordersToBuy,
+                'price_changes' => [],
+                'first_price' => $cheapestPrice,
+                'fulfilled_quantity' => $fulfilledQuantity,
+                'pending_quantity' => 0,
+                'total_market_quantity' => $totalMarketQuantity,
+            ];
+        } else {
+            // الكمية المطلوبة أكبر من المتوفر بأرخص سعر
+            // نشتري كل ما هو متوفر بأرخص سعر
+            foreach ($orderBook as $order) {
+                if (abs($order['price'] - $cheapestPrice) < 0.01) {
+                    $qtyToTake = $order['qty'];
+                    
+                    $ordersToBuy[] = [
+                        'type' => $order['type'],
+                        'order_id' => $order['id'],
+                        'quantity' => $qtyToTake,
+                        'price' => $cheapestPrice,
+                    ];
+                    
+                    $totalAmount += $qtyToTake * $cheapestPrice;
+                    $fulfilledQuantity += $qtyToTake;
+                }
+            }
+            
+            $pendingQuantity = $requestedQuantity - $fulfilledQuantity;
+            
+            return [
+                'success' => false,
+                'message' => 'Insufficient quantity at lowest price',
+                'available_quantity' => $fulfilledQuantity,
+                'average_price' => $cheapestPrice,
+                'total_amount' => $totalAmount,
+                'orders' => $ordersToBuy,
+                'first_price' => $cheapestPrice,
+                'pending_quantity' => $pendingQuantity,
+                'pending_price' => $cheapestPrice,
+                'fulfilled_quantity' => $fulfilledQuantity,
+                'total_market_quantity' => $totalMarketQuantity,
             ];
         }
-        
-        $averagePrice = $totalAmount / $requestedQuantity;
         
         return [
             'success' => true,
-            'average_price' => $averagePrice,
+            'average_price' => $cheapestPrice,
             'total_amount' => $totalAmount,
             'orders' => $ordersToBuy,
-            'price_changes' => $priceChanges,
-            'first_price' => $firstPrice,
+            'price_changes' => [],
+            'first_price' => $cheapestPrice,
         ];
     }
 
@@ -376,22 +407,8 @@ class BuyController extends Controller
         $user = auth()->user();
         $product = \App\Models\Product::findOrFail($request->product_id);
         
-        // التحقق من أن السعر المطلوب موجود في sell orders
-        $hasPrice = \App\Models\BatchSellOrder::where('product_id', $product->id)
-            ->where('status', Status::SELL_ORDER_ACTIVE)
-            ->where('sell_price', $request->requested_price)
-            ->exists() || 
-            \App\Models\UserSellOrder::where('product_id', $product->id)
-            ->where('status', Status::SELL_ORDER_ACTIVE)
-            ->where('sell_price', $request->requested_price)
-            ->exists();
-        
-        if (!$hasPrice) {
-            return response()->json([
-                'success' => false,
-                'message' => 'The requested price is not available',
-            ]);
-        }
+        // لا نحتاج للتحقق من السعر لأن السعر هو سعر السوق (المتوسط الموزون)
+        // وليس سعر order محدد
         
         $pendingOrder = new \App\Models\PendingBuyOrder();
         $pendingOrder->user_id = $user->id;

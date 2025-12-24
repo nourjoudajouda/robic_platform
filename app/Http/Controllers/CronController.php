@@ -123,4 +123,39 @@ class CronController extends Controller
         $historicalPrice->save();
     }
 
+    /**
+     * تسجيل أسعار السوق كل ساعة إذا لم توجد سجلات
+     */
+    public function recordHourlyMarketPrices()
+    {
+        try {
+            $currentHourStart = now()->startOfHour();
+            $currentHourEnd = now()->endOfHour();
+            
+            $products = \App\Models\Product::active()->get();
+            $recordedCount = 0;
+            
+            foreach ($products as $product) {
+                // التحقق من وجود سجل في الساعة الحالية
+                $existingRecord = \App\Models\MarketPriceHistory::where('product_id', $product->id)
+                    ->whereBetween('created_at', [$currentHourStart, $currentHourEnd])
+                    ->exists();
+                
+                // إذا لم يوجد سجل، أضف السعر الحالي
+                if (!$existingRecord && $product->market_price !== null && $product->market_price > 0) {
+                    \App\Models\MarketPriceHistory::create([
+                        'product_id' => $product->id,
+                        'market_price' => $product->market_price,
+                    ]);
+                    $recordedCount++;
+                }
+            }
+            
+            \Log::info("Recorded hourly market prices for {$recordedCount} products.");
+        } catch (Exception $ex) {
+            \Log::error("Error recording hourly market prices: " . $ex->getMessage());
+            throw new \Exception($ex->getMessage());
+        }
+    }
+
 }

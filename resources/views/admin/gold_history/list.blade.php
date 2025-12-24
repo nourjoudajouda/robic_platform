@@ -80,7 +80,9 @@
                                         <td>{{ showDateTime($goldHistory->created_at) }}<br>{{ diffForHumans($goldHistory->created_at) }}</td>
                                         <td>{{ $goldHistory->trx }}</td>
                                         <td>
-                                            @if($goldHistory->batch && $goldHistory->batch->product)
+                                            @if($goldHistory->product)
+                                                {{ __($goldHistory->product->name) }}
+                                            @elseif($goldHistory->batch && $goldHistory->batch->product)
                                                 {{ __($goldHistory->batch->product->name) }}
                                                 @if($goldHistory->batch->quality_grade)
                                                     <br>
@@ -90,7 +92,9 @@
                                                 @lang('N/A')
                                             @endif
                                         </td>
-                                        <td>{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }} {{ $goldHistory->itemUnit->symbol ?? ($goldHistory->batch && $goldHistory->batch->product && $goldHistory->batch->product->unit ? $goldHistory->batch->product->unit->symbol : 'Unit') }}</td>
+                                        <td>{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }} 
+                                            {{ $goldHistory->itemUnit->symbol ?? ($goldHistory->product && $goldHistory->product->unit ? $goldHistory->product->unit->symbol : ($goldHistory->batch && $goldHistory->batch->product && $goldHistory->batch->product->unit ? $goldHistory->batch->product->unit->symbol : 'Unit')) }}
+                                        </td>
                                         <td>
                                             {{ showAmount($goldHistory->amount) }}
                                             <br>
@@ -106,21 +110,29 @@
                                                 @php echo $goldHistory->redeemData->statusBadge; @endphp
                                             </td>
                                             <td>
-                                                <button type="button" class="btn btn-sm btn-outline--primary detailsBtn" data-order_details='@json($goldHistory->redeemData->order_details->items)' data-pickup_point='@json($goldHistory->redeemData->pickupPoint)' data-address="{{ $goldHistory->redeemData->delivery_address }}">
+                                                <button type="button" class="btn btn-sm btn-outline--primary detailsBtn" 
+                                                    data-product_name="{{ $goldHistory->product ? $goldHistory->product->name : 'N/A' }}"
+                                                    data-quantity="{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }}"
+                                                    data-unit="{{ $goldHistory->product && $goldHistory->product->unit ? $goldHistory->product->unit->symbol : 'Unit' }}"
+                                                    data-shipping_cost="{{ showAmount($goldHistory->charge) }}"
+                                                    data-delivery_type="{{ $goldHistory->redeemData->delivery_type }}"
+                                                    data-delivery_address="{{ $goldHistory->redeemData->delivery_address }}"
+                                                    data-shipping_method="{{ $goldHistory->redeemData->shippingMethod ? $goldHistory->redeemData->shippingMethod->name : 'N/A' }}"
+                                                    data-distance="{{ $goldHistory->redeemData->distance ? showAmount($goldHistory->redeemData->distance, 2, currencyFormat: false) : 'N/A' }}">
                                                     <i class="la la-desktop"></i> @lang('Details')
                                                 </button>
                                                 @if ($goldHistory->redeemData->status == Status::REDEEM_STATUS_PROCESSING)
-                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_SHIPPED]) }}" data-question="@lang('Are you sure to mark this redeem as shipped?')">
+                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_SHIPPED]) }}" data-question="@lang('Are you sure to mark this order as shipped?')">
                                                         <i class="la la-truck"></i>@lang('Ship')
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this redeem as cancelled?')">
+                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this order as cancelled?')">
                                                         <i class="la la-times"></i>@lang('Cancel')
                                                     </button>
                                                 @elseif($goldHistory->redeemData->status == Status::REDEEM_STATUS_SHIPPED)
-                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_DELIVERED]) }}" data-question="@lang('Are you sure to mark this redeem as delivered?')">
+                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_DELIVERED]) }}" data-question="@lang('Are you sure to mark this order as delivered?')">
                                                         <i class="la la-check"></i>@lang('Deliver')
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this redeem as cancelled?')">
+                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this order as cancelled?')">
                                                         <i class="la la-times"></i>@lang('Cancel')
                                                     </button>
                                                 @endif
@@ -151,7 +163,7 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@lang('Redeem Details')</h5>
+                    <h5 class="modal-title">@lang('Shipping & Receiving Details')</h5>
                     <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <i class="las la-times"></i>
                     </button>
@@ -188,22 +200,40 @@
                 let modal = $('#redeemDetailsModal');
 
                 $('.detailsBtn').on('click', function() {
-                    let orderDetails = $(this).data('order_details');
-                    let html = '';
-                    orderDetails.forEach(item => {
-                        html += `<span>${item.text}</span></br>`;
-                    });
+                    let productName = $(this).data('product_name');
+                    let quantity = $(this).data('quantity');
+                    let unit = $(this).data('unit');
+                    let shippingCost = $(this).data('shipping_cost');
+                    let deliveryType = $(this).data('delivery_type');
+                    let deliveryAddress = $(this).data('delivery_address');
+                    let shippingMethod = $(this).data('shipping_method');
+                    let distance = $(this).data('distance');
+                    
+                    let html = `
+                        <div class="mb-3">
+                            <strong>@lang('Product'):</strong> ${productName}<br>
+                            <strong>@lang('Quantity'):</strong> ${quantity} ${unit}<br>
+                            <strong>@lang('Shipping Cost'):</strong> ${shippingCost}
+                        </div>
+                    `;
+                    
+                    if (deliveryType === 'shipping' && shippingMethod !== 'N/A') {
+                        html += `
+                            <div class="mb-3">
+                                <strong>@lang('Shipping Method'):</strong> ${shippingMethod}<br>
+                                <strong>@lang('Distance'):</strong> ${distance} @lang('km')
+                            </div>
+                        `;
+                    }
+                    
                     modal.find('.orderDetails').html(html);
 
-                    let pickupPoint = $(this).data('pickup_point');
-                    if (pickupPoint) {
-                        modal.find('.deliveryPoint').text(`@lang('Pickup Point')`);
-                        modal.find('.deliveryDetails').text(pickupPoint.address);
+                    if (deliveryType === 'pickup') {
+                        modal.find('.deliveryPoint').text(`@lang('Pickup from Warehouse')`);
                     } else {
-                        let address = $(this).data('address');
                         modal.find('.deliveryPoint').text(`@lang('Home Delivery')`);
-                        modal.find('.deliveryDetails').html(address);
                     }
+                    modal.find('.deliveryDetails').html(deliveryAddress);
 
                     modal.modal('show');
                 });

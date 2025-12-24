@@ -14,6 +14,8 @@ class Warehouse extends Model
         'location',
         'code',
         'address',
+        'latitude',
+        'longitude',
         'manager_name',
         'mobile',
         'max_capacity_unit',

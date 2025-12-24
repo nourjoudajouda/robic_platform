@@ -102,6 +102,27 @@ Route::middleware('admin')->group(function () {
         Route::post('status/{id}', 'status')->name('status');
     });
 
+    // Pending Buy Orders Management
+    Route::controller('PendingBuyOrderController')->name('pending-buy-orders.')->prefix('pending-buy-orders')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->name('show');
+        Route::post('{id}/approve', 'approve')->name('approve');
+        Route::post('{id}/reject', 'reject')->name('reject');
+        Route::post('{id}/mark-expired', 'markAsExpired')->name('mark-expired');
+        Route::post('{id}/delete', 'destroy')->name('destroy');
+    });
+
+    // Shipping Methods Management
+    Route::controller('ShippingMethodController')->name('shipping-methods.')->prefix('shipping-methods')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('store', 'store')->name('store');
+        Route::get('edit/{id}', 'edit')->name('edit');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('status/{id}', 'status')->name('status');
+        Route::post('delete/{id}', 'delete')->name('delete');
+    });
+
     // Manage Admins
     Route::controller('ManageAdminController')->name('admin.')->prefix('admin')->group(function () {
         Route::get('/', 'index')->name('index');

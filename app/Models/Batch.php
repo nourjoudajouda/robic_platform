@@ -27,7 +27,14 @@ class Batch extends Model
         'origin_country',
         'exp_date',
         'buy_price',
-        'status'
+        'status',
+        'type',
+        'user_id',
+        'parent_ids'
+    ];
+
+    protected $casts = [
+        'parent_ids' => 'array',
     ];
 
     public function product()
@@ -45,10 +52,14 @@ class Batch extends Model
         return $this->belongsTo(Unit::class);
     }
 
-
     public function currency()
     {
         return $this->belongsTo(Currency::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function sellOrders()
@@ -185,18 +196,34 @@ class Batch extends Model
         // الكمية الإجمالية للباتش بالوحدات (unit_id من المنتج)
         $batchTotalQuantity = $this->units_count ?? 0;
         
-        // حساب الكمية المستخدمة بالفعل في sell orders نشطة فقط
+        // حساب الكمية المستخدمة في كل batch_sell_orders (بغض النظر عن status)
         // نستخدم DB query مباشرة للحصول على أحدث البيانات من قاعدة البيانات
         // نستخدم fresh query بدون cache
         $usedQuantity = DB::table('batch_sell_orders')
             ->where('batch_id', $this->id)
-            ->where('status', Status::SELL_ORDER_ACTIVE)
             ->sum('quantity');
         
         // الكمية المتاحة للبيع = الكمية الإجمالية - الكمية المستخدمة
         $available = $batchTotalQuantity - ($usedQuantity ?? 0);
         
         return max(0, $available);
+    }
+
+    /**
+     * Generate unique batch code automatically
+     * Format: BATCH-XXX (for admin) or USER-XXX (for user sale)
+     */
+    public static function generateBatchCode($type = 'admin_created')
+    {
+        $prefix = $type === 'user_sale' ? 'USER' : 'BATCH';
+        $code = '';
+        
+        do {
+            $number = getNumber(5);
+            $code = $prefix . '-' . $number;
+        } while (self::where('batch_code', $code)->exists());
+        
+        return $code;
     }
 
 }

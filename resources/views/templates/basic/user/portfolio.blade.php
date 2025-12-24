@@ -285,7 +285,7 @@
     <a href="{{ route('user.buy.form') }}" class="btn btn--success btn--lg"><i class="fas fa-circle-dollar-to-slot"></i> @lang('Buy Green Coffee')</a>
     <a href="{{ route('user.sell.form') }}" class="btn btn--danger btn--lg"><i class="fas fa-money-bill-trend-up"></i> @lang('Sell Green Coffee')</a>
     @if (gs('redeem_option'))
-        <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Redeem Green Coffee')</a>
+        <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Shipping and receiving')</a>
     @endif
     <a href="{{ route('user.gift.form') }}" class="btn btn--warning btn--lg"><i class="fas fa-gift"></i> @lang('Gift Green Coffee')</a>
 @endpush

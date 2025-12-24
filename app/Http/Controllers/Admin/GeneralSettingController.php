@@ -65,6 +65,11 @@ class GeneralSettingController extends Controller
 
     public function systemConfigurationSubmit(Request $request)
     {
+        $request->validate([
+            'chart_price_from' => 'required|numeric|min:0',
+            'chart_price_to' => 'required|numeric|min:0|gt:chart_price_from',
+        ]);
+
         $general                  = gs();
         $general->kv              = $request->kv ? Status::ENABLE : Status::DISABLE;
         $general->ev              = $request->ev ? Status::ENABLE : Status::DISABLE;
@@ -78,6 +83,8 @@ class GeneralSettingController extends Controller
         $general->agree           = $request->agree ? Status::ENABLE : Status::DISABLE;
         $general->multi_language  = $request->multi_language ? Status::ENABLE : Status::DISABLE;
         $general->redeem_option   = $request->redeem_option ? Status::ENABLE : Status::DISABLE;
+        $general->chart_price_from = $request->chart_price_from;
+        $general->chart_price_to   = $request->chart_price_to;
         $general->save();
         $notify[] = ['success', 'System configuration updated successfully'];
         return back()->withNotify($notify);

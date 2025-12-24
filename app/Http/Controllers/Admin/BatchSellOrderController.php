@@ -57,24 +57,28 @@ class BatchSellOrderController extends Controller
             ->orderBy('batch_code')
             ->get();
         
-        // حساب الكمية المتاحة لكل batch (fresh calculation)
+        // حساب الكمية المتاحة والمستخدمة لكل batch (fresh calculation)
         // نستخدم query مباشرة للحصول على أحدث البيانات من قاعدة البيانات
         $availableQuantities = [];
+        $usedQuantities = [];
         foreach ($batches as $batch) {
             // حساب مباشر من قاعدة البيانات بدون استخدام cache
             $batchTotalQuantity = $batch->units_count ?? 0;
             
-            // حساب الكمية المستخدمة من batch_sell_orders نشطة باستخدام DB facade مباشرة
+            // حساب الكمية المستخدمة من batch_sell_orders (كل الطلبات بغض النظر عن status)
+            // نجمع فقط quantity (الكمية المطلوبة) من جدول batch_sell_orders
             $usedQuantity = \Illuminate\Support\Facades\DB::table('batch_sell_orders')
                 ->where('batch_id', $batch->id)
-                ->where('status', Status::SELL_ORDER_ACTIVE)
-                ->sum('quantity');
+                ->sum('quantity'); // جمع حقل quantity لكل الطلبات
+            
+            // حفظ الكمية المستخدمة
+            $usedQuantities[$batch->id] = $usedQuantity ?? 0;
             
             // الكمية المتاحة = الكمية الإجمالية - الكمية المستخدمة
             $availableQuantities[$batch->id] = max(0, $batchTotalQuantity - ($usedQuantity ?? 0));
         }
         
-        return view('admin.batch-sell-order.create', compact('pageTitle', 'batches', 'availableQuantities'));
+        return view('admin.batch-sell-order.create', compact('pageTitle', 'batches', 'availableQuantities', 'usedQuantities'));
     }
 
     public function store(Request $request)
@@ -140,20 +144,28 @@ class BatchSellOrderController extends Controller
         
         // حساب الكمية المتاحة لكل batch
         $availableQuantities = [];
+        $usedQuantities = [];
         foreach ($batches as $batch) {
             // عند التعديل، نضيف الكمية الحالية للسجل الحالي إذا كان نفس الباتش
             if ($sellOrder->batch_id == $batch->id) {
-                $currentUsedQuantity = BatchSellOrder::where('batch_id', $batch->id)
-                    ->where('status', Status::SELL_ORDER_ACTIVE)
+                // حساب الكمية المستخدمة (كل الطلبات ما عدا الطلب الحالي)
+                $currentUsedQuantity = \Illuminate\Support\Facades\DB::table('batch_sell_orders')
+                    ->where('batch_id', $batch->id)
                     ->where('id', '!=', $sellOrder->id)
                     ->sum('quantity');
-                $availableQuantities[$batch->id] = ($batch->units_count - $currentUsedQuantity);
+                $usedQuantities[$batch->id] = $currentUsedQuantity ?? 0;
+                $availableQuantities[$batch->id] = max(0, $batch->units_count - $currentUsedQuantity);
             } else {
-                $availableQuantities[$batch->id] = $batch->getAvailableQuantityForSellOrder();
+                // حساب الكمية المستخدمة (كل الطلبات)
+                $usedQuantity = \Illuminate\Support\Facades\DB::table('batch_sell_orders')
+                    ->where('batch_id', $batch->id)
+                    ->sum('quantity');
+                $usedQuantities[$batch->id] = $usedQuantity ?? 0;
+                $availableQuantities[$batch->id] = max(0, $batch->units_count - ($usedQuantity ?? 0));
             }
         }
         
-        return view('admin.batch-sell-order.edit', compact('pageTitle', 'sellOrder', 'batches', 'availableQuantities'));
+        return view('admin.batch-sell-order.edit', compact('pageTitle', 'sellOrder', 'batches', 'availableQuantities', 'usedQuantities'));
     }
 
     public function update(Request $request, $id)
@@ -174,16 +186,15 @@ class BatchSellOrderController extends Controller
             return back()->withNotify($notify)->withInput();
         }
         
-        // حساب الكمية المتاحة (الكمية الإجمالية - الكمية المستخدمة في sell orders أخرى + الكمية الحالية لهذا السجل)
+        // حساب الكمية المتاحة (الكمية الإجمالية - الكمية المستخدمة في sell orders أخرى)
         $batchTotalQuantity = $batch->units_count;
-        $usedQuantity = BatchSellOrder::where('batch_id', $batch->id)
-            ->where('status', Status::SELL_ORDER_ACTIVE)
+        $usedQuantity = \Illuminate\Support\Facades\DB::table('batch_sell_orders')
+            ->where('batch_id', $batch->id)
             ->where('id', '!=', $id)
             ->sum('quantity');
         
-        // إضافة الكمية الحالية لهذا السجل لأننا سنستبدلها
-        $currentQuantity = $sellOrder->quantity;
-        $availableBatchQuantity = ($batchTotalQuantity - $usedQuantity) + $currentQuantity;
+        // الكمية المتاحة (بدون الطلب الحالي)
+        $availableBatchQuantity = ($batchTotalQuantity - ($usedQuantity ?? 0));
         
         $requestedQuantity = $request->quantity;
         

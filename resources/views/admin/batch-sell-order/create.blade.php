@@ -17,6 +17,7 @@
                                             @php
                                                 // استخدام الكمية المحسوبة من الـ controller (fresh calculation)
                                                 $availableQty = $availableQuantities[$batch->id] ?? 0;
+                                                $usedQty = $usedQuantities[$batch->id] ?? 0;
                                                 $totalQty = $batch->units_count ?? 0;
                                             @endphp
                                             <option value="{{ $batch->id }}" {{ old('batch_id') == $batch->id ? 'selected' : '' }}
@@ -26,9 +27,13 @@
                                                 data-currency="{{ $batch->product->currency->symbol ?? '' }}"
                                                 data-units-count="{{ $totalQty }}"
                                                 data-total-quantity="{{ $totalQty }}"
+                                                data-used-quantity="{{ $usedQty }}"
                                                 data-available-quantity="{{ $availableQty }}">
                                                 {{ $batch->batch_code }} - {{ $batch->product->name ?? 'N/A' }} 
                                                 (Total: {{ showAmount($totalQty, 4, currencyFormat: false) }} {{ $batch->product->unit->symbol ?? 'Unit' }}, 
+                                                @if($usedQty > 0)
+                                                    Used: {{ showAmount($usedQty, 4, currencyFormat: false) }}, 
+                                                @endif
                                                 Available: {{ showAmount($availableQty, 4, currencyFormat: false) }} {{ $batch->product->unit->symbol ?? 'Unit' }})
                                             </option>
                                         @endforeach
@@ -44,11 +49,19 @@
                                         <input type="number" step="0.0001" name="quantity" id="quantity" class="form-control" value="{{ old('quantity') }}" required style="flex: 1;" min="0">
                                         <span class="input-group-text" id="unit_display">@lang('Unit')</span>
                                     </div>
-                                    <small class="form-text text-muted" id="available_quantity_hint">
-                                        <span class="text-info">@lang('Available from batch'): <strong id="available_from_batch">0</strong> <span id="available_unit_display">@lang('Unit')</span></span>
-                                    </small>
-                                    <small class="form-text text-muted" id="remaining_quantity_hint" style="display: none;">
-                                        <span class="text-muted">@lang('Remaining'): <strong id="remaining_quantity">0</strong> <span id="remaining_unit_display">@lang('Unit')</span></span>
+                                    <div id="batch_quantity_info" style="display: none;" class="mt-2 p-2 border rounded bg-light">
+                                        <small class="d-block mb-1">
+                                            <span class="text-muted">@lang('Total batch quantity'): <strong id="total_batch_quantity">0</strong> <span id="total_unit_display">@lang('Unit')</span></span>
+                                        </small>
+                                        <small class="d-block mb-1">
+                                            <span class="text-danger">@lang('Already in sell orders'): <strong id="used_quantity">0</strong> <span id="used_unit_display">@lang('Unit')</span></span>
+                                        </small>
+                                        <small class="d-block">
+                                            <span class="text-success">@lang('Available to sell now'): <strong id="available_from_batch">0</strong> <span id="available_unit_display">@lang('Unit')</span></span>
+                                        </small>
+                                    </div>
+                                    <small class="form-text" id="remaining_quantity_hint" style="display: none; margin-top: 8px;">
+                                        <span class="text-success">@lang('Will remain after this order'): <strong id="remaining_quantity">0</strong> <span id="remaining_unit_display">@lang('Unit')</span></span>
                                     </small>
                                 </div>
                             </div>
@@ -126,30 +139,31 @@
                 const unit = option.data('unit') || '@lang("Unit")';
                 const currency = option.data('currency') || '@lang("Currency")';
                 const totalQuantity = parseFloat(option.data('total-quantity')) || 0;
+                const usedQuantity = parseFloat(option.data('used-quantity')) || 0;
                 const availableQuantity = parseFloat(option.data('available-quantity')) || 0;
                 
                 $('#unit_display').text(unit);
                 $('#unit_display3').text(unit);
+                $('#total_unit_display').text(unit);
+                $('#used_unit_display').text(unit);
                 $('#available_unit_display').text(unit);
                 $('#remaining_unit_display').text(unit);
                 $('#currency_display').text(currency);
                 
-                // عرض الكمية المتاحة
+                // عرض معلومات الكمية
+                $('#total_batch_quantity').text(totalQuantity.toFixed(4));
+                $('#used_quantity').text(usedQuantity.toFixed(4));
                 $('#available_from_batch').text(availableQuantity.toFixed(4));
+                
+                // إظهار معلومات الباتش
+                $('#batch_quantity_info').show();
                 
                 // تحديث الحد الأقصى للكمية
                 if (availableQuantity > 0) {
                     $('#quantity').attr('max', availableQuantity);
-                    $('#available_quantity_hint').html(
-                        '<span class="text-info">@lang("Available from batch"): <strong>' + 
-                        availableQuantity.toFixed(4) + ' ' + unit + 
-                        '</strong></span>'
-                    );
                 } else {
                     $('#quantity').removeAttr('max');
-                    $('#available_quantity_hint').html(
-                        '<span class="text-danger">@lang("No available quantity. All quantity is already in sell orders.")</span>'
-                    );
+                    $('#batch_quantity_info').addClass('border-danger');
                 }
                 
                 // تحديث الكمية المتبقية
@@ -161,7 +175,7 @@
                 $('#currency_display').text('@lang("Currency")');
                 $('#available_from_batch').text('0');
                 $('#quantity').removeAttr('max');
-                $('#available_quantity_hint').html('');
+                $('#batch_quantity_info').hide();
                 $('#remaining_quantity_hint').hide();
             }
         }
@@ -190,11 +204,30 @@
                 const enteredQuantity = parseFloat($('#quantity').val()) || 0;
                 const unit = option.data('unit') || '@lang("Unit")';
                 
-                if (enteredQuantity > 0 && enteredQuantity <= availableQuantity) {
+                if (enteredQuantity > 0) {
                     const remaining = availableQuantity - enteredQuantity;
                     $('#remaining_quantity').text(remaining.toFixed(4));
                     $('#remaining_unit_display').text(unit);
-                    $('#remaining_quantity_hint').show();
+                    
+                    // تغيير اللون حسب الكمية المتبقية
+                    const $hint = $('#remaining_quantity_hint');
+                    const $span = $hint.find('span').first();
+                    
+                    if (remaining < 0) {
+                        $span.removeClass('text-success text-warning text-muted').addClass('text-danger');
+                        $span.html('@lang("Error - Exceeds available"): <strong>' + Math.abs(remaining).toFixed(4) + ' ' + unit + '</strong>');
+                    } else if (remaining === 0) {
+                        $span.removeClass('text-danger text-warning text-muted').addClass('text-success');
+                        $span.html('@lang("Will remain after this order"): <strong>' + remaining.toFixed(4) + ' ' + unit + '</strong> (@lang("Batch will be fully used"))');
+                    } else if (remaining < availableQuantity * 0.2) {
+                        $span.removeClass('text-danger text-success text-muted').addClass('text-warning');
+                        $span.html('@lang("Will remain after this order"): <strong>' + remaining.toFixed(4) + ' ' + unit + '</strong> (@lang("Low stock"))');
+                    } else {
+                        $span.removeClass('text-danger text-warning text-muted').addClass('text-success');
+                        $span.html('@lang("Will remain after this order"): <strong>' + remaining.toFixed(4) + ' ' + unit + '</strong>');
+                    }
+                    
+                    $hint.show();
                 } else {
                     $('#remaining_quantity_hint').hide();
                 }
@@ -212,15 +245,12 @@
                 const unit = option.data('unit') || '@lang("Unit")';
                 
                 // إزالة رسائل الخطأ السابقة
-                $('#available_quantity_hint .text-danger').remove();
                 $('#quantity').removeClass('is-invalid');
+                $('#batch_quantity_info').removeClass('border-danger').addClass('border');
                 
                 if (enteredQuantity > availableQuantity) {
                     $('#quantity').addClass('is-invalid');
-                    $('#available_quantity_hint').append(
-                        '<div class="text-danger mt-1">@lang("Quantity exceeds available amount. Maximum: ") ' + 
-                        availableQuantity.toFixed(4) + ' ' + unit + '</div>'
-                    );
+                    $('#batch_quantity_info').removeClass('border').addClass('border-danger');
                 }
             }
         }

@@ -40,13 +40,39 @@
                                         <input type="number" step="0.0001" name="quantity" id="quantity" class="form-control" value="{{ old('quantity', $sellOrder->quantity) }}" required style="flex: 1;" min="0">
                                         <span class="input-group-text" id="unit_display">{{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
                                     </div>
-                                    <small class="form-text text-muted" id="available_quantity_hint">
-                                        <span class="text-info">@lang('Initial Quantity'): <strong>{{ showAmount($sellOrder->quantity, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
-                                        <br>
-                                        <span class="text-success">@lang('Remaining Quantity'): <strong>{{ showAmount($sellOrder->available_quantity ?? $sellOrder->quantity, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
-                                        <br>
-                                        <span class="text-warning">@lang('Sold Quantity'): <strong>{{ showAmount($sellOrder->quantity - ($sellOrder->available_quantity ?? $sellOrder->quantity), 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
-                                    </small>
+                                    <div class="mt-2 p-2 border rounded bg-light">
+                                        <small class="d-block mb-1">
+                                            <span class="text-primary">@lang('Initial Quantity'): <strong>{{ showAmount($sellOrder->quantity, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
+                                        </small>
+                                        <small class="d-block mb-1">
+                                            <span class="text-danger">@lang('Sold (Used) Quantity'): <strong>{{ showAmount($sellOrder->quantity - ($sellOrder->available_quantity ?? $sellOrder->quantity), 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
+                                        </small>
+                                        <small class="d-block">
+                                            <span class="text-success">@lang('Remaining (Unsold) Quantity'): <strong>{{ showAmount($sellOrder->available_quantity ?? $sellOrder->quantity, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
+                                        </small>
+                                    </div>
+                                    @php
+                                        $currentBatch = $batches->firstWhere('id', $sellOrder->batch_id);
+                                        if ($currentBatch) {
+                                            $batchAvailable = $availableQuantities[$currentBatch->id] ?? 0;
+                                            $batchTotal = $currentBatch->units_count ?? 0;
+                                            $batchUsed = $batchTotal - $batchAvailable;
+                                        }
+                                    @endphp
+                                    @if(isset($currentBatch))
+                                    <div class="mt-2 p-2 border rounded" style="background-color: #f8f9fa;">
+                                        <strong class="d-block mb-2 text-info">@lang('Batch Information'):</strong>
+                                        <small class="d-block mb-1">
+                                            <span class="text-muted">@lang('Total batch quantity'): <strong>{{ showAmount($batchTotal, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
+                                        </small>
+                                        <small class="d-block mb-1">
+                                            <span class="text-danger">@lang('Already in all sell orders'): <strong>{{ showAmount($batchUsed, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
+                                        </small>
+                                        <small class="d-block">
+                                            <span class="text-success">@lang('Available in batch now'): <strong>{{ showAmount($batchAvailable, 4, currencyFormat: false) }}</strong> {{ $sellOrder->unit->symbol ?? 'Unit' }}</span>
+                                        </small>
+                                    </div>
+                                    @endif
                                 </div>
                             </div>
                             

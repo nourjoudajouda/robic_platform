@@ -89,11 +89,12 @@
                                     <label class="form--label">{{ __(gs('cur_text')) }}</label>
                                 </div>
                                 <span class="equal"><i class="fa-solid fa-equals"></i></span>
-                                <div class="form-group position-relative has-icon">
-                                    <span class="icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/23.png') }}" alt="image"></span>
-                                    <input type="number" step="any" class="form--control" placeholder="00.00" name="quantity" id="quantity">
-                                    <label class="form--label">{{ $product->unit->name ?? 'Quantity' }}</label>
-                                </div>
+                <div class="form-group position-relative has-icon">
+                    <span class="icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/23.png') }}" alt="image"></span>
+                    <input type="number" step="any" class="form--control" placeholder="00.00" name="quantity" id="quantity" max="{{ $totalAvailableQuantity }}">
+                    <label class="form--label">{{ $product->unit->name ?? 'Quantity' }}</label>
+                    <small class="text-muted">@lang('Max'): <strong>{{ showAmount($totalAvailableQuantity, 4, currencyFormat: false) }}</strong></small>
+                </div>
                             </div>
                             <button type="submit" class="btn btn--base w-100" id="submitBtn" disabled>@lang('Submit')</button>
                             <input type="hidden" name="action_type" id="action_type" value="continue">
@@ -163,7 +164,7 @@
                 return a.sell_price - b.sell_price;
             });
 
-        // دالة لحساب السعر المتوسط مع إعادة تسعير السوق بعد استهلاك كل باتش
+        // دالة لحساب سعر السوق (المتوسط الموزون) والشراء من أرخص سعر
         function calculatePriceFromMultipleOrders(requestedQuantity) {
             if (!requestedQuantity || requestedQuantity <= 0) {
                 return {
@@ -181,14 +182,23 @@
                 };
             }
 
-            // نسخة قابلة للتعديل لحساب السوق المتغير
-            let orderBook = allSellOrders.map(o => ({
-                ...o,
-                price: parseFloat(o.sell_price),
-                qty: parseFloat(o.available_quantity),
-            }));
+            if (allSellOrders.length === 0) {
+                return {
+                    success: false,
+                    available_quantity: 0,
+                    average_price: 0,
+                    total_amount: 0,
+                    orders: [],
+                    price_changes: [],
+                    insufficient: true,
+                    first_price: 0,
+                    first_price_quantity: 0,
+                    pending_quantity: requestedQuantity,
+                    pending_price: 0,
+                };
+            }
 
-            // دالة لحساب متوسط السعر (سعر السوق الحالي) بناءً على الكميات المتبقية
+            // دالة لحساب سعر السوق (المتوسط الموزون)
             function computeMarketPrice(book) {
                 const totals = book.reduce((acc, o) => {
                     acc.qty += o.qty;
@@ -198,67 +208,151 @@
                 return totals.qty > 0 ? totals.amount / totals.qty : 0;
             }
 
-            let remainingQuantity = requestedQuantity;
-            let totalAmount = 0;
-            let ordersToBuy = [];
-            let priceChanges = [];
+            // نسخة من order book للحسابات
+            let orderBook = allSellOrders.map(o => ({
+                ...o,
+                price: parseFloat(o.sell_price),
+                qty: parseFloat(o.available_quantity),
+            }));
 
-            let firstPrice = computeMarketPrice(orderBook);
-            let firstPriceQuantity = orderBook.reduce((sum, o) => sum + o.qty, 0);
-            let prevPrice = null;
-
-            while (remainingQuantity > 0 && orderBook.length > 0) {
-                // سعر السوق الحالي قبل أخذ الكمية
-                const currentMarket = computeMarketPrice(orderBook);
-                const top = orderBook[0];
-                const qtyToTake = Math.min(remainingQuantity, top.qty);
-
-                // سجل تغير السعر إن وجد
-                if (prevPrice !== null && currentMarket !== prevPrice) {
-                    priceChanges.push({
-                        from_price: prevPrice,
-                        to_price: currentMarket,
-                        quantity_at_old_price: ordersToBuy.reduce((sum, o) => sum + o.quantity, 0),
-                        quantity_at_new_price: qtyToTake,
-                    });
-                }
-
-                ordersToBuy.push({
-                    type: top.type,
-                    order_id: top.id,
-                    quantity: qtyToTake,
-                    price: currentMarket,
-                });
-
-                totalAmount += qtyToTake * currentMarket;
-                remainingQuantity -= qtyToTake;
-                prevPrice = currentMarket;
-
-                // خصم الكمية المأخوذة من أعلى باتش
-                top.qty -= qtyToTake;
-                if (top.qty <= 0) {
-                    orderBook.shift();
+            // حساب سعر السوق الأولي
+            const initialMarketPrice = computeMarketPrice(orderBook);
+            
+            // أرخص سعر متوفر
+            const cheapestPrice = parseFloat(allSellOrders[0].sell_price);
+            
+            // حساب الكمية المتوفرة بأرخص سعر فقط
+            let quantityAtCheapestPrice = 0;
+            for (let order of allSellOrders) {
+                const orderPrice = parseFloat(order.sell_price);
+                if (Math.abs(orderPrice - cheapestPrice) < 0.01) {
+                    quantityAtCheapestPrice += parseFloat(order.available_quantity);
+                } else {
+                    break;
                 }
             }
+            
+            // إذا الكمية المطلوبة متوفرة بأرخص سعر
+            if (quantityAtCheapestPrice >= requestedQuantity) {
+                // نشتري بسعر السوق الحالي
+                let remainingQuantity = requestedQuantity;
+                let totalAmount = 0;
+                let ordersToBuy = [];
+                
+                let prevPrice = null;
+                let priceChanges = [];
+                
+                while (remainingQuantity > 0 && orderBook.length > 0) {
+                    const currentMarket = computeMarketPrice(orderBook);
+                    const top = orderBook[0];
+                    const qtyToTake = Math.min(remainingQuantity, top.qty);
 
-            const fulfilledQuantity = requestedQuantity - remainingQuantity;
-            const averagePrice = fulfilledQuantity > 0 ? totalAmount / fulfilledQuantity : 0;
-            const hasInsufficientQuantity = remainingQuantity > 0;
-            const pendingPrice = computeMarketPrice(orderBook);
+                    // تسجيل تغير السعر
+                    if (prevPrice !== null && Math.abs(currentMarket - prevPrice) > 0.01) {
+                        priceChanges.push({
+                            from_price: prevPrice,
+                            to_price: currentMarket,
+                            quantity_at_old_price: ordersToBuy.reduce((sum, o) => sum + o.quantity, 0),
+                            quantity_at_new_price: qtyToTake,
+                        });
+                    }
 
-            return {
-                success: !hasInsufficientQuantity,
-                available_quantity: fulfilledQuantity,
-                average_price: averagePrice,
-                total_amount: totalAmount,
-                orders: ordersToBuy,
-                price_changes: priceChanges,
-                insufficient: hasInsufficientQuantity,
-                first_price: firstPrice || 0,
-                first_price_quantity: firstPriceQuantity,
-                pending_quantity: remainingQuantity,
-                pending_price: pendingPrice || firstPrice || 0,
-            };
+                    ordersToBuy.push({
+                        type: top.type,
+                        order_id: top.id,
+                        quantity: qtyToTake,
+                        price: currentMarket, // سعر السوق
+                    });
+
+                    totalAmount += qtyToTake * currentMarket;
+                    remainingQuantity -= qtyToTake;
+                    prevPrice = currentMarket;
+
+                    // خصم الكمية
+                    top.qty -= qtyToTake;
+                    if (top.qty <= 0) {
+                        orderBook.shift();
+                    }
+                }
+                
+                const fulfilledQuantity = requestedQuantity - remainingQuantity;
+                const averagePrice = fulfilledQuantity > 0 ? totalAmount / fulfilledQuantity : 0;
+                
+                return {
+                    success: true,
+                    available_quantity: fulfilledQuantity,
+                    average_price: averagePrice,
+                    total_amount: totalAmount,
+                    orders: ordersToBuy,
+                    price_changes: priceChanges,
+                    insufficient: false,
+                    first_price: initialMarketPrice,
+                    first_price_quantity: quantityAtCheapestPrice,
+                    pending_quantity: 0,
+                    pending_price: 0,
+                };
+            } else {
+                // الكمية غير كافية بأرخص سعر
+                // نحسب سعر السوق للكمية المتوفرة
+                let tempOrderBook = [...orderBook];
+                let tempRemaining = quantityAtCheapestPrice;
+                let fulfilledAmount = 0;
+                let ordersToBuy = [];
+                
+                let prevPrice = null;
+                let priceChanges = [];
+                
+                while (tempRemaining > 0 && tempOrderBook.length > 0) {
+                    const currentMarket = computeMarketPrice(tempOrderBook);
+                    const top = tempOrderBook[0];
+                    const qtyToTake = Math.min(tempRemaining, top.qty);
+
+                    if (prevPrice !== null && Math.abs(currentMarket - prevPrice) > 0.01) {
+                        priceChanges.push({
+                            from_price: prevPrice,
+                            to_price: currentMarket,
+                        });
+                    }
+
+                    ordersToBuy.push({
+                        type: top.type,
+                        order_id: top.id,
+                        quantity: qtyToTake,
+                        price: currentMarket,
+                    });
+
+                    fulfilledAmount += qtyToTake * currentMarket;
+                    tempRemaining -= qtyToTake;
+                    prevPrice = currentMarket;
+
+                    top.qty -= qtyToTake;
+                    if (top.qty <= 0) {
+                        tempOrderBook.shift();
+                    }
+                }
+                
+                // حساب سعر السوق بعد استهلاك الكمية المتوفرة
+                const newMarketPrice = tempOrderBook.length > 0 ? computeMarketPrice(tempOrderBook) : initialMarketPrice;
+                
+                const pendingQuantity = requestedQuantity - quantityAtCheapestPrice;
+                const averagePrice = quantityAtCheapestPrice > 0 ? fulfilledAmount / quantityAtCheapestPrice : 0;
+                
+                return {
+                    success: false,
+                    message: 'Insufficient quantity at lowest price',
+                    available_quantity: quantityAtCheapestPrice,
+                    average_price: averagePrice,
+                    total_amount: fulfilledAmount,
+                    orders: ordersToBuy,
+                    price_changes: priceChanges,
+                    insufficient: true,
+                    first_price: initialMarketPrice, // سعر السوق الحالي
+                    first_price_quantity: quantityAtCheapestPrice,
+                    pending_quantity: pendingQuantity,
+                    pending_price: initialMarketPrice,
+                    next_available_price: newMarketPrice, // سعر السوق الجديد
+                };
+            }
         }
 
         function calculateValues() {
@@ -416,21 +510,21 @@
         function showOptionsModal(priceCalc) {
             const availableQty = priceCalc.available_quantity.toFixed(4);
             const pendingQty = priceCalc.pending_quantity.toFixed(4);
-            const firstPrice = priceCalc.first_price.toFixed(2);
-            const newPrice = priceCalc.price_changes.length > 0 ? priceCalc.price_changes[0].to_price.toFixed(2) : firstPrice;
-            const newTotalAmount = priceCalc.total_amount.toFixed(2);
+            const currentMarketPrice = priceCalc.first_price.toFixed(2); // سعر السوق الحالي
+            const newMarketPrice = priceCalc.next_available_price ? priceCalc.next_available_price.toFixed(2) : currentMarketPrice;
+            const estimatedTotal = (priceCalc.available_quantity * priceCalc.first_price + priceCalc.pending_quantity * (priceCalc.next_available_price || priceCalc.first_price)).toFixed(2);
             
             let modalHtml = `
-                <div class="modal fade show" id="buyOptionsModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
+                <div class="modal fade show" id="buyOptionsModal" tabindex="-1" style="display: block;">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content" style="background: hsl(var(--section-bg)); border: 1px solid hsl(var(--border-color));">
                             <div class="modal-header" style="border-bottom: 1px solid hsl(var(--border-color));">
                                 <h5 class="modal-title text-white">@lang('Insufficient Quantity Available')</h5>
-                                <button type="button" class="btn-close btn-close-white" onclick="hideOptionsModal()"></button>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body text-white">
-                                <p>@lang('Available quantity at price') <strong>${firstPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}: <strong>${availableQty}</strong> {{ $product->unit->symbol ?? 'Unit' }}</p>
-                                <p>@lang('Requested quantity'): <strong>${(parseFloat($('#quantity').val()) || (parseFloat($('#amount').val()) / firstPrice)).toFixed(4)}</strong> {{ $product->unit->symbol ?? 'Unit' }}</p>
+                                <p>@lang('Available quantity at current market price') <strong>${currentMarketPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}: <strong>${availableQty}</strong> {{ $product->unit->symbol ?? 'Unit' }}</p>
+                                <p>@lang('Requested quantity'): <strong>${(parseFloat($('#quantity').val()) || (parseFloat($('#amount').val()) / currentMarketPrice)).toFixed(4)}</strong> {{ $product->unit->symbol ?? 'Unit' }}</p>
                                 <p class="text-warning">@lang('Pending quantity'): <strong>${pendingQty}</strong> {{ $product->unit->symbol ?? 'Unit' }}</p>
                                 
                                 <div class="mt-4">
@@ -439,11 +533,11 @@
                                     <div class="card mb-3" style="background: rgba(255,255,255,0.05); border: 1px solid hsl(var(--base));">
                                         <div class="card-body">
                                             <h6 class="text-base">@lang('Option 1: Continue with New Price')</h6>
-                                            <p class="mb-2">@lang('Complete your purchase with the available quantity at different prices')</p>
+                                            <p class="mb-2">@lang('Buy all quantity - market price will change')</p>
                                             <ul class="mb-2">
-                                                <li>@lang('Available'): <strong>${availableQty}</strong> {{ $product->unit->symbol ?? 'Unit' }}</li>
-                                                <li>@lang('Average Price'): <strong>${priceCalc.average_price.toFixed(2)}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
-                                                <li>@lang('Total Amount'): <strong>${newTotalAmount}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
+                                                <li><strong>${availableQty}</strong> {{ $product->unit->symbol ?? 'Unit' }} @lang('at market price') <strong>${currentMarketPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
+                                                <li><strong>${pendingQty}</strong> {{ $product->unit->symbol ?? 'Unit' }} @lang('at new market price') <strong class="text-warning">${newMarketPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
+                                                <li class="text-info mt-2">@lang('Estimated Total'): <strong>${estimatedTotal}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
                                             </ul>
                                             <button type="button" class="btn btn--base w-100" onclick="continueWithNewPrice()">
                                                 @lang('Continue with New Price')
@@ -454,11 +548,11 @@
                                     <div class="card" style="background: rgba(255,255,255,0.05); border: 1px solid hsl(var(--info));">
                                         <div class="card-body">
                                             <h6 class="text-info">@lang('Option 2: Pending Order')</h6>
-                                            <p class="mb-2">@lang('Place a pending order for the remaining quantity at the requested price')</p>
+                                            <p class="mb-2">@lang('Buy available now, wait for remaining at current market price')</p>
                                             <ul class="mb-2">
-                                                <li>@lang('Pending Quantity'): <strong>${pendingQty}</strong> {{ $product->unit->symbol ?? 'Unit' }}</li>
-                                                <li>@lang('Requested Price'): <strong>${firstPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
-                                                <li class="text-muted"><small>@lang('You will be notified when the quantity becomes available at this price')</small></li>
+                                                <li>@lang('Buy Now'): <strong>${availableQty}</strong> {{ $product->unit->symbol ?? 'Unit' }} @lang('at') <strong>${currentMarketPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
+                                                <li>@lang('Pending'): <strong>${pendingQty}</strong> {{ $product->unit->symbol ?? 'Unit' }} @lang('at') <strong>${currentMarketPrice}</strong> {{ $product->currency->code ?? gs('cur_sym') }}</li>
+                                                <li class="text-muted"><small>@lang('You will be notified when quantity available at this market price')</small></li>
                                             </ul>
                                             <button type="button" class="btn btn-outline--info w-100" onclick="createPendingOrder()">
                                                 @lang('Create Pending Order')
@@ -470,32 +564,103 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal-backdrop fade show"></div>
             `;
             
+            // إزالة أي modal سابق
+            hideOptionsModal();
+            
+            // إضافة modal جديد
             $('body').append(modalHtml);
-            $('#buyOptionsModal').modal('show');
             
             // حفظ بيانات الحساب
             window.currentPriceCalc = priceCalc;
+            
+            // إضافة event listener للإغلاق
+            $('#buyOptionsModal .btn-close, .modal-backdrop').on('click', function() {
+                hideOptionsModal();
+            });
         }
         
         function hideOptionsModal() {
             $('#buyOptionsModal').remove();
             $('.modal-backdrop').remove();
+            $('body').removeClass('modal-open');
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
         }
         
         function continueWithNewPrice() {
-            // تحديث القيم بناءً على الكمية المتوفرة
+            // حساب الكمية الكاملة المطلوبة بسعر السوق المتغير
             const priceCalc = window.currentPriceCalc;
-            if (purchaseType === 'quantity') {
-                $('#quantity').val(priceCalc.available_quantity.toFixed(4));
-                $('#amount').val(priceCalc.total_amount.toFixed(2));
-            } else {
-                $('#amount').val(priceCalc.total_amount.toFixed(2));
-                $('#quantity').val(priceCalc.available_quantity.toFixed(4));
+            const requestedQuantity = priceCalc.available_quantity + priceCalc.pending_quantity;
+            
+            // إعادة حساب من جميع الـ orders (مش بس من أرخص سعر)
+            // نحسب بنفس طريقة Backend - المتوسط الموزون
+            let orderBook = allSellOrders.map(o => ({
+                ...o,
+                price: parseFloat(o.sell_price),
+                qty: parseFloat(o.available_quantity),
+            }));
+            
+            function computeMarketPrice(book) {
+                const totals = book.reduce((acc, o) => {
+                    acc.qty += o.qty;
+                    acc.amount += o.qty * o.price;
+                    return acc;
+                }, { qty: 0, amount: 0 });
+                return totals.qty > 0 ? totals.amount / totals.qty : 0;
             }
             
-            updatePriceDisplay(priceCalc.average_price, priceCalc.price_changes, priceCalc.orders);
+            let remainingQuantity = requestedQuantity;
+            let totalAmount = 0;
+            let ordersToBuy = [];
+            let prevPrice = null;
+            let priceChanges = [];
+            
+            while (remainingQuantity > 0 && orderBook.length > 0) {
+                const currentMarket = computeMarketPrice(orderBook);
+                const top = orderBook[0];
+                const qtyToTake = Math.min(remainingQuantity, top.qty);
+
+                if (prevPrice !== null && Math.abs(currentMarket - prevPrice) > 0.01) {
+                    priceChanges.push({
+                        from_price: prevPrice,
+                        to_price: currentMarket,
+                        quantity_at_old_price: ordersToBuy.reduce((sum, o) => sum + o.quantity, 0),
+                        quantity_at_new_price: qtyToTake,
+                    });
+                }
+
+                ordersToBuy.push({
+                    type: top.type,
+                    order_id: top.id,
+                    quantity: qtyToTake,
+                    price: currentMarket,
+                });
+
+                totalAmount += qtyToTake * currentMarket;
+                remainingQuantity -= qtyToTake;
+                prevPrice = currentMarket;
+
+                top.qty -= qtyToTake;
+                if (top.qty <= 0) {
+                    orderBook.shift();
+                }
+            }
+            
+            const averagePrice = requestedQuantity > 0 ? totalAmount / requestedQuantity : 0;
+            
+            // تحديث القيم
+            if (purchaseType === 'quantity') {
+                $('#quantity').val(requestedQuantity.toFixed(4));
+                $('#amount').val(totalAmount.toFixed(2));
+            } else {
+                $('#amount').val(totalAmount.toFixed(2));
+                $('#quantity').val(requestedQuantity.toFixed(4));
+            }
+            
+            updatePriceDisplay(averagePrice, priceChanges, ordersToBuy);
             hideOptionsModal();
             validateForm();
         }
@@ -520,22 +685,20 @@
                     fulfilled_quantity: fulfilledQuantity,
                 },
                 success: function(response) {
-                    if (response.success) {
-                        hideOptionsModal();
-                        // تحديث القيم للكمية المتوفرة فقط (الخيار الأول)
-                        if (purchaseType === 'quantity') {
-                            $('#quantity').val(fulfilledQuantity.toFixed(4));
-                            $('#amount').val(priceCalc.total_amount.toFixed(2));
-                        } else {
-                            $('#amount').val(priceCalc.total_amount.toFixed(2));
-                            $('#quantity').val(fulfilledQuantity.toFixed(4));
-                        }
-                        updatePriceDisplay(priceCalc.average_price, priceCalc.price_changes, priceCalc.orders);
-                        validateForm();
-                        showPriceAlert('success', response.message || '@lang("Pending order created successfully. You will be notified when the quantity becomes available.")');
+                    hideOptionsModal();
+                    // تحديث القيم للكمية المتوفرة فقط (الخيار الأول)
+                    if (purchaseType === 'quantity') {
+                        $('#quantity').val(fulfilledQuantity.toFixed(4));
+                        $('#amount').val(priceCalc.total_amount.toFixed(2));
                     } else {
-                        showPriceAlert('error', response.message || '@lang("Failed to create pending order")');
+                        $('#amount').val(priceCalc.total_amount.toFixed(2));
+                        $('#quantity').val(fulfilledQuantity.toFixed(4));
                     }
+                    updatePriceDisplay(priceCalc.average_price, priceCalc.price_changes, priceCalc.orders);
+                    validateForm();
+                    
+                    // عرض رسالة نجاح
+                    showPriceAlert('success', response.message || '@lang("Pending order created successfully. You will be notified when the quantity becomes available.")');
                 },
                 error: function(xhr) {
                     const errorMsg = xhr.responseJSON?.message || '@lang("An error occurred. Please try again.")';
@@ -544,10 +707,19 @@
             });
         }
 
+        // جعل الدوال متاحة في النطاق العام (global scope)
+        window.hideOptionsModal = hideOptionsModal;
+        window.continueWithNewPrice = continueWithNewPrice;
+        window.createPendingOrder = createPendingOrder;
+
         function validateForm() {
             const amount = parseFloat($('#amount').val()) || 0;
             const quantity = parseFloat($('#quantity').val()) || 0;
+            const totalMarketQuantity = {{ $totalAvailableQuantity ?? 0 }};
             let isValid = true;
+
+            // إزالة رسائل الخطأ السابقة
+            $('.quantity-error').remove();
 
             if (purchaseType === 'amount') {
                 if (amount <= 0) {
@@ -555,19 +727,30 @@
                 } else {
                     const marketPrice = {{ $marketPrice ?? ($cheapestOrder['sell_price'] ?? 0) }};
                     const calculatedQuantity = amount / marketPrice;
-                    if (calculatedQuantity > availableQuantity) {
+                    if (calculatedQuantity > totalMarketQuantity) {
                         isValid = false;
+                        showQuantityError(calculatedQuantity, totalMarketQuantity);
                     }
                 }
             } else {
                 if (quantity <= 0) {
                     isValid = false;
-                } else if (quantity > availableQuantity) {
+                } else if (quantity > totalMarketQuantity) {
                     isValid = false;
+                    showQuantityError(quantity, totalMarketQuantity);
                 }
             }
 
             $('button[type="submit"]').attr('disabled', !isValid);
+        }
+
+        function showQuantityError(requested, available) {
+            const errorHtml = '<div class="alert alert-danger mt-2 quantity-error" role="alert">' +
+                '<i class="fas fa-exclamation-triangle me-2"></i>' +
+                '@lang("Requested quantity") (<strong>' + requested.toFixed(4) + '</strong> {{ $product->unit->symbol ?? "Unit" }}) ' +
+                '@lang("exceeds available quantity in market") (<strong>' + available.toFixed(4) + '</strong> {{ $product->unit->symbol ?? "Unit" }})' +
+                '</div>';
+            $('.gold-calculator__inputs').after(errorHtml);
         }
 
         $('input[name="purchase_type"]').on('change', function() {

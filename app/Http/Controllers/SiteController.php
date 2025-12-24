@@ -7,7 +7,9 @@ use App\Models\AdminNotification;
 use App\Models\Frontend;
 use App\Models\HistoricalPrice;
 use App\Models\Language;
+use App\Models\MarketPriceHistory;
 use App\Models\Page;
+use App\Models\Product;
 use App\Models\Subscriber;
 use App\Models\SupportMessage;
 use App\Models\SupportTicket;
@@ -59,7 +61,69 @@ class SiteController extends Controller
         $amountChange          = showAmount(abs($lastPrice - $firstPrice), currencyFormat: false);
         $percentage            = showAmount($amountChange / $firstPrice * 100, currencyFormat: false) . '%';
 
-        return responseSuccess('gold_price', 'Gold Price', ['gold_price' => $goldPrice, 'max_price' => showAmount($minMaxPrice->max_price), 'min_price' => showAmount($minMaxPrice->min_price), 'first_price' => showAmount($firstPrice), 'last_price' => showAmount($lastPrice), 'amount_change_direction' => $amountChangeDirection, 'amount_change' => showAmount($amountChange), 'percentage' => $percentage]);
+        return responseSuccess('gold_price', 'Gold Price', ['gold_price' => $goldPrice, 'max_price' => showAmount($minMaxPrice->max_price), 'min_price' => showAmount($minMaxPrice->min_price), 'first_price' => showAmount($firstPrice), 'last_price' => showAmount($lastPrice), 'amount_change_direction' => $amountChangeDirection, 'amount_change' => $amountChange, 'percentage' => $percentage]);
+    }
+
+    public function getMarketPrices()
+    {
+        // جلب جميع المنتجات النشطة
+        $products = Product::where('status', Status::ENABLE)->with('unit')->get();
+        
+        $chartData = [];
+        
+        foreach ($products as $product) {
+            // جلب جميع أسعار المنتج مرتبة من الأقدم للأحدث
+            $allPriceHistory = MarketPriceHistory::where('product_id', $product->id)
+                ->orderBy('created_at', 'asc')
+                ->get();
+            
+            // إذا لم يكن هناك تاريخ أسعار، استخدم السعر الحالي
+            if ($allPriceHistory->isEmpty()) {
+                $currentPrice = (float) ($product->market_price ?? 0);
+                $hourlyPrices = array_fill(0, 24, $currentPrice);
+            } else {
+                // تجميع الأسعار حسب الساعة لليوم الحالي
+                $hourlyPrices = [];
+                
+                // أول سعر معروف كقيمة افتراضية
+                $lastKnownPrice = (float) $allPriceHistory->first()->market_price;
+                
+                for ($hour = 0; $hour < 24; $hour++) {
+                    $hourStart = now()->startOfDay()->addHours($hour);
+                    $hourEnd = $hourStart->copy()->addHour();
+                    
+                    // البحث عن آخر سعر تم تسجيله قبل نهاية هذه الساعة
+                    $relevantPrice = null;
+                    
+                    foreach ($allPriceHistory as $price) {
+                        // إذا كان السعر تم تسجيله قبل أو خلال هذه الساعة
+                        if ($price->created_at < $hourEnd) {
+                            $relevantPrice = $price;
+                            $lastKnownPrice = (float) $price->market_price;
+                        }
+                    }
+                    
+                    // استخدم آخر سعر معروف لهذه الساعة
+                    $hourlyPrices[] = $lastKnownPrice;
+                }
+            }
+            
+            $chartData[] = [
+                'name' => $product->name,
+                'data' => $hourlyPrices,
+                'unit' => $product->unit ? $product->unit->name : '',
+                'current_price' => (float) ($product->market_price ?? 0)
+            ];
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $chartData,
+            'debug' => [
+                'current_time' => now()->toDateTimeString(),
+                'day_start' => now()->startOfDay()->toDateTimeString(),
+            ]
+        ]);
     }
 
     public function subscribe(Request $request)

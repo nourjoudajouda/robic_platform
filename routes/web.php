@@ -24,6 +24,7 @@ Route::get('app/deposit/confirm/{hash}', 'Gateway\PaymentController@appDepositCo
 
 Route::controller('SiteController')->group(function () {
     Route::get('gold-price', 'goldPrice')->name('gold.price');
+    Route::get('market-prices', 'getMarketPrices')->name('market.prices');
 
     Route::get('/contact', 'contact')->name('contact');
     Route::post('/contact', 'contactSubmit');

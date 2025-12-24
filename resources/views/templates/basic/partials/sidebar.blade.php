@@ -31,9 +31,15 @@
                 </a>
             </li>
             <li class="sidebar-menu-list__item">
-                <a href="{{ route('user.buy.form') }}" class="sidebar-menu-list__link {{ menuActive('user.buy*') }}">
+                <a href="{{ route('user.buy.form') }}" class="sidebar-menu-list__link {{ menuActive('user.buy.form') }}">
                     <span class="icon"><i class="fa-solid fa-circle-dollar-to-slot"></i></span>
                     <span class="text">@lang('Buy Green Coffee')</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-list__item">
+                <a href="{{ route('user.buy.pending') }}" class="sidebar-menu-list__link {{ menuActive('user.buy.pending') }}">
+                    <span class="icon"><i class="fa-solid fa-clock"></i></span>
+                    <span class="text">@lang('Pending Buy Orders')</span>
                 </a>
             </li>
             <li class="sidebar-menu-list__item">
@@ -46,16 +52,18 @@
                 <li class="sidebar-menu-list__item">
                     <a href="{{ route('user.redeem.form') }}" class="sidebar-menu-list__link {{ menuActive('user.redeem*') }}">
                         <span class="icon"><i class="fa-solid fa-truck"></i></span>
-                        <span class="text">@lang('Redeem')</span>
+                        <span class="text">@lang('Shipping and receiving')</span>
                     </a>
                 </li>
             @endif
+            {{-- Gift feature disabled
             <li class="sidebar-menu-list__item">
                 <a href="{{ route('user.gift.form') }}" class="sidebar-menu-list__link {{ menuActive('user.gift*') }}">
                     <span class="icon"><i class="fa-solid fa-gift"></i></span>
                     <span class="text">@lang('Gift Green Coffee')</span>
                 </a>
             </li>
+            --}}
             <li class="sidebar-menu-list__item">
                 <a href="{{ route('user.withdraw') }}" class="sidebar-menu-list__link {{ menuActive('user.withdraw*') }}">
                     <span class="icon"><i class="fa-solid fa-hand-holding-dollar"></i></span>

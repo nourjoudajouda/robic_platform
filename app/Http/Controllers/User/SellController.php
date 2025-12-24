@@ -10,6 +10,7 @@ use App\Models\ChargeLimit;
 use App\Models\BeanHistory;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SellController extends Controller
 {
@@ -259,7 +260,110 @@ class SellController extends Controller
         // متوسط سعر الشراء الفعلي (شامل كل التكاليف)
         $averageBuyPrice = $totalQty > 0 ? ($totalCost / $totalQty) : 0;
 
-        // إنشاء user_sell_order لكل asset
+        // حساب سعر السوق الحالي قبل إضافة sell orders الجديدة
+        $currentMarketPrice = Batch::calculateMarketPrice($productId);
+        
+        // فحص إذا كان السعر المطلوب أقل من سعر السوق بـ 20% أو أكثر
+        $lowPriceThreshold = $currentMarketPrice ? $currentMarketPrice * 0.8 : 0;
+        $isLowPrice = $currentMarketPrice && $sellPrice <= $lowPriceThreshold;
+        
+        if ($isLowPrice) {
+            // السعر منخفض جداً - نقل الملكية للنظام وإضافة المبلغ للمحفظة
+            
+            return DB::transaction(function () use ($user, $sellData, $product, $sellPrice, $currentMarketPrice, $productId) {
+                // جمع معلومات الـ batches الأصلية
+                $parentBatchIds = [];
+                $totalQuantity = 0;
+                $firstAsset = null;
+                
+                foreach ($sellData->assets_to_sell as $assetData) {
+                    $asset = Asset::where('user_id', $user->id)->with('batch.product')->findOrFail($assetData['asset_id']);
+                    $assetQuantity = $assetData['quantity'];
+
+                    if (!$firstAsset) {
+                        $firstAsset = $asset;
+                    }
+
+                    // التحقق من الكمية المتاحة مرة أخرى
+                    $totalQuantity = $asset->quantity;
+                    $usedQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                        ->where('status', Status::SELL_ORDER_ACTIVE)
+                        ->sum('quantity');
+                    $availableQuantity = max(0, $totalQuantity - $usedQuantity);
+
+                    if ($assetQuantity > $availableQuantity) {
+                        $notify[] = ['error', 'The available quantity for ' . ($asset->batch ? $asset->batch->batch_code : 'N/A') . ' is ' . showAmount($availableQuantity, 4, currencyFormat: false) . ' ' . ($product->unit->symbol ?? 'Unit')];
+                        return to_route('user.sell.form')->withNotify($notify);
+                    }
+                    
+                    // حفظ batch_id الأصلي
+                    if ($asset->batch_id && !in_array($asset->batch_id, $parentBatchIds)) {
+                        $parentBatchIds[] = $asset->batch_id;
+                    }
+                    
+                    // خصم الكمية من asset المستخدم
+                    $asset->quantity -= $assetQuantity;
+                    $asset->save();
+                    
+                    $totalQuantity += $assetQuantity;
+                }
+                
+                // إنشاء batch جديد للنظام
+                $newBatch = new Batch();
+                $newBatch->product_id = $productId;
+                $newBatch->warehouse_id = $firstAsset->warehouse_id;
+                $newBatch->units_count = $sellData->quantity;
+                $newBatch->unit_id = $product->unit_id;
+                $newBatch->sell_price = $sellPrice; // سعر البيع من المستخدم
+                $newBatch->buy_price = $sellPrice; // سعر الشراء من المستخدم
+                $newBatch->currency_id = $product->currency_id;
+                $newBatch->batch_code = Batch::generateBatchCode('user_sale');
+                $newBatch->quality_grade = $firstAsset->batch->quality_grade ?? null;
+                $newBatch->origin_country = $firstAsset->batch->origin_country ?? null;
+                $newBatch->exp_date = $firstAsset->batch->exp_date ?? null;
+                $newBatch->status = Status::ENABLE;
+                $newBatch->type = 'user_sale';
+                $newBatch->user_id = $user->id;
+                $newBatch->parent_ids = $parentBatchIds;
+                $newBatch->save();
+                
+                // حساب المبلغ الذي سيضاف للمحفظة (قيمة الكمية بسعر البيع المطلوب)
+                $amountToAdd = $sellData->quantity * $sellPrice;
+                
+                // إضافة المبلغ لمحفظة المستخدم
+                $user->balance += $amountToAdd;
+                $user->save();
+                
+                // تحديث wallet
+                $wallet = \App\Models\Wallet::where('user_id', $user->id)->first();
+                if (!$wallet) {
+                    $wallet = new \App\Models\Wallet();
+                    $wallet->user_id = $user->id;
+                    $wallet->balance = 0;
+                    $wallet->status = Status::ENABLE;
+                    $wallet->save();
+                }
+                $wallet->balance += $amountToAdd;
+                $wallet->save();
+                
+                // تسجيل transaction
+                $transaction = new \App\Models\Transaction();
+                $transaction->user_id = $user->id;
+                $transaction->amount = $amountToAdd;
+                $transaction->post_balance = $user->balance;
+                $transaction->charge = 0;
+                $transaction->trx_type = '+';
+                $transaction->details = 'Low price sale - Asset transferred to system (Batch: ' . $newBatch->batch_code . '). Quantity: ' . showAmount($sellData->quantity, 4, currencyFormat: false) . ' ' . ($product->unit->symbol ?? 'Unit') . ' at ' . showAmount($sellPrice) . ' per unit';
+                $transaction->trx = getTrx();
+                $transaction->remark = 'low_price_sale';
+                $transaction->save();
+                
+                $notify[] = ['warning', 'Your sell price (' . showAmount($sellPrice) . ') is 20% or more below market price (' . showAmount($currentMarketPrice) . '). Asset ownership transferred to system (Batch: ' . $newBatch->batch_code . ') and ' . showAmount($amountToAdd) . ' added to your wallet'];
+                return to_route('user.sell.history')->withNotify($notify);
+            });
+        }
+        
+        // إنشاء user_sell_order لكل asset (السعر طبيعي)
         foreach ($sellData->assets_to_sell as $assetData) {
             $asset = Asset::where('user_id', $user->id)->with('batch.product')->findOrFail($assetData['asset_id']);
             $assetQuantity = $assetData['quantity'];

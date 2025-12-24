@@ -301,20 +301,16 @@ class Asset extends Model
                 $orderAmount = $qty * $price;
                 $orderIndex++;
                 
-                // توزيع الـ charge و vat على كل order حسب نسبة المبلغ
-                // لكن في آخر order نضع كل المتبقي لتجنب مشاكل التقريب
-                $isLastOrder = ($orderIndex === $totalOrdersCount);
-                
-                if ($isLastOrder) {
-                    // في آخر order، نحسب المتبقي من charge و vat
-                    $alreadyDistributedCharge = array_sum(array_column($buyHistories, 'charge'));
-                    $alreadyDistributedVat = array_sum(array_column($buyHistories, 'vat'));
-                    $orderCharge = $charge - $alreadyDistributedCharge;
-                    $orderVat = $vat - $alreadyDistributedVat;
+                // حساب الضرائب والرسوم مرة واحدة فقط في أول order
+                // باقي الأوامر charge و vat = 0
+                if ($orderIndex === 1) {
+                    // أول order: نضع كل الـ charge و vat عليه
+                    $orderCharge = $charge;
+                    $orderVat = $vat;
                 } else {
-                    // توزيع حسب النسبة
-                    $orderCharge = ($orderAmount / $totalAmount) * $charge;
-                    $orderVat = ($orderAmount / $totalAmount) * $vat;
+                    // باقي الأوامر: بدون charge أو vat
+                    $orderCharge = 0;
+                    $orderVat = 0;
                 }
                 
                 if ($orderType == 'batch') {

@@ -160,6 +160,29 @@
                                 <input type="checkbox" data-width="100%" data-size="large" data-onstyle="-success" data-offstyle="-danger" data-bs-toggle="toggle" data-height="35" data-on="@lang('Enable')" data-off="@lang('Disable')" name="redeem_option" @if(gs('redeem_option')) checked @endif>
                             </div>
                         </li>
+
+                        <li class="list-group-item">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <p class="fw-bold mb-2">@lang('Chart Price Range')</p>
+                                    <p class="mb-3">
+                                        <small>@lang('Set the price range for the chart display on the homepage.')</small>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">@lang('Price From') ({{ __(gs('cur_text')) }})</label>
+                                        <input type="number" step="0.01" class="form-control" name="chart_price_from" value="{{ gs('chart_price_from') ?? 0 }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">@lang('Price To') ({{ __(gs('cur_text')) }})</label>
+                                        <input type="number" step="0.01" class="form-control" name="chart_price_to" value="{{ gs('chart_price_to') ?? 20 }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
                     </ul>
                 </div>
                 <div class="card-footer">
@@ -188,6 +211,9 @@
         }
         .list-group-item:hover {
             background-color: #F7F7F7
+        }
+        .list-group-item .form-group input[type="number"] {
+            width: 100%;
         }
     </style>
 @endpush

@@ -6419,7 +6419,7 @@ background-color: #81C104 !important;
   position: relative;
   z-index: 1;
   overflow: hidden;
-  background-color: #3d2bfb;
+  background-color: #81C104;
 }
 
 @media (max-width: 575px) {
@@ -6435,7 +6435,7 @@ background-color: #81C104 !important;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #1e157d;
+  background-color: #06303E;
   opacity: 0.57;
   z-index: -1;
 }
@@ -6451,7 +6451,7 @@ background-color: #81C104 !important;
   height: 247px;
   right: -80px;
   top: -100px;
-  border: 40px solid rgba(52, 34, 229, 0.31);
+  border: 40px solid rgba(52, 299, 34, 0.31);
   box-sizing: border-box;
   filter: blur(2px);
   border-radius: 50%;
@@ -6462,7 +6462,7 @@ background-color: #81C104 !important;
 }
 
 .login-wrapper {
-  background-color: #1e157d;
+  background-color: #083b4d;
   border-radius: 10px;
   -webkit-border-radius: 10px;
   -moz-border-radius: 10px;
@@ -6474,7 +6474,7 @@ background-color: #81C104 !important;
 .login-wrapper__top {
   padding: 60px 30px 40px 30px;
   text-align: center;
-  background-color: #3d2bfb;
+  background-color: #083b4d;
   border-radius: 10px;
   -webkit-border-radius: 10px;
   -moz-border-radius: 10px;
@@ -6499,7 +6499,7 @@ background-color: #81C104 !important;
   z-index: -1;
   border-width: 25px 256px 0px 256px;
   border-style: solid;
-  border-color: #3d2bfb transparent transparent transparent;
+  border-color: #81C104 transparent transparent transparent;
 }
 
 @media (max-width: 1399px) {
@@ -6604,7 +6604,7 @@ background-color: #81C104 !important;
 }
 
 .cmn-btn {
-  background-color: #3d2bfb;
+  background-color: #81C104;
   color: #fff;
   height: 50px;
 }
@@ -6612,7 +6612,7 @@ background-color: #81C104 !important;
 .cmn-btn:hover,
 .btn:focus-visible,
 .cmn-btn:active {
-  background-color: #2916ed !important;
+  background-color: #81C104 !important;
   color: #fff !important;
   border-color: transparent !important;
 }

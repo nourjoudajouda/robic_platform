@@ -48,6 +48,8 @@ class WarehouseController extends Controller
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
             'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'manager_name' => 'required|string|max:255',
             'mobile' => 'required|string|max:255',
             'max_capacity_unit' => 'nullable|string|max:255',
@@ -61,6 +63,8 @@ class WarehouseController extends Controller
         $warehouse->location = $request->location;
         $warehouse->code = $this->generateCode();
         $warehouse->address = $request->address;
+        $warehouse->latitude = $request->latitude;
+        $warehouse->longitude = $request->longitude;
         $warehouse->manager_name = $request->manager_name;
         $warehouse->mobile = $request->mobile;
         $warehouse->max_capacity_unit = $request->max_capacity_unit;
@@ -103,6 +107,8 @@ class WarehouseController extends Controller
             'name' => 'required|string|max:255',
             'location' => 'required|string|max:255',
             'address' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'manager_name' => 'required|string|max:255',
             'mobile' => 'required|string|max:255',
             'max_capacity_unit' => 'nullable|string|max:255',
@@ -116,6 +122,8 @@ class WarehouseController extends Controller
         $warehouse->location = $request->location;
         // Code لا يتم تعديله - يتم إنشاؤه تلقائياً فقط عند الإضافة
         $warehouse->address = $request->address;
+        $warehouse->latitude = $request->latitude;
+        $warehouse->longitude = $request->longitude;
         $warehouse->manager_name = $request->manager_name;
         $warehouse->mobile = $request->mobile;
         $warehouse->max_capacity_unit = $request->max_capacity_unit;

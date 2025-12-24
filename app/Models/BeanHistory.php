@@ -18,6 +18,11 @@ class BeanHistory extends Model
         return $this->belongsTo(Batch::class);
     }
 
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function itemUnit()
     {
         return $this->belongsTo(Unit::class, 'item_unit_id');
@@ -45,7 +50,7 @@ class BeanHistory extends Model
 
     public function redeemData()
     {
-        return $this->hasOne(RedeemData::class);
+        return $this->hasOne(RedeemData::class, 'bean_history_id');
     }
 
     public function scopeBuy($query)

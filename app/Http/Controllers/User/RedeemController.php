@@ -7,10 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Asset;
 use App\Models\ChargeLimit;
 use App\Models\BeanHistory;
+use App\Models\Product;
 use App\Models\RedeemData;
 use App\Models\RedeemUnit;
 use App\Models\Transaction;
+use App\Models\Wallet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RedeemController extends Controller
 {
@@ -23,95 +26,171 @@ class RedeemController extends Controller
 
     public function redeemForm()
     {
-        $pageTitle   = 'Redeem Gold';
-        $assets      = Asset::where('user_id', auth()->id())->get();
+        $pageTitle   = 'Shipping and receiving';
+        
+        // جلب جميع الأصول وتجميعها حسب المنتج
+        $userAssets = Asset::where('user_id', auth()->id())
+            ->with(['product.unit', 'product.currency', 'batch.warehouse'])
+            ->get();
+        
+        // تجميع الأصول حسب product_id
+        $assets = $userAssets->groupBy('product_id')->map(function ($groupedAssets) {
+            $firstAsset = $groupedAssets->first();
+            $totalQuantity = $groupedAssets->sum('quantity');
+            
+            // حساب سعر السوق للمنتج
+            $marketPrice = \App\Models\Batch::calculateMarketPrice($firstAsset->product_id) ?? 0;
+            
+            // إنشاء object يحتوي على المعلومات المجمعة
+            return (object) [
+                'product_id' => $firstAsset->product_id,
+                'product' => $firstAsset->product,
+                'quantity' => $totalQuantity,
+                'unit' => $firstAsset->product->unit ?? null,
+                'price' => $marketPrice,
+                'warehouse' => $firstAsset->batch->warehouse ?? null,
+                'asset_ids' => $groupedAssets->pluck('id')->toArray(), // للاستخدام عند الحفظ
+            ];
+        })->values();
+        
         $redeemUnits = RedeemUnit::active()->get();
         $chargeLimit = ChargeLimit::where('slug', 'redeem')->first();
+        $shippingMethods = \App\Models\ShippingMethod::active()->get();
 
-        return view('Template::user.redeem.form', compact('pageTitle', 'assets', 'redeemUnits', 'chargeLimit'));
+        return view('Template::user.redeem.form', compact('pageTitle', 'assets', 'redeemUnits', 'chargeLimit', 'shippingMethods'));
     }
 
     public function redeemStore(Request $request)
     {
         $request->validate([
-            'asset_id'               => 'required|integer|gt:0',
-            'redeem_unit_quantity'   => 'required|array',
-            'redeem_unit_quantity.*' => 'required|integer|min:0',
+            'product_id'     => 'required|integer|gt:0',
+            'asset_ids'      => 'required|json',
+            'quantity'       => 'required|numeric|gt:0',
+            'delivery_type'  => 'required|in:pickup,shipping',
+            'shipping_lat'   => 'required_if:delivery_type,shipping|nullable|numeric',
+            'shipping_lng'   => 'required_if:delivery_type,shipping|nullable|numeric',
+            'shipping_method_id' => 'required_if:delivery_type,shipping|nullable|integer|exists:shipping_methods,id',
+            'shipping_cost'  => 'required_if:delivery_type,shipping|nullable|numeric|min:0',
+            'distance'       => 'nullable|numeric|min:0',
         ]);
 
-        $redeemUnitQuantity = array_filter($request->redeem_unit_quantity, function ($value) {
-            return $value > 0;
+        $user = auth()->user();
+        $product = Product::with('unit', 'currency')->findOrFail($request->product_id);
+        $assetIds = json_decode($request->asset_ids, true);
+        $quantity = $request->quantity;
+        
+        // جلب جميع الأصول المطلوبة والتحقق من الملكية
+        $assets = Asset::where('user_id', $user->id)
+            ->whereIn('id', $assetIds)
+            ->where('product_id', $product->id)
+            ->get();
+        
+        $totalAvailableQuantity = $assets->sum('quantity');
+        
+        if ($totalAvailableQuantity < $quantity) {
+            $notify[] = ['error', 'Insufficient quantity. Available: ' . showAmount($totalAvailableQuantity, 4, currencyFormat: false)];
+            return back()->withNotify($notify);
+        }
+
+        // المستخدم يستلم من مخزونه - لا توجد تكلفة منتج
+        $amount = 0;
+        $shippingCost = $request->delivery_type === 'shipping' ? $request->shipping_cost : 0;
+        $totalAmount = $shippingCost; // التكلفة الكلية = تكلفة الشحن فقط
+        
+        // التحقق من الرصيد (فقط لتكلفة الشحن)
+        if ($shippingCost > 0 && $user->balance < $shippingCost) {
+            $notify[] = ['error', 'Insufficient balance for shipping cost. Your balance: ' . showAmount($user->balance) . ', Required: ' . showAmount($shippingCost)];
+            return back()->withNotify($notify);
+        }
+
+        // معالجة الطلب في transaction
+        DB::transaction(function () use ($user, $assets, $product, $quantity, $amount, $shippingCost, $request) {
+            $remainingQuantity = $quantity;
+            
+            // خصم الكمية من الأصول
+            foreach ($assets as $asset) {
+                if ($remainingQuantity <= 0) break;
+                
+                $qtyToDeduct = min($remainingQuantity, $asset->quantity);
+                $asset->quantity -= $qtyToDeduct;
+                $asset->save();
+                
+                $remainingQuantity -= $qtyToDeduct;
+                
+                // حذف الأصل إذا أصبحت الكمية 0
+                if ($asset->quantity <= 0) {
+                    $asset->delete();
+                }
+            }
+            
+            // خصم تكلفة الشحن من رصيد المستخدم (إذا كان شحن)
+            if ($shippingCost > 0) {
+                $user->balance -= $shippingCost;
+                $user->save();
+                
+                // تحديث wallet
+                $wallet = Wallet::where('user_id', $user->id)->first();
+                if ($wallet) {
+                    $wallet->balance -= $shippingCost;
+                    $wallet->save();
+                }
+                
+                // إنشاء Transaction للشحن
+                $transaction = new Transaction();
+                $transaction->user_id = $user->id;
+                $transaction->amount = $shippingCost;
+                $transaction->post_balance = $user->balance;
+                $transaction->charge = 0;
+                $transaction->trx_type = '-';
+                $transaction->details = 'Shipping cost for ' . ($request->delivery_type === 'shipping' ? 'delivery' : 'pickup');
+                $transaction->trx = getTrx();
+                $transaction->remark = 'shipping_cost';
+                $transaction->save();
+        }
+
+            // إنشاء سجل Redeem في BeanHistory
+            $redeemHistory = new BeanHistory();
+            $redeemHistory->user_id = $user->id;
+            $redeemHistory->product_id = $product->id;
+            $redeemHistory->quantity = $quantity;
+            $redeemHistory->item_unit_id = $product->unit_id;
+            $redeemHistory->amount = $amount;
+            $redeemHistory->currency_id = $product->currency_id;
+            $redeemHistory->charge = $shippingCost; // استخدام حقل charge لحفظ تكلفة الشحن
+            $redeemHistory->trx = getTrx();
+            $redeemHistory->type = Status::REDEEM_HISTORY;
+            $redeemHistory->save();
+            
+            // إنشاء سجل RedeemData
+            $redeemData = new RedeemData();
+            $redeemData->bean_history_id = $redeemHistory->id;
+            $redeemData->delivery_type = $request->delivery_type;
+
+            if ($request->delivery_type === 'shipping') {
+                $shippingMethod = \App\Models\ShippingMethod::findOrFail($request->shipping_method_id);
+                $redeemData->delivery_address = 'Location: ' . $request->shipping_lat . ', ' . $request->shipping_lng;
+                $redeemData->shipping_method_id = $request->shipping_method_id;
+                $redeemData->shipping_cost = $shippingCost;
+                $redeemData->distance = $request->distance;
+            } else {
+                $redeemData->delivery_address = 'Pickup from warehouse';
+            }
+            
+            $redeemData->status = Status::REDEEM_STATUS_PROCESSING;
+            $redeemData->save();
         });
-
-        $redeemUnitIds        = array_keys($redeemUnitQuantity);
-        $redeemUnitQuantities = array_values($redeemUnitQuantity);
-
-        $redeemUnits = RedeemUnit::active()->whereIn('id', $redeemUnitIds)->get();
-
-        if (count($redeemUnits) != count($redeemUnitQuantities)) {
-            $notify[] = ['error', 'Invalid redeem unit quantity'];
-            return back()->withNotify($notify);
+        
+        $successMessage = 'Shipping request submitted successfully!';
+        if ($shippingCost > 0) {
+            $successMessage .= ' Shipping cost of ' . showAmount($shippingCost) . ' has been deducted from your balance.';
         }
-
-        $totalQuantity = 0;
-        $orderDetails  = [];
-
-        foreach ($redeemUnits as $redeemUnit) {
-            $totalQuantity += $redeemUnitQuantity[$redeemUnit->id] * $redeemUnit->quantity;
-            $orderDetails[] = [
-                'redeem_unit_id' => $redeemUnit->id,
-                'type'           => $redeemUnit->type,
-                'quantity'       => $redeemUnitQuantity[$redeemUnit->id],
-                'text'           => ($redeemUnit->type == Status::REDEEM_UNIT_BAR ? 'Gold bar' : 'Gold coin') . ' - ' . showAmount($redeemUnit->quantity, currencyFormat: false) . ' gram (' . $redeemUnitQuantity[$redeemUnit->id] . ' pieces)',
-            ];
-        }
-
-        $orderDetails = collect($orderDetails)->sortBy('type')->values()->toArray();
-
-        $user  = auth()->user();
-        $asset = Asset::with('category')->where('user_id', $user->id)->findOrFail($request->asset_id);
-
-        if ($asset->quantity < $totalQuantity) {
-            $notify[] = ['error', 'Insufficient gold asset'];
-            return back()->withNotify($notify);
-        }
-
-        $chargeLimit = ChargeLimit::where('slug', 'redeem')->first();
-        $category    = $asset->category;
-        $amount      = $category->price * $totalQuantity;
-
-        if ($chargeLimit->min_amount > $amount) {
-            $notify[] = ['error', 'The minimum redeem amount is ' . showAmount($chargeLimit->min_amount)];
-            return back()->withNotify($notify);
-        }
-
-        if ($chargeLimit->max_amount < $amount) {
-            $notify[] = ['error', 'The maximum redeem amount is ' . showAmount($chargeLimit->max_amount)];
-            return back()->withNotify($notify);
-        }
-
-        $charge = $chargeLimit->fixed_charge + ($amount * $chargeLimit->percent_charge / 100);
-
-        if ($user->balance < $charge) {
-            $notify[] = ['error', 'Insufficient balance for charge'];
-            return back()->withNotify($notify);
-        }
-
-        $redeemData = [
-            'asset_id'       => $asset->id,
-            'amount'         => $amount,
-            'total_quantity' => $totalQuantity,
-            'charge'         => $charge,
-            'order_details'  => $orderDetails,
-        ];
-
-        session()->put('redeem_data', (object) $redeemData);
-        return to_route('user.redeem.address');
+        $notify[] = ['success', $successMessage];
+        return to_route('user.redeem.success.page')->withNotify($notify);
     }
 
     public function address()
     {
-        $pageTitle = 'Redeem Gold - Address';
+        $pageTitle = 'Shipping Address';
         $redeemData = session()->get('redeem_data');
 
         if (!$redeemData) {
@@ -182,7 +261,7 @@ class RedeemController extends Controller
         $address .= $request->zip_code ? ', Zip Code: ' . $request->zip_code : '';
 
         $redeemDataLog                   = new RedeemData();
-        $redeemDataLog->gold_history_id  = $redeemHistory->id;
+        $redeemDataLog->bean_history_id  = $redeemHistory->id;
         $redeemDataLog->delivery_address = $address;
         $redeemDataLog->order_details    = $orderData;
         $redeemDataLog->status           = Status::REDEEM_STATUS_PROCESSING;
@@ -217,12 +296,12 @@ class RedeemController extends Controller
 
     public function successPage()
     {
-        $pageTitle     = 'Redeem Success';
+        $pageTitle     = 'Shipping Success';
         $redeemHistory = session()->get('redeem_history');
         if ($redeemHistory) {
-            $redeemHistory = BeanHistory::with('batch.product.unit')->find($redeemHistory->id);
+            $redeemHistory = BeanHistory::with('product.unit', 'product.currency', 'redeemData.shippingMethod')->find($redeemHistory->id);
         } else {
-            $redeemHistory = BeanHistory::with('batch.product.unit')->latest()->first();
+            $redeemHistory = BeanHistory::with('product.unit', 'product.currency', 'redeemData.shippingMethod')->latest()->first();
         }
 
         if (!$redeemHistory) {
@@ -234,8 +313,8 @@ class RedeemController extends Controller
 
     public function history()
     {
-        $pageTitle       = 'Redeem History';
-        $redeemHistories = BeanHistory::redeem()->where('user_id', auth()->id())->with('batch.product')->orderBy('id', 'desc')->paginate(getPaginate());
+        $pageTitle       = 'Shipping History';
+        $redeemHistories = BeanHistory::redeem()->where('user_id', auth()->id())->with('product.unit', 'redeemData.shippingMethod', 'currency')->orderBy('id', 'desc')->paginate(getPaginate());
 
         return view('Template::user.redeem.history', compact('pageTitle', 'redeemHistories'));
     }

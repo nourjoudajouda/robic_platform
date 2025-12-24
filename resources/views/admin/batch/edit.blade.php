@@ -52,17 +52,6 @@
                             
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>@lang('Sell Price') <span class="text--danger">*</span></label>
-                                    <div class="input-group">
-                                        <input type="number" step="0.01" name="sell_price" id="sell_price" class="form-control" value="{{ old('sell_price', $batch->sell_price) }}" required style="flex: 1;">
-                                        <span class="input-group-text" id="currency_display">{{ $batch->product->currency->symbol ?? 'Currency' }}</span>
-                                    </div>
-                                    <small class="form-text text-muted">@lang('Price per unit')</small>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="form-group">
                                     <label>@lang('Batch Code')</label>
                                     <input type="text" class="form-control" value="{{ $batch->batch_code }}" disabled>
                                     <small class="form-text text-muted">@lang('Batch code cannot be modified')</small>
@@ -131,19 +120,13 @@
                                     <div class="card-body">
                                         <h6 class="mb-3">@lang('Total Calculation')</h6>
                                         <div class="row">
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <div class="form-group mb-2">
                                                     <label class="text-muted">@lang('Total Items')</label>
                                                     <div class="h5" id="total_items">0</div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
-                                                <div class="form-group mb-2">
-                                                    <label class="text-muted">@lang('Total Sell Price')</label>
-                                                    <div class="h5 text--success" id="total_sell_price">0</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-6">
                                                 <div class="form-group mb-2">
                                                     <label class="text-muted">@lang('Total Buy Price')</label>
                                                     <div class="h5 text--info" id="total_buy_price">0</div>
@@ -175,30 +158,22 @@
             if (productId) {
                 const option = $('#product_id option:selected');
                 const unitSymbol = option.data('unit-symbol') || '{{ $batch->product->unit->symbol ?? "Unit" }}';
-                const currencySymbol = option.data('currency-symbol') || '{{ $batch->product->currency->symbol ?? "Currency" }}';
                 
                 $('#unit_display').text(unitSymbol);
-                $('#currency_display').text(currencySymbol);
             } else {
                 $('#unit_display').text('{{ $batch->product->unit->symbol ?? "Unit" }}');
-                $('#currency_display').text('{{ $batch->product->currency->symbol ?? "Currency" }}');
             }
         }
         
         function calculateTotal() {
             const unitsCount = parseFloat($('#units_count').val()) || 0;
-            const sellPrice = parseFloat($('#sell_price').val()) || 0;
             const buyPrice = parseFloat($('#buy_price').val()) || 0;
-            
-            // حساب إجمالي سعر البيع
-            const totalSellPrice = unitsCount * sellPrice;
             
             // حساب إجمالي سعر الشراء
             const totalBuyPrice = unitsCount * buyPrice;
             
             // عرض النتائج
             $('#total_items').text(unitsCount.toFixed(2));
-            $('#total_sell_price').text(totalSellPrice.toFixed(2));
             $('#total_buy_price').text(totalBuyPrice.toFixed(2));
         }
         
@@ -209,7 +184,7 @@
         });
         
         // حساب تلقائي عند تغيير أي حقل
-        $('#units_count, #sell_price, #buy_price').on('input', function() {
+        $('#units_count, #buy_price').on('input', function() {
             calculateTotal();
         });
         
