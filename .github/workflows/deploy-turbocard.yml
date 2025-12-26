@@ -1,0 +1,119 @@
+name: Deploy Turbocard
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - 'README.md'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Turbocard
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for composer changes
+        id: composer_changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE 'composer\.(json|lock)$'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check for migration changes
+        id: migrations_changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE 'database/migrations/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.CPANEL_SSH_KEY }}
+          ssh-passphrase: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.CPANEL_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        run: |
+          rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='storage' \
+            --exclude='.env' \
+            --exclude='vendor' \
+            ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }}
+
+      - name: Setup .env file
+        run: |
+          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            if [ ! -f .env ]; then \
+              if [ -f .env.example ]; then \
+                cp .env.example .env; \
+              else \
+                touch .env; \
+              fi; \
+              php artisan key:generate --force; \
+            fi && \
+            sed -i 's/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/' .env || echo 'DB_DATABASE=${{ secrets.DB_DATABASE }}' >> .env && \
+            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/' .env || echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env && \
+            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/' .env || echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env"
+
+      - name: Install Composer Dependencies (if changed)
+        if: steps.composer_changed.outputs.changed == 'true'
+        run: |
+          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            composer install --no-dev --optimize-autoloader --no-interaction"
+
+      - name: Run Database Migrations (if changed)
+        if: steps.migrations_changed.outputs.changed == 'true'
+        run: |
+          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            php artisan migrate --force"
+
+      - name: Run deployment commands on server
+        run: |
+          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            php artisan config:cache && \
+            php artisan route:cache && \
+            php artisan view:cache && \
+            php artisan queue:restart || true"
+
+      - name: Clear application cache
+        run: |
+          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            php artisan cache:clear && \
+            php artisan optimize:clear && \
+            php artisan optimize"
+
+      - name: Deployment notification
+        if: success()
+        run: |
+          echo "✅ Deployment to Turbocard completed successfully!"
+
+      - name: Deployment failure notification
+        if: failure()
+        run: |
+          echo "❌ Deployment to Turbocard failed!"
+
