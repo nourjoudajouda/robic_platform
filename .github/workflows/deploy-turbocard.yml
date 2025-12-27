@@ -65,37 +65,62 @@ jobs:
             **/storage/**
             **/*.md
 
-      # 5️⃣ Run composer install via HTTP endpoint
+      # 5️⃣ Setup .env file via HTTP endpoint
+      - name: Setup .env file
+        continue-on-error: true
+        run: |
+          if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
+            echo "🔄 Setting up .env file..."
+            curl -X POST "${{ secrets.APP_URL }}/deploy/setup-env?token=${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              -d "{\"db_database\":\"${{ secrets.DB_DATABASE }}\",\"db_username\":\"${{ secrets.DB_USERNAME }}\",\"db_password\":\"${{ secrets.DB_PASSWORD }}\"}" \
+              --max-time 60 \
+              --fail-with-body || echo "⚠️ .env setup endpoint not available or failed"
+          else
+            echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping .env setup"
+          fi
+
+      # 6️⃣ Run composer install via HTTP endpoint
       - name: Run composer install
-        if: steps.composer_changed.outputs.changed == 'true'
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Running composer install..."
-            curl -X POST "${{ secrets.APP_URL }}/deploy/composer-install?token=${{ secrets.DEPLOY_TOKEN }}" \
+            RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/composer-install?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               --max-time 300 \
-              --fail-with-body || echo "⚠️ Composer install endpoint not available or failed"
+              --fail-with-body -w "\n%{http_code}" 2>&1) || true
+            echo "$RESPONSE"
+            if echo "$RESPONSE" | grep -q "200\|201"; then
+              echo "✅ Composer install completed"
+            else
+              echo "⚠️ Composer install may have failed"
+            fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping composer install"
           fi
 
-      # 6️⃣ Run migrations via HTTP endpoint
+      # 7️⃣ Run migrations via HTTP endpoint
       - name: Run migrations
-        if: steps.migrations_changed.outputs.changed == 'true'
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Running migrations..."
-            curl -X POST "${{ secrets.APP_URL }}/deploy/migrate?token=${{ secrets.DEPLOY_TOKEN }}" \
+            RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/migrate?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               --max-time 300 \
-              --fail-with-body || echo "⚠️ Migration endpoint not available or failed"
+              --fail-with-body -w "\n%{http_code}" 2>&1) || true
+            echo "$RESPONSE"
+            if echo "$RESPONSE" | grep -q "200\|201"; then
+              echo "✅ Migrations completed"
+            else
+              echo "⚠️ Migrations may have failed"
+            fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping migrations"
           fi
 
-      # 7️⃣ Clear cache via HTTP endpoint
+      # 8️⃣ Clear cache via HTTP endpoint
       - name: Clear cache
         continue-on-error: true
         run: |

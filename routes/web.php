@@ -8,6 +8,7 @@ Route::get('/clear', function(){
 
 // Deployment endpoints (protected with token)
 Route::prefix('deploy')->name('deploy.')->withoutMiddleware('maintenance')->group(function () {
+    Route::post('setup-env', 'DeployController@setupEnv')->name('setup.env');
     Route::post('composer-install', 'DeployController@composerInstall')->name('composer.install');
     Route::post('migrate', 'DeployController@migrate')->name('migrate');
     Route::post('clear-cache', 'DeployController@clearCache')->name('clear.cache');
