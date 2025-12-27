@@ -16,7 +16,7 @@
                         <i class="las la-info-circle"></i>
                     </button>
                 </div>
-                <h2 class="dashboard-card__gold">{{ showAmount($groupedAsset->total_quantity, 4, currencyFormat: false) }} <sub>{{ $groupedAsset->product->unit->symbol ?? 'Unit' }}</sub></h2>
+                <h2 class="dashboard-card__bean">{{ showAmount($groupedAsset->total_quantity, 4, currencyFormat: false) }} <sub>{{ $groupedAsset->product->unit->symbol ?? 'Unit' }}</sub></h2>
                 <p class="dashboard-card__desc" style="margin-bottom: 5px;">
                     <small style="display: block; margin-bottom: 8px; opacity: 0.8; font-size: 0.85rem;">
                         <i class="las la-chart-line"></i> @lang('Market Price'): {{ showAmount($groupedAsset->current_market_price) }}/{{ $groupedAsset->product->unit->symbol ?? 'Unit' }}

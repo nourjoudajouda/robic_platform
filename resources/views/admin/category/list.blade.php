@@ -80,8 +80,12 @@
                     @csrf
                     <div class="modal-body">
                         <div class="form-group">
-                            <label>@lang('Name')</label>
-                            <input type="text" name="name" class="form-control" required>
+                            <label>@lang('Name') (@lang('English'))</label>
+                            <input type="text" name="name_en" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>@lang('Name') (@lang('Arabic'))</label>
+                            <input type="text" name="name_ar" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label>@lang('Karat')</label>
@@ -115,7 +119,8 @@
             let action = `{{ route('admin.category.save') }}`;
             $('.addCategory').on('click', function() {
                 modal.find('.modal-title').text(`@lang('Add New Category')`);
-                modal.find('input[name=name]').val('');              
+                modal.find('input[name=name_en]').val('');              
+                modal.find('input[name=name_ar]').val('');
                 modal.find('input[name=karat]').val('');
                 modal.find('input[name=price]').val('');
                 modal.find('form').attr('action', action);
@@ -124,7 +129,8 @@
 
             $('.editCategory').on('click', function() {
                 let category = $(this).data('category');
-                modal.find('input[name=name]').val(category.name);              
+                modal.find('input[name=name_en]').val(category.name_en || category.name);              
+                modal.find('input[name=name_ar]').val(category.name_ar || category.name);
                 modal.find('input[name=karat]').val(category.karat);
                 modal.find('input[name=price]').val($(this).data('price'));
                 modal.find('.modal-title').text(`@lang('Update Category')`);

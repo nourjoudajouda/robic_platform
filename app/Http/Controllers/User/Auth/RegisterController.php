@@ -229,6 +229,8 @@ class RegisterController extends Controller
         $userLogin->os      = @$userAgent['os_platform'];
         $userLogin->save();
 
+        $userType = $user->type == 'establishment' ? 'منشأة' : 'مستخدم';
+        $this->audit('register', "تم تسجيل {$userType} جديد: " . ($user->establishment_name ?? $user->username ?? $user->email), $user);
 
         return $user;
     }

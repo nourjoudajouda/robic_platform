@@ -24,35 +24,15 @@
                         </span>
                     </li>
                 </ul>
-                <div class="gold-calculator">
+                <div class="bean-calculator">
                     <form action="{{ route('user.buy.store') }}" method="POST">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
                         <input type="hidden" name="order_type" id="order_type" value="{{ $cheapestOrder['type'] ?? 'batch' }}">
                         <input type="hidden" name="sell_order_id" id="sell_order_id" value="{{ $cheapestOrder['sell_order_id'] ?? ($cheapestOrder['user_sell_order_id'] ?? '') }}">
-                        
-                        <!-- معلومات المنتج -->
-                        <div class="product-info mb-4 p-3" style="background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
-                            <h5 class="text-white mb-3">{{ $product->name ?? 'N/A' }}</h5>
-                            <div class="row">
-                                @if($qualityGrade)
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-muted">@lang('Quality Grade'):</small>
-                                    <strong class="text-white d-block">{{ $qualityGrade }}</strong>
-                                </div>
-                                @endif
-                                @if($originCountry)
-                                <div class="col-md-6 mb-2">
-                                    <small class="text-muted">@lang('Origin Country'):</small>
-                                    <strong class="text-white d-block">{{ $originCountry }}</strong>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                        
-                        <div class="gold-calculator__top">
-                            <div class="gold-calculator__top-left">
-                                <h4 class="gold-calculator__top-amount"> 
+                        <div class="bean-calculator__top">
+                            <div class="bean-calculator__top-left">
+                                <h4 class="bean-calculator__top-amount"> 
                                     @if($marketPrice)
                                         <span class="currentPrice">{{ showAmount($marketPrice, 2, true, false, false) }}</span> 
                                         {{ $product->currency->code ?? gs('cur_sym') }} / {{ $product->unit->symbol ?? 'Unit' }}
@@ -72,18 +52,18 @@
                             </div>
                             <div class="calculator-switch">
                                 <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" id="goldCalculatorSwitch1" name="purchase_type" checked>
-                                    <label class="text" for="goldCalculatorSwitch1">@lang('Purchase in '){{ __(gs('cur_text')) }}</label>
+                                    <input class="form-check-input" type="radio" id="beanCalculatorSwitch1" name="purchase_type" checked>
+                                    <label class="text" for="beanCalculatorSwitch1">@lang('Purchase in '){{ __(gs('cur_text')) }}</label>
                                 </div>
                                 <span class="calculator-switch__icon"><i class="fa-solid fa-right-left"></i></span>
                                 <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" id="goldCalculatorSwitch2" name="purchase_type">
-                                    <label class="text" for="goldCalculatorSwitch2">@lang('Purchase in Quantity')</label>
+                                    <input class="form-check-input" type="radio" id="beanCalculatorSwitch2" name="purchase_type">
+                                    <label class="text" for="beanCalculatorSwitch2">@lang('Purchase in Quantity')</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="gold-calculator__bottom">
-                            <div class="gold-calculator__inputs">
+                        <div class="bean-calculator__bottom">
+                            <div class="bean-calculator__inputs">
                                 <div class="form-group position-relative">
                                     <input type="number" step="any" class="form--control" placeholder="00.00" name="amount" id="amount">
                                     <label class="form--label">{{ __(gs('cur_text')) }}</label>
@@ -500,7 +480,7 @@
                 '<i class="fas fa-info-circle me-2"></i>' + message +
                 breakdownHtml +
                 '</div>';
-            $('.gold-calculator__top').after(alertHtml);
+            $('.bean-calculator__top').after(alertHtml);
         }
         
         function hidePriceAlert() {
@@ -750,11 +730,11 @@
                 '@lang("Requested quantity") (<strong>' + requested.toFixed(4) + '</strong> {{ $product->unit->symbol ?? "Unit" }}) ' +
                 '@lang("exceeds available quantity in market") (<strong>' + available.toFixed(4) + '</strong> {{ $product->unit->symbol ?? "Unit" }})' +
                 '</div>';
-            $('.gold-calculator__inputs').after(errorHtml);
+            $('.bean-calculator__inputs').after(errorHtml);
         }
 
         $('input[name="purchase_type"]').on('change', function() {
-            purchaseType = $(this).attr('id') === 'goldCalculatorSwitch1' ? 'amount' : 'quantity';
+            purchaseType = $(this).attr('id') === 'beanCalculatorSwitch1' ? 'amount' : 'quantity';
             // إعادة تعيين القيم عند تغيير نوع الشراء
             if (purchaseType === 'amount') {
                 $('#quantity').val('');

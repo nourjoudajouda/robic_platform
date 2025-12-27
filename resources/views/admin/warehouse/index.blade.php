@@ -43,6 +43,9 @@
                                         <td>{{ showDateTime($warehouse->created_at) }}</td>
                                         <td>
                                             <div class="button--group">
+                                                <a href="{{ route('admin.warehouse.statistics', $warehouse->id) }}" class="btn btn-sm btn-outline--info">
+                                                    <i class="las la-chart-bar"></i> @lang('Statistics')
+                                                </a>
                                                 <a href="{{ route('admin.warehouse.edit', $warehouse->id) }}" class="btn btn-sm btn-outline--primary">
                                                     <i class="la la-pen"></i> @lang('Edit')
                                                 </a>

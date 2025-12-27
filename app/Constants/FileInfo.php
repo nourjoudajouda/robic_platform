@@ -93,6 +93,10 @@ class FileInfo
             'path' => 'transfers',
         ];
 
+        $data['batchAttachment'] = [
+            'path' => 'assets/images/batch/attachment',
+        ];
+
         return $data;
 	}
 

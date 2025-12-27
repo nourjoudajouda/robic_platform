@@ -328,39 +328,97 @@ class UserController extends Controller
     public function priceTracker(Request $request)
     {
         $pageTitle = 'Price Tracker';
-        $days      = $request->days ?? 90;
-        $prices    = HistoricalPrice::where('date', '>=', now()->subDays($days))->groupBy('date')->orderBy('date', 'asc')->get();
-
-        $categories = Category::active()->get();
-        $category   = $categories->find($request->category) ?? $categories->first();
-
-        // إذا لم توجد فئات، أنشئ بيانات افتراضية
-        if (!$category) {
-            $prices = collect([]);
-            return view('Template::user.price_tracker', compact('pageTitle', 'prices', 'categories', 'category'));
-        }
-
-        $prices = $prices->map(function ($price) use ($category) {
-            return [
-                'date'  => $price->date,
-                'price' => getAmount($price->price * $category->karat / 24),
+        $days = $request->days ?? 1; // الافتراضي 1 يوم (24 ساعة)
+        
+        // الحصول على نطاق الأسعار من الإعدادات
+        $priceFrom = gs('chart_price_from') ?? 0;
+        $priceTo = gs('chart_price_to') ?? 20;
+        
+        // جلب جميع المنتجات النشطة
+        $products = \App\Models\Product::active()->with(['unit', 'currency'])->get();
+        
+        $allProductsData = [];
+        $labels = collect();
+        
+        foreach ($products as $product) {
+            if ($days == 1) {
+                // عرض آخر 24 ساعة (hourly)
+                $priceHistory = \App\Models\MarketPriceHistory::where('product_id', $product->id)
+                    ->where('created_at', '>=', now()->subHours(24))
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                
+                $lastKnownPrice = $product->market_price ?? (($priceFrom + $priceTo) / 2);
+                $startOfDay = now()->startOfDay();
+                $productData = [];
+                
+                // ملء البيانات لكل ساعة
+                for ($hour = 0; $hour < 24; $hour++) {
+                    $hourStart = $startOfDay->copy()->addHours($hour);
+                    $hourEnd = $hourStart->copy()->addHour();
+                    
+                    $priceInHour = $priceHistory->filter(function($record) use ($hourStart, $hourEnd) {
+                        return $record->created_at >= $hourStart && $record->created_at < $hourEnd;
+                    })->first();
+                    
+                    if ($priceInHour) {
+                        $lastKnownPrice = $priceInHour->market_price;
+                    }
+                    
+                    $productData[] = round($lastKnownPrice, 2);
+                    
+                    if ($labels->count() < 24) {
+                        $labels->push($hour);
+                    }
+                }
+            } else {
+                // عرض حسب الأيام (daily)
+                $priceHistory = \App\Models\MarketPriceHistory::where('product_id', $product->id)
+                    ->where('created_at', '>=', now()->subDays($days))
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                
+                $lastKnownPrice = $product->market_price ?? (($priceFrom + $priceTo) / 2);
+                $productData = [];
+                
+                // ملء البيانات لكل يوم
+                for ($day = $days - 1; $day >= 0; $day--) {
+                    $dayStart = now()->subDays($day)->startOfDay();
+                    $dayEnd = $dayStart->copy()->endOfDay();
+                    
+                    $priceInDay = $priceHistory->filter(function($record) use ($dayStart, $dayEnd) {
+                        return $record->created_at >= $dayStart && $record->created_at <= $dayEnd;
+                    })->last(); // آخر سعر في اليوم
+                    
+                    if ($priceInDay) {
+                        $lastKnownPrice = $priceInDay->market_price;
+                    }
+                    
+                    $productData[] = round($lastKnownPrice, 2);
+                    
+                    if ($labels->count() < $days) {
+                        $labels->push($dayStart->format('Y-m-d'));
+                    }
+                }
+            }
+            
+            $allProductsData[] = [
+                'name' => $product->name,
+                'data' => $productData,
+                'unit' => $product->unit ? $product->unit->name : 'unit',
+                'current_price' => $product->market_price ?? 0
             ];
-        });
-
+        }
 
         if ($request->ajax()) {
-            $column        = 'change_' . $days . 'd';
-            $percentChange = $category->$column ?? 0;
-            $priceChange   = $percentChange > 0 ? $category->price * $percentChange / 100 : $category->price * abs($percentChange) / 100;
-            $data          = [
-                'prices'         => $prices,
-                'percent_change' => $percentChange,
-                'price_change'   => $priceChange,
-            ];
-            return response()->json($data);
+            return response()->json([
+                'products' => $allProductsData,
+                'labels' => $labels,
+                'days' => $days
+            ]);
         }
 
-        return view('Template::user.price_tracker', compact('pageTitle', 'prices', 'categories', 'category'));
+        return view('Template::user.price_tracker', compact('pageTitle', 'allProductsData', 'labels', 'priceFrom', 'priceTo', 'products', 'days'));
     }
 
     private function getPortfolioData()

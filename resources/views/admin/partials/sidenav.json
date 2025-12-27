@@ -27,28 +27,28 @@
         "menu_active": "admin.dashboard"
     },
     
-    "gold_history": {
+    "bean_history": {
         "title": "Green Coffee History",
         "icon": "las la-history",
-        "menu_active": "admin.gold.history*",
+        "menu_active": "admin.bean.history*",
         "counters": ["processingRedeemCount"],
         "submenu": [{
-                "keyword": ["buy history", "purchase history", "gold buying", "transaction history", "buying records"],
+                "keyword": ["buy history", "purchase history", "bean buying", "transaction history", "buying records"],
                 "title": "Buy",
-                "route_name": "admin.gold.history.buy",
-                "menu_active": "admin.gold.history.buy"
+                "route_name": "admin.bean.history.buy",
+                "menu_active": "admin.bean.history.buy"
             },
             {
-                "keyword": ["sell history", "sales history", "gold selling", "transaction history", "selling records"],
+                "keyword": ["sell history", "sales history", "bean selling", "transaction history", "selling records"],
                 "title": "Sell",
-                "route_name": "admin.gold.history.sell",
-                "menu_active": "admin.gold.history.sell"
+                "route_name": "admin.bean.history.sell",
+                "menu_active": "admin.bean.history.sell"
             },
             {
                 "keyword": ["shipping history", "receiving history", "shipping and receiving", "delivery history", "shipping records"],
                 "title": "Shipping & Receiving",
-                "route_name": "admin.gold.history.redeem",
-                "menu_active": "admin.gold.history.redeem",
+                "route_name": "admin.bean.history.redeem",
+                "menu_active": "admin.bean.history.redeem",
                 "counter": "processingRedeemCount"
             }
         ]
@@ -56,8 +56,8 @@
     "categories": {
         "keyword": [
             "Categories",
-            "Gold Category",
-            "Gold Type",
+            "Bean Category",
+            "Bean Type",
             "Karat"
         ],
         "title": "Category",

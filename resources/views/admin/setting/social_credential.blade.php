@@ -16,6 +16,41 @@
                             </thead>
                             <tbody>
                                 @foreach (gs('socialite_credentials') as $key => $credential)
+                                    @if ($key == 'facebook' || $key == 'linkedin')
+                                        {{-- <tr>
+                                            <td class="fw-bold">{{ ucfirst($key) }}</td>
+                                            <td>{{ $credential->client_id }}</td>
+                                            <td>
+                                                @if (@$credential->status == Status::ENABLE)
+                                                    <span class="badge badge--success">@lang('Enabled')</span>
+                                                @else
+                                                    <span class="badge badge--warning">@lang('Disabled')</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <div class="button--group">
+                                                    <button class="btn btn-outline--primary btn-sm editBtn"
+                                                        data-client_id="{{ $credential->client_id }}"
+                                                        data-client_secret="{{ $credential->client_secret }}"
+                                                        data-key="{{ $key }}"><i class="la la-cogs"></i>
+                                                        @lang('Configure')
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline--dark helpBtn" data-target-key="{{ $key }}">
+                                                        <i class="la la-question"></i> @lang('Help')
+                                                    </button>
+                                                    @if (@$credential->status == Status::ENABLE)
+                                                        <button class="btn btn-outline--danger btn-sm confirmationBtn"  data-question="@lang('Are you sure that you want to disable this login credential?')" data-action="{{ route('admin.setting.socialite.credentials.status.update', $key) }}">
+                                                            <i class="las la-eye-slash"></i>@lang('Disable')
+                                                        </button>
+                                                    @else
+                                                        <button class="btn btn-outline--success btn-sm confirmationBtn" data-question="@lang('Are you sure that you want to enable login credential?')" data-action="{{ route('admin.setting.socialite.credentials.status.update', $key) }}">
+                                                            <i  class="las la-eye"></i>@lang('Enable')
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                        </tr> --}}
+                                    @else
                                     <tr>
                                         <td class="fw-bold">{{ ucfirst($key) }}</td>
                                         <td>{{ $credential->client_id }}</td>
@@ -49,6 +84,7 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
@@ -170,25 +206,25 @@
                         <li class="list-group-item"><b>@lang('Step 8')</b>: @lang('Again click on') <a href="https://console.cloud.google.com/apis/credentials" target="_blank">@lang('credentials')</a> @lang('and select type as web application and fill up the required informations. Also don\'t forget to add redirect url and press create button'). </li>
                         <li class="list-group-item"><b>@lang('Step 9')</b>: @lang('Finally you\'ve got the credentials. Please copy the Client ID and Client Secret and paste it in admin panel google configuration'). </li>
                     </ul>`;
-                } else if (key == 'facebook') {
-                    rules = ` <ul class="list-group list-group-flush">
-                        <li class="list-group-item"><b>@lang('Step 1')</b>: @lang('Go to') <a href="https://developers.facebook.com/" target="_blank">@lang('facebook developer')</a></li>
-                        <li class="list-group-item"><b>@lang('Step 2')</b>: @lang('Click on Get Started and create Meta Developer account').</li>
-                        <li class="list-group-item"><b>@lang('Step 3')</b>: @lang('Create an app by selecting Consumer option').</li>
-                        <li class="list-group-item"><b>@lang('Step 4')</b>: @lang('Click on Setup Facebook Login and select Web option').</li>
-                        <li class="list-group-item"><b>@lang('Step 5')</b>: @lang('Add site url').</li>
-                        <li class="list-group-item"><b>@lang('Step 6')</b>: @lang('Go to Facebook Login > Settings and add callback URL here').</li>
-                        <li class="list-group-item"><b>@lang('Step 7')</b>: @lang('Go to Setting > Basic and copy the credentials and paste to admin panel').</li>
+                // } else if (key == 'facebook') {
+                //     rules = ` <ul class="list-group list-group-flush">
+                //         <li class="list-group-item"><b>@lang('Step 1')</b>: @lang('Go to') <a href="https://developers.facebook.com/" target="_blank">@lang('facebook developer')</a></li>
+                //         <li class="list-group-item"><b>@lang('Step 2')</b>: @lang('Click on Get Started and create Meta Developer account').</li>
+                //         <li class="list-group-item"><b>@lang('Step 3')</b>: @lang('Create an app by selecting Consumer option').</li>
+                //         <li class="list-group-item"><b>@lang('Step 4')</b>: @lang('Click on Setup Facebook Login and select Web option').</li>
+                //         <li class="list-group-item"><b>@lang('Step 5')</b>: @lang('Add site url').</li>
+                //         <li class="list-group-item"><b>@lang('Step 6')</b>: @lang('Go to Facebook Login > Settings and add callback URL here').</li>
+                //         <li class="list-group-item"><b>@lang('Step 7')</b>: @lang('Go to Setting > Basic and copy the credentials and paste to admin panel').</li>
 
-                    </ul>`;
-                } else if (key == 'linkedin') {
-                    rules = `<ul class="list-group list-group-flush">
-                        <li class="list-group-item"><b>@lang('Step 1')</b>: @lang('Go to') <a href="https://developer.linkedin.com/" target="_blank">@lang('linkedin developer')</a>.</li>
-                        <li class="list-group-item"><b>@lang('Step 2')</b>: @lang('Click on create app and provide required information').</li>
-                        <li class="list-group-item"><b>@lang('Step 3')</b>: @lang('Click on Sign In with Linkedin > Request access').</li>
-                        <li class="list-group-item"><b>@lang('Step 4')</b>: @lang('Click Auth option and copy the credentials and paste it to admin panel and don\'t forget to add redirect url here').</li>
-                    </ul>`;
-                }
+                //     </ul>`;
+                // } else if (key == 'linkedin') {
+                //     rules = `<ul class="list-group list-group-flush">
+                //         <li class="list-group-item"><b>@lang('Step 1')</b>: @lang('Go to') <a href="https://developer.linkedin.com/" target="_blank">@lang('linkedin developer')</a>.</li>
+                //         <li class="list-group-item"><b>@lang('Step 2')</b>: @lang('Click on create app and provide required information').</li>
+                //         <li class="list-group-item"><b>@lang('Step 3')</b>: @lang('Click on Sign In with Linkedin > Request access').</li>
+                //         <li class="list-group-item"><b>@lang('Step 4')</b>: @lang('Click Auth option and copy the credentials and paste it to admin panel and don\'t forget to add redirect url here').</li>
+                //     </ul>`;
+                // }
 
                 modal.find('.modal-body').html(rules);
                 modal.modal('show');

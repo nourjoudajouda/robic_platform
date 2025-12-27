@@ -27,6 +27,7 @@ class Batch extends Model
         'origin_country',
         'exp_date',
         'buy_price',
+        'attachment',
         'status',
         'type',
         'user_id',
@@ -50,6 +51,11 @@ class Batch extends Model
     public function unit()
     {
         return $this->belongsTo(Unit::class);
+    }
+
+    public function itemUnit()
+    {
+        return $this->belongsTo(Unit::class, 'item_unit_id');
     }
 
     public function currency()

@@ -161,4 +161,9 @@ class User extends Authenticatable
         return $this->hasMany(DeviceToken::class);
     }
 
+    public function audits()
+    {
+        return $this->hasMany(Audit::class)->where('user_type', 'user');
+    }
+
 }

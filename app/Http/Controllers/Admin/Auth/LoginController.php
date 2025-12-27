@@ -97,8 +97,20 @@ class LoginController extends Controller
 
     public function logout(Request $request)
     {
+        $admin = auth()->guard('admin')->user();
         $this->guard('admin')->logout();
         $request->session()->invalidate();
+        
+        if ($admin) {
+            $this->audit('logout', 'تسجيل خروج الأدمن: ' . $admin->username, $admin);
+        }
+        
         return $this->loggedOut($request) ?: redirect($this->redirectTo);
+    }
+    
+    protected function authenticated(Request $request, $admin)
+    {
+        $this->audit('login', 'تسجيل دخول الأدمن: ' . $admin->username, $admin);
+        return redirect()->intended($this->redirectPath());
     }
 }

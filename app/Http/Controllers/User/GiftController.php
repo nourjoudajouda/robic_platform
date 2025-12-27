@@ -62,7 +62,7 @@ class GiftController extends Controller
         $quantity = $request->amount / $asset->batch->sell_price;
 
         if ($quantity > $asset->quantity) {
-            $notify[] = ['error', 'Insufficient gold asset'];
+            $notify[] = ['error', 'Insufficient bean asset'];
             return back()->withNotify($notify);
         }
 
@@ -114,10 +114,10 @@ class GiftController extends Controller
         $transaction->trx_type     = '-';
         $transaction->details      = 'Gift charge of Green Coffee to ' . $recipientUser->username;
         $transaction->trx          = $trx;
-        $transaction->remark       = 'gift_gold';
+        $transaction->remark       = 'gift_bean';
         $transaction->save();
 
-        notify($user, 'GIFT_GOLD', [
+        notify($user, 'GIFT_BEAN', [
             'recipient_name' => $recipientUser->fullname,
             'category'       => $category->name,
             'quantity'       => showAmount($quantity, 4, currencyFormat: false),
@@ -126,7 +126,7 @@ class GiftController extends Controller
             'trx'            => $trx,
         ]);
 
-        notify($recipientUser, 'RECEIVED_GIFT_GOLD', [
+        notify($recipientUser, 'RECEIVED_GIFT_BEAN', [
             'user_name' => $user->fullname,
             'category'  => $category->name,
             'quantity'  => showAmount($quantity, 4, currencyFormat: false),
@@ -135,7 +135,7 @@ class GiftController extends Controller
             'trx'       => $trx,
         ]);
 
-        $notify[] = ['success', 'Gold gifted successfully'];
+        $notify[] = ['success', 'Bean gifted successfully'];
         return back()->withNotify($notify);
     }
 

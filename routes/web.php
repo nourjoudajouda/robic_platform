@@ -23,7 +23,7 @@ Route::controller('TicketController')->prefix('ticket')->name('ticket.')->group(
 Route::get('app/deposit/confirm/{hash}', 'Gateway\PaymentController@appDepositConfirm')->name('deposit.app.confirm');
 
 Route::controller('SiteController')->group(function () {
-    Route::get('gold-price', 'goldPrice')->name('gold.price');
+    Route::get('bean-price', 'beanPrice')->name('bean.price');
     Route::get('market-prices', 'getMarketPrices')->name('market.prices');
 
     Route::get('/contact', 'contact')->name('contact');

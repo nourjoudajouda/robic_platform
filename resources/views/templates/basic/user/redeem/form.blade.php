@@ -17,7 +17,7 @@
                                 <span class="dashboard-card__tag-icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/29.png') }}" alt="image"></span>
                                 <span class="dashboard-card__tag-text">{{ $asset->product ? __($asset->product->name) : 'N/A' }}</span>
                             </div>
-                            <h4 class="dashboard-card__gold">{{ showAmount($asset->quantity, 4, currencyFormat: false) }} <sub>{{ $asset->unit ? $asset->unit->symbol : 'Unit' }}</sub></h4>
+                            <h4 class="dashboard-card__bean">{{ showAmount($asset->quantity, 4, currencyFormat: false) }} <sub>{{ $asset->unit ? $asset->unit->symbol : 'Unit' }}</sub></h4>
                             <p class="dashboard-card__desc">{{ showAmount($asset->quantity * $asset->price) }} {{ gs('cur_text') }}</p>
                         </div>
                     @endforeach
@@ -86,7 +86,7 @@
                         <div class="col-12">
                             <div class="form-group mb-3">
                                 <p class="withdraw-form__desc"> 
-                                    @lang('Shipping Cost'): <span class="totalAmount fw-bold">0.00</span> {{ __(gs('cur_text')) }}
+                                    <span id="costLabel">@lang('Pickup Fee')</span>: <span class="totalAmount fw-bold">0.00</span> {{ __(gs('cur_text')) }}
                                     <span id="shippingCostDisplay" style="display: none;">
                                         <br><small class="text-muted">(@lang('Distance') × @lang('Rate')/km = <span class="shippingCostText">0.00</span> {{ __(gs('cur_text')) }})</small>
                                     </span>
@@ -289,7 +289,7 @@
             selectedProduct = {
                 product_id: $(this).data('product-id'),
                 price: $(this).data('price'),
-                quantity: parseFloat($(this).find('.dashboard-card__gold').text().trim().split(' ')[0]),
+                quantity: parseFloat($(this).find('.dashboard-card__bean').text().trim().split(' ')[0]),
                 warehouseLat: $(this).data('warehouse-lat'),
                 warehouseLng: $(this).data('warehouse-lng'),
                 warehouseName: $(this).data('warehouse-name'),
@@ -308,12 +308,17 @@
         $('input[name="delivery_type"]').on('change', function() {
             if ($(this).val() === 'shipping') {
                 $('#shippingDetailsSection').show();
+                $('#costLabel').text('@lang("Shipping Cost")');
             } else {
                 $('#shippingDetailsSection').hide();
                 resetShippingData();
+                $('#costLabel').text('@lang("Pickup Fee")');
             }
             updateTotal();
         });
+        
+        // Pickup fee from charge limit
+        const pickupFee = {{ $chargeLimit->pickup_fee ?? 0 }};
         
         // Quantity change
         $('#quantity').on('input', function() {
@@ -505,6 +510,10 @@
                 $('#shippingCostDisplay').show();
                 $('.productCost').text('0.00');
                 $('.shippingCostText').text(shippingCost.toFixed(2));
+            } else if ($('#deliveryPickup').is(':checked')) {
+                // استخدام رسوم الاستلام من الإعدادات
+                shippingCost = pickupFee;
+                $('#shippingCostDisplay').hide();
                 
                 // تحديث التنبيه بناءً على الرصيد
                 if (shippingCost > userBalance) {
@@ -520,6 +529,25 @@
                         .css('color', '#333')
                         .html('<i class="fas fa-exclamation-triangle"></i> <strong style="color: #000;">@lang("Important"):</strong><p class="mb-0" style="color: #333;">@lang("The shipping cost of") <strong style="color: #000;">' + shippingCost.toFixed(2) + ' {{ gs("cur_text") }}</strong> @lang("will be deducted from your account balance")<br><small style="color: #555;">@lang("Your current balance"): <strong style="color: #000;">' + userBalance.toFixed(2) + ' {{ gs("cur_text") }}</strong></small></p>');
                 }
+            } else if ($('#deliveryPickup').is(':checked')) {
+                // استخدام رسوم الاستلام من الإعدادات
+                shippingCost = pickupFee;
+                $('#shippingCostDisplay').hide();
+                
+                // تحديث التنبيه بناءً على الرصيد
+                if (shippingCost > userBalance) {
+                    $('#balanceWarning')
+                        .removeClass('alert-warning')
+                        .addClass('alert-danger')
+                        .css('color', '#721c24')
+                        .html('<i class="fas fa-exclamation-circle"></i> <strong style="color: #000;">@lang("Insufficient Balance")!</strong><p class="mb-0" style="color: #721c24;">@lang("Your balance") (<strong style="color: #000;">' + userBalance.toFixed(2) + ' {{ gs("cur_text") }}</strong>) @lang("is not enough for pickup fee") (<strong style="color: #000;">' + shippingCost.toFixed(2) + ' {{ gs("cur_text") }}</strong>).</p>');
+                } else {
+                    $('#balanceWarning')
+                        .removeClass('alert-danger')
+                        .addClass('alert-warning')
+                        .css('color', '#333')
+                        .html('<i class="fas fa-exclamation-triangle"></i> <strong style="color: #000;">@lang("Important"):</strong><p class="mb-0" style="color: #333;">@lang("The pickup fee of") <strong style="color: #000;">' + shippingCost.toFixed(2) + ' {{ gs("cur_text") }}</strong> @lang("will be deducted from your account balance")<br><small style="color: #555;">@lang("Your current balance"): <strong style="color: #000;">' + userBalance.toFixed(2) + ' {{ gs("cur_text") }}</strong></small></p>');
+                }
             } else {
                 $('#shippingCostDisplay').hide();
                 $('#balanceWarning')
@@ -529,10 +557,13 @@
                     .html('<i class="fas fa-exclamation-triangle"></i> <strong style="color: #000;">@lang("Important"):</strong><p class="mb-0" style="color: #333;">@lang("The shipping cost will be deducted from your account balance.")<br><small style="color: #555;">@lang("Your current balance"): <strong style="color: #000;">{{ showAmount(auth()->user()->balance) }}</strong></small></p>');
             }
             
-            // Total = Shipping Cost فقط (لأن المنتج من مخزون المستخدم)
+            // Total = Shipping Cost أو Pickup Fee فقط (لأن المنتج من مخزون المستخدم)
             let total = shippingCost;
             $('.totalAmount').text(total.toFixed(2));
         }
+        
+        // تحديث عند تحميل الصفحة
+        updateTotal();
         
         // Reset shipping data
         function resetShippingData() {

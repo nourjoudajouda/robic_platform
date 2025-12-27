@@ -18,7 +18,8 @@ class CategoryController extends Controller
     public function save(Request $request, $id = 0)
     {
         $request->validate([
-            'name'  => 'required',
+            'name_en'  => 'required',
+            'name_ar'  => 'required',
             'karat' => 'required|numeric|gt:0|lte:24',
             'price' => 'required|numeric|gt:0',
         ]);
@@ -31,17 +32,35 @@ class CategoryController extends Controller
             $notify[] = ['success', 'Category added successfully'];
         }
 
-        $category->name  = $request->name;
+        $oldValues = $id ? $category->only(['name_en', 'name_ar', 'karat', 'price']) : null;
+        $category->name  = $request->name_en; // Keep for backward compatibility
+        $category->name_en  = $request->name_en;
+        $category->name_ar  = $request->name_ar;
         $category->karat = $request->karat;
         $category->price = $request->price;
         $category->save();
+
+        if ($id) {
+            $newValues = $category->only(['name_en', 'name_ar', 'karat', 'price']);
+            $this->audit('update', 'تم تحديث الفئة: ' . $category->name_en, $category, $oldValues, $newValues);
+        } else {
+            $this->audit('create', 'تم إنشاء فئة جديدة: ' . $category->name_en, $category);
+        }
 
         return back()->withNotify($notify);
     }
 
     public function status($id)
     {
-        return Category::changeStatus($id);
+        $category = Category::findOrFail($id);
+        $oldStatus = $category->status;
+        $result = Category::changeStatus($id);
+        $category->refresh();
+        
+        $statusText = $category->status == \App\Constants\Status::ENABLE ? 'تفعيل' : 'تعطيل';
+        $this->audit('status_change', "تم {$statusText} الفئة: " . $category->name_en, $category, ['status' => $oldStatus], ['status' => $category->status]);
+        
+        return $result;
     }
 
 }

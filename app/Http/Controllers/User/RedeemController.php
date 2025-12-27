@@ -94,8 +94,17 @@ class RedeemController extends Controller
 
         // المستخدم يستلم من مخزونه - لا توجد تكلفة منتج
         $amount = 0;
-        $shippingCost = $request->delivery_type === 'shipping' ? $request->shipping_cost : 0;
-        $totalAmount = $shippingCost; // التكلفة الكلية = تكلفة الشحن فقط
+        
+        // حساب التكلفة حسب نوع الاستلام
+        if ($request->delivery_type === 'shipping') {
+            $shippingCost = $request->shipping_cost ?? 0;
+        } else {
+            // pickup - استخدام رسوم الاستلام من charge_limit
+            $chargeLimit = ChargeLimit::where('slug', 'redeem')->first();
+            $shippingCost = $chargeLimit->pickup_fee ?? 0;
+        }
+        
+        $totalAmount = $shippingCost; // التكلفة الكلية = تكلفة الشحن أو رسوم الاستلام
         
         // التحقق من الرصيد (فقط لتكلفة الشحن)
         if ($shippingCost > 0 && $user->balance < $shippingCost) {
@@ -135,16 +144,16 @@ class RedeemController extends Controller
                     $wallet->save();
                 }
                 
-                // إنشاء Transaction للشحن
+                // إنشاء Transaction للشحن أو الاستلام
                 $transaction = new Transaction();
                 $transaction->user_id = $user->id;
                 $transaction->amount = $shippingCost;
                 $transaction->post_balance = $user->balance;
                 $transaction->charge = 0;
                 $transaction->trx_type = '-';
-                $transaction->details = 'Shipping cost for ' . ($request->delivery_type === 'shipping' ? 'delivery' : 'pickup');
+                $transaction->details = $request->delivery_type === 'shipping' ? 'Shipping cost for delivery' : 'Pickup fee for warehouse collection';
                 $transaction->trx = getTrx();
-                $transaction->remark = 'shipping_cost';
+                $transaction->remark = $request->delivery_type === 'shipping' ? 'shipping_cost' : 'pickup_fee';
                 $transaction->save();
         }
 
@@ -174,15 +183,23 @@ class RedeemController extends Controller
                 $redeemData->distance = $request->distance;
             } else {
                 $redeemData->delivery_address = 'Pickup from warehouse';
+                $redeemData->shipping_cost = $shippingCost; // حفظ رسوم الاستلام
             }
             
             $redeemData->status = Status::REDEEM_STATUS_PROCESSING;
             $redeemData->save();
         });
         
-        $successMessage = 'Shipping request submitted successfully!';
-        if ($shippingCost > 0) {
-            $successMessage .= ' Shipping cost of ' . showAmount($shippingCost) . ' has been deducted from your balance.';
+        if ($request->delivery_type === 'shipping') {
+            $successMessage = 'Shipping request submitted successfully!';
+            if ($shippingCost > 0) {
+                $successMessage .= ' Shipping cost of ' . showAmount($shippingCost) . ' has been deducted from your balance.';
+            }
+        } else {
+            $successMessage = 'Pickup request submitted successfully!';
+            if ($shippingCost > 0) {
+                $successMessage .= ' Pickup fee of ' . showAmount($shippingCost) . ' has been deducted from your balance.';
+            }
         }
         $notify[] = ['success', $successMessage];
         return to_route('user.redeem.success.page')->withNotify($notify);
@@ -219,7 +236,7 @@ class RedeemController extends Controller
 
         if ($asset->quantity < $redeemData->total_quantity) {
             session()->forget('redeem_data');
-            $notify[] = ['error', 'Insufficient gold asset'];
+            $notify[] = ['error', 'Insufficient bean asset'];
             return back()->withNotify($notify);
         }
 
@@ -275,13 +292,13 @@ class RedeemController extends Controller
         $transaction->trx_type     = '-';
         $transaction->details      = 'Redeem Green Coffee';
         $transaction->trx          = $trx;
-        $transaction->remark       = 'redeem_gold';
+        $transaction->remark       = 'redeem_bean';
         $transaction->save();
 
         $sentence = collect($orderData['items'])->pluck('text')->toArray();
         $sentence = count($sentence) > 1 ? implode(', ', array_slice($sentence, 0, -1)) . ' and ' . end($sentence) : $sentence[0];
 
-        notify($user, 'REDEEM_GOLD', [
+        notify($user, 'REDEEM_BEAN', [
             'category' => $asset->category->name,
             'quantity' => showAmount($redeemHistory->total_quantity, 4, currencyFormat: false),
             'amount'   => showAmount($redeemHistory->amount),
@@ -290,7 +307,7 @@ class RedeemController extends Controller
             'details'  => $sentence,
         ]);
 
-        $notify[] = ['success', 'Gold redeemed successfully'];
+        $notify[] = ['success', 'Bean redeemed successfully'];
         return to_route('user.redeem.success.page')->withNotify($notify)->with('redeem_history', $redeemHistory);
     }
 

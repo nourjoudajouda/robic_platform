@@ -10,11 +10,10 @@
                             <thead>
                                 <tr>
                                     <th>@lang('Slug')</th>
-                                    <th>@lang('Min Amount')</th>
-                                    <th>@lang('Max Amount')</th>
                                     <th>@lang('Fixed Charge')</th>
                                     <th>@lang('Percent Charge')</th>
                                     <th>@lang('Vat')</th>
+                                    <th>@lang('Pickup Fee')</th>
                                     <th>@lang('Action')</th>
                                 </tr>
                             </thead>
@@ -22,13 +21,12 @@
                                 @forelse($chargeLimits as $chargeLimit)
                                     <tr>
                                         <td>{{ __(ucFirst($chargeLimit->slug)) }}</td>
-                                        <td>{{ showAmount($chargeLimit->min_amount) }}</td>
-                                        <td>{{ showAmount($chargeLimit->max_amount) }}</td>
                                         <td>{{ showAmount($chargeLimit->fixed_charge) }}</td>
                                         <td>{{ $chargeLimit->percent_charge }}%</td>
                                         <td>{{ $chargeLimit->id == 1 ? $chargeLimit->vat . '%' : '--' }}</td>
+                                        <td>{{ $chargeLimit->slug === 'redeem' ? showAmount($chargeLimit->pickup_fee ?? 0) : '--' }}</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-outline--primary me-1 updateChargeLimit" data-id="{{ $chargeLimit->id }}" data-min_amount="{{ getAmount($chargeLimit->min_amount) }}" data-max_amount="{{ getAmount($chargeLimit->max_amount) }}" data-fixed_charge="{{ getAmount($chargeLimit->fixed_charge) }}" data-percent_charge="{{ getAmount($chargeLimit->percent_charge) }}" data-vat="{{ getAmount($chargeLimit->vat) }}"
+                                            <button type="button" class="btn btn-sm btn-outline--primary me-1 updateChargeLimit" data-id="{{ $chargeLimit->id }}" data-slug="{{ $chargeLimit->slug }}" data-fixed_charge="{{ getAmount($chargeLimit->fixed_charge) }}" data-percent_charge="{{ getAmount($chargeLimit->percent_charge) }}" data-vat="{{ getAmount($chargeLimit->vat) }}" data-pickup_fee="{{ $chargeLimit->slug === 'redeem' ? getAmount($chargeLimit->pickup_fee ?? 0) : 0 }}"
                                                 data-title="{{ __('Update ' . $chargeLimit->slug . ' charge limit') }}">
                                                 <i class="las la-pen"></i>@lang('Edit')
                                             </button>
@@ -36,7 +34,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td class="text-muted text-center" colspan="100%">{{ __($emptyMessage) }}</td>
+                                        <td class="text-muted text-center" colspan="6">@lang('No charge limits found')</td>
                                     </tr>
                                 @endforelse
 
@@ -62,20 +60,6 @@
                     @csrf
                     <div class="modal-body">
                         <div class="form-group">
-                            <label>@lang('Min Amount')</label>
-                            <div class="input-group">
-                                <input type="number" step="any" name="min_amount" class="form-control" required>
-                                <span class="input-group-text">{{ __(gs('cur_text')) }}</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>@lang('Max Amount')</label>
-                            <div class="input-group">
-                                <input type="number" step="any" name="max_amount" class="form-control" required>
-                                <span class="input-group-text">{{ __(gs('cur_text')) }}</span>
-                            </div>
-                        </div>
-                        <div class="form-group">
                             <label>@lang('Fixed Charge')</label>
                             <div class="input-group">
                                 <input type="number" step="any" name="fixed_charge" class="form-control" required>
@@ -94,6 +78,13 @@
                             <div class="input-group">
                                 <input type="number" step="any" name="vat" class="form-control" required>
                                 <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="form-group pickupFeeGroup" style="display: none;">
+                            <label>@lang('Pickup Fee') <small>@lang('(رسوم استلام البضاعة من المستودع)')</small></label>
+                            <div class="input-group">
+                                <input type="number" step="0.01" name="pickup_fee" class="form-control" min="0">
+                                <span class="input-group-text">{{ __(gs('cur_text')) }}</span>
                             </div>
                         </div>
                     </div>
@@ -116,8 +107,6 @@
 
             $('.updateChargeLimit').on('click', function() {
                 let data = $(this).data();
-                $('[name=min_amount]').val(data.min_amount);
-                $('[name=max_amount]').val(data.max_amount);
                 $('[name=fixed_charge]').val(data.fixed_charge);
                 $('[name=percent_charge]').val(data.percent_charge);
                 $('[name=vat]').val(data.vat);
@@ -125,6 +114,7 @@
                 modal.find('form').attr('action', `${action+'/'+data.id}`);
                 modal.modal('show');
                 handleVat(data.id, modal);
+                handlePickupFee(data.slug, data.pickup_fee, modal);
             });
 
             function handleVat(id, modal) {
@@ -136,6 +126,16 @@
                     modal.find('.vatGroup').addClass('d-none');
                     modal.find('.vatGroup').find('label').removeClass('required');
                     modal.find('.vatGroup').find('[name=vat]').attr('required', false);
+                }
+            }
+
+            function handlePickupFee(slug, pickupFee, modal) {
+                if (slug === 'redeem') {
+                    modal.find('.pickupFeeGroup').show();
+                    $('[name=pickup_fee]').val(pickupFee || 0);
+                } else {
+                    modal.find('.pickupFeeGroup').hide();
+                    $('[name=pickup_fee]').val(0);
                 }
             }
 

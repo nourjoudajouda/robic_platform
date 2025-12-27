@@ -16,7 +16,7 @@ class SellController extends Controller
 {
     public function sellForm()
     {
-        $pageTitle   = "Sell Gold";
+        $pageTitle   = "Sell Bean";
         $allAssets   = Asset::where('user_id', '=', auth()->id())
             ->where('quantity', '>', 0)
             ->with(['batch.product.unit', 'batch.product.currency', 'product.unit', 'product.currency'])
@@ -405,13 +405,15 @@ class SellController extends Controller
         // لا ننقص الكمية من asset مباشرة - سيتم إدارتها من خلال user_sell_orders
         // عندما يتم شراء الكمية من sell order، سيتم تقليل available_quantity
 
+        $this->audit('sell', "تم إنشاء طلب بيع للكمية: {$sellData->quantity} من المنتج: " . ($product->name_en ?? 'N/A'), $product, null, ['quantity' => $sellData->quantity, 'sell_price' => $sellPrice, 'amount' => $sellData->amount]);
+
         $notify[] = ['success', 'Sell order(s) created successfully'];
         return to_route('user.sell.history')->withNotify($notify);
     }
 
     public function successPage()
     {
-        $pageTitle   = 'Gold Sold';
+        $pageTitle   = 'Bean Sold';
         $sellHistory = session('sell_history');
         if (!$sellHistory) {
             $notify[] = ['error', 'Invalid session data'];

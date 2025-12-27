@@ -13,7 +13,16 @@ class GeneralSettingController extends Controller
     public function systemSetting()
     {
         $pageTitle = 'System Settings';
-        $settings  = json_decode(file_get_contents(resource_path('views/admin/setting/settings.json')));
+        $allSettings  = json_decode(file_get_contents(resource_path('views/admin/setting/settings.json')), true);
+        
+        // Filter out disabled settings
+        $settings = [];
+        foreach ($allSettings as $key => $setting) {
+            if (!isset($setting['enabled']) || $setting['enabled'] === true) {
+                $settings[$key] = (object) $setting;
+            }
+        }
+        
         return view('admin.setting.system', compact('pageTitle', 'settings'));
     }
     public function general()

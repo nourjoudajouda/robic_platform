@@ -62,6 +62,7 @@ class BatchController extends Controller
             'origin_country' => 'nullable|string|max:255',
             'exp_date' => 'nullable|date',
             'buy_price' => 'nullable|numeric|min:0',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'status' => 'required|in:' . Status::ENABLE . ',' . Status::DISABLE,
         ]);
 
@@ -86,11 +87,29 @@ class BatchController extends Controller
         $batch->origin_country = $request->origin_country;
         $batch->exp_date = $request->exp_date;
         $batch->buy_price = $request->buy_price;
+        
+        // Handle attachment upload
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = getFilePath('batchAttachment');
+            $filename = uniqid() . time() . '.' . $file->getClientOriginalExtension();
+            
+            // Create directory if doesn't exist
+            if (!file_exists(public_path($path))) {
+                mkdir(public_path($path), 0755, true);
+            }
+            
+            $file->move(public_path($path), $filename);
+            $batch->attachment = $filename;
+        }
+        
         $batch->status = $request->status;
         $batch->save();
 
         // تحديث سعر السوق للمنتج
         Batch::updateMarketPrice($batch->product_id);
+
+        $this->audit('create', 'تم إنشاء دفعة جديدة: ' . $batch->batch_code, $batch);
 
         $notify[] = ['success', 'Batch added successfully'];
         return redirect()->route('admin.batch.index')->withNotify($notify);
@@ -117,6 +136,7 @@ class BatchController extends Controller
             'origin_country' => 'nullable|string|max:255',
             'exp_date' => 'nullable|date',
             'buy_price' => 'nullable|numeric|min:0',
+            'attachment' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240',
             'status' => 'required|in:' . Status::ENABLE . ',' . Status::DISABLE,
         ]);
 
@@ -141,11 +161,38 @@ class BatchController extends Controller
         $batch->origin_country = $request->origin_country;
         $batch->exp_date = $request->exp_date;
         $batch->buy_price = $request->buy_price;
+        
+        // Handle attachment upload
+        if ($request->hasFile('attachment')) {
+            // Delete old attachment if exists
+            if ($batch->attachment && file_exists(public_path(getFilePath('batchAttachment') . '/' . $batch->attachment))) {
+                unlink(public_path(getFilePath('batchAttachment') . '/' . $batch->attachment));
+            }
+            
+            $file = $request->file('attachment');
+            $path = getFilePath('batchAttachment');
+            $filename = uniqid() . time() . '.' . $file->getClientOriginalExtension();
+            
+            // Create directory if doesn't exist
+            if (!file_exists(public_path($path))) {
+                mkdir(public_path($path), 0755, true);
+            }
+            
+            $file->move(public_path($path), $filename);
+            $batch->attachment = $filename;
+        }
+        
         $batch->status = $request->status;
         $batch->save();
 
         // تحديث سعر السوق للمنتج
         Batch::updateMarketPrice($batch->product_id);
+
+        $oldValues = $batch->getOriginal();
+        $batch->save();
+        $newValues = $batch->getChanges();
+
+        $this->audit('update', 'تم تحديث الدفعة: ' . $batch->batch_code, $batch, $oldValues, $newValues);
 
         $notify[] = ['success', 'Batch updated successfully'];
         return redirect()->route('admin.batch.index')->withNotify($notify);
@@ -154,11 +201,14 @@ class BatchController extends Controller
     public function delete($id)
     {
         $batch = Batch::findOrFail($id);
+        $batchCode = $batch->batch_code;
         $productId = $batch->product_id;
         $batch->delete();
 
         // تحديث سعر السوق للمنتج بعد الحذف
         Batch::updateMarketPrice($productId);
+
+        $this->audit('delete', 'تم حذف الدفعة: ' . $batchCode, $batch);
 
         $notify[] = ['success', 'Batch deleted successfully'];
         return back()->withNotify($notify);
@@ -166,7 +216,15 @@ class BatchController extends Controller
 
     public function status($id)
     {
-        return Batch::changeStatus($id);
+        $batch = Batch::findOrFail($id);
+        $oldStatus = $batch->status;
+        $result = Batch::changeStatus($id);
+        $batch->refresh();
+        
+        $statusText = $batch->status == \App\Constants\Status::ENABLE ? 'تفعيل' : 'تعطيل';
+        $this->audit('status_change', "تم {$statusText} الدفعة: " . $batch->batch_code, $batch, ['status' => $oldStatus], ['status' => $batch->status]);
+        
+        return $result;
     }
 
     /**

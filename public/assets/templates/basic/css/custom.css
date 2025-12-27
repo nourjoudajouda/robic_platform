@@ -557,3 +557,651 @@ button .spinner-border {
 .cursor-pointer{
   cursor: pointer;
 }
+
+/* Bean Calculator Styles - نفس ستايلات gold-calculator */
+.dashboard .buy-sell-card .bean-calculator {
+    background: transparent;
+    padding: 0;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    -webkit-column-gap: 20px;
+    -moz-column-gap: 20px;
+    column-gap: 20px;
+    margin-bottom: 65px;
+    row-gap: 20px;
+    padding: 0 80px;
+}
+
+@media (max-width: 1899px) {
+    .dashboard .buy-sell-card .bean-calculator__top {
+        padding: 0 35px;
+    }
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__top {
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+        margin-bottom: 45px;
+    }
+}
+
+@media screen and (max-width: 1599px) {
+    .dashboard .buy-sell-card .bean-calculator__top {
+        margin-bottom: 35px;
+    }
+}
+
+@media screen and (max-width: 1399px) {
+    .dashboard .buy-sell-card .bean-calculator__top {
+        padding: 0 30px;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .dashboard .buy-sell-card .bean-calculator__top {
+        padding: 0 20px;
+        row-gap: 15px;
+        margin-bottom: 20px;
+    }
+}
+
+@media screen and (max-width: 575px) {
+    .dashboard .buy-sell-card .bean-calculator__top {
+        padding: 0 15px;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__top-left {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-column-gap: 15px;
+    -moz-column-gap: 15px;
+    column-gap: 15px;
+    row-gap: 10px;
+}
+
+@media screen and (max-width: 767px) {
+    .dashboard .buy-sell-card .bean-calculator__top-left {
+        -webkit-column-gap: 10px;
+        -moz-column-gap: 10px;
+        column-gap: 10px;
+    }
+}
+
+@media screen and (max-width: 575px) {
+    .dashboard .buy-sell-card .bean-calculator__top-left {
+        -webkit-box-pack: center;
+        -ms-flex-pack: center;
+        justify-content: center;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .customNiceSelect .nice-select {
+    padding-left: 15px;
+    padding-right: 85px;
+    border-color: hsl(var(--white)/0.1);
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .customNiceSelect .nice-select.open {
+    border-color: hsl(var(--base));
+}
+
+@media (max-width: 1899px) {
+    .dashboard .buy-sell-card .bean-calculator__top .customNiceSelect .nice-select {
+        padding: 0 20px;
+        padding-right: 45px;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__top-amount {
+    margin-bottom: 0;
+}
+
+.dashboard .buy-sell-card .bean-calculator__bottom {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
+    flex-direction: column;
+    padding: 0 130px;
+    row-gap: 10px;
+}
+
+.dashboard .buy-sell-card .bean-calculator__bottom > small.text-muted {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 1899px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom {
+        padding: 0 90px;
+    }
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom {
+        padding: 0 75px;
+    }
+}
+
+@media screen and (max-width: 1599px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom {
+        padding: 0 35px;
+    }
+}
+
+@media screen and (max-width: 1399px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom {
+        padding: 0 30px;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom {
+        padding: 0 20px;
+    }
+}
+
+@media screen and (max-width: 575px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom {
+        padding: 0 15px;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: justify;
+    -ms-flex-pack: justify;
+    justify-content: space-between;
+    row-gap: 10px;
+    margin-bottom: 80px;
+}
+
+.dashboard .buy-sell-card .bean-calculator form:has(#beanCalculatorSwitch2:checked) .bean-calculator__inputs .form-group:first-of-type {
+    -webkit-box-ordinal-group: 4;
+    -ms-flex-order: 3;
+    order: 3;
+}
+
+.dashboard .buy-sell-card .bean-calculator form:has(#beanCalculatorSwitch2:checked) .bean-calculator__inputs .form-group:last-of-type {
+    -webkit-box-ordinal-group: 2;
+    -ms-flex-order: 1;
+    order: 1;
+}
+
+.dashboard .buy-sell-card .bean-calculator form:has(#beanCalculatorSwitch2:checked) .bean-calculator__inputs .equal {
+    -webkit-box-ordinal-group: 3;
+    -ms-flex-order: 2;
+    order: 2;
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs {
+        margin-bottom: 50px;
+    }
+}
+
+@media screen and (max-width: 1599px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs {
+        margin-bottom: 35px;
+    }
+}
+
+@media screen and (max-width: 1199px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs {
+        margin-bottom: 30px;
+    }
+}
+
+@media screen and (max-width: 991px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs {
+        margin-bottom: 25px;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs {
+        margin-bottom: 20px;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group {
+    width: calc(50% - 20px);
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: stretch;
+    -ms-flex-align: stretch;
+    align-items: stretch;
+}
+
+@media screen and (max-width: 575px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group {
+        width: 100%;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group.has-icon .form--control {
+    padding-left: 45px;
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+        padding-left: 40px;
+    }
+}
+
+@media screen and (max-width: 1599px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+        padding-right: 95px;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    display: -webkit-inline-box;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .icon {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+    padding: 9.5px 15px;
+    padding-right: 60px;
+    font-size: 2rem;
+    font-weight: 700;
+    height: 100%;
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group.has-icon .form--control {
+    padding-right: 75px;
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+        font-size: 1.625rem;
+        padding: 10px 15px;
+        padding-right: 60px;
+    }
+
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group.has-icon .form--control {
+        padding-right: 65px;
+    }
+}
+
+@media screen and (max-width: 1599px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+        font-size: 1.375rem;
+    }
+}
+
+@media screen and (max-width: 1399px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+        padding-right: 50px;
+    }
+
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group.has-icon .form--control {
+        padding-left: 40px;
+        padding-right: 60px;
+    }
+}
+
+@media screen and (max-width: 991px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control {
+        font-size: 1.125rem;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control::-webkit-input-placeholder {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control::-moz-placeholder {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control:-ms-input-placeholder {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control::-ms-input-placeholder {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--control::placeholder {
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--label {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    transform: translateY(-50%);
+    color: hsl(var(--white));
+    font-weight: 700;
+    line-height: 1;
+    font-size: 1.125rem;
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--label {
+        font-size: 1rem;
+    }
+}
+
+@media screen and (max-width: 1599px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--label {
+        font-size: 0.9375rem;
+    }
+}
+
+@media screen and (max-width: 991px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .form-group .form--label {
+        font-size: 0.875rem;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__inputs .equal {
+    width: 35px;
+    height: 56px;
+    display: -webkit-inline-box;
+    display: -ms-inline-flexbox;
+    display: inline-flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
+    justify-content: center;
+    color: hsl(var(--base));
+    font-size: 1rem;
+}
+
+@media screen and (max-width: 1399px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .equal {
+        width: 30px;
+        height: 54px;
+    }
+}
+
+@media screen and (max-width: 1199px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .equal {
+        font-size: 0.9375rem;
+        height: 46px;
+    }
+}
+
+@media screen and (max-width: 767px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .equal {
+        font-size: 0.875rem;
+        height: 43px;
+    }
+}
+
+@media screen and (max-width: 424px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .equal {
+        height: 35px;
+        margin: 0 auto;
+    }
+}
+
+@media screen and (max-width: 575px) {
+    .dashboard .buy-sell-card .bean-calculator__inputs .equal {
+        margin: 0 auto;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__bottom .info {
+    width: 100%;
+    font-size: 0.875rem;
+    color: hsl(var(--white));
+    margin-bottom: 25px;
+}
+
+@media (max-width: 1699px) {
+    .dashboard .buy-sell-card .bean-calculator__bottom .info {
+        margin-top: bottom;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__bottom .info__text {
+    width: calc(100% - 25px);
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch,
+.bean-calculator__top .calculator-switch {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -ms-flex-wrap: wrap;
+    flex-wrap: wrap;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    background: hsl(var(--white)/0.15);
+    padding: 5px;
+    border-radius: 40px;
+}
+
+@media screen and (max-width: 424px) {
+    .dashboard .buy-sell-card .bean-calculator__top .calculator-switch,
+    .bean-calculator__top .calculator-switch {
+        background: transparent;
+        border-radius: 0;
+        border-bottom: 1px solid hsl(var(--border-color));
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item {
+    position: relative;
+    padding: 4px 12px;
+    border-radius: 30px;
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--body-color));
+}
+
+@media screen and (max-width: 424px) {
+    .dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item::before,
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item::after {
+    position: absolute;
+    content: "";
+    background: var(--gradient-bg-1);
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    visibility: hidden;
+    opacity: 0;
+    -webkit-transition: 0.2s linear;
+    transition: 0.2s linear;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item::after {
+    background: var(--gradient-bg-2);
+    z-index: 2;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item:has(input:checked) {
+    color: hsl(var(--dark));
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item:has(input:checked)::before {
+    visibility: visible;
+    opacity: 1;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item:has(input:checked):hover::after {
+    visibility: visible;
+    opacity: 1;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__item .text {
+    position: relative;
+    z-index: 3;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch input {
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.dashboard .buy-sell-card .bean-calculator__top .calculator-switch__icon {
+    margin: 0 10px;
+}
+
+@media screen and (max-width: 1399px) {
+    .dashboard .buy-sell-card .bean-calculator__top .calculator-switch__icon {
+        margin: 0 8px;
+    }
+}
+
+@media screen and (max-width: 424px) {
+    .dashboard .buy-sell-card .bean-calculator__top .calculator-switch__icon {
+        margin: 0 auto;
+    }
+}
+
+
+.bean-calculator__top .calculator-switch__item {
+    position: relative;
+    padding: 4px 12px;
+    border-radius: 30px;
+    overflow: hidden;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--body-color));
+}
+
+@media screen and (max-width: 424px) {
+    .bean-calculator__top .calculator-switch__item {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+.bean-calculator__top .calculator-switch__item::before,
+.bean-calculator__top .calculator-switch__item::after {
+    position: absolute;
+    content: "";
+    background: var(--gradient-bg-1);
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    z-index: 1;
+    visibility: hidden;
+    opacity: 0;
+    -webkit-transition: 0.2s linear;
+    transition: 0.2s linear;
+}
+
+.bean-calculator__top .calculator-switch__item::after {
+    background: var(--gradient-bg-2);
+    z-index: 2;
+}
+
+.bean-calculator__top .calculator-switch__item:has(input:checked) {
+    color: hsl(var(--dark));
+}
+
+.bean-calculator__top .calculator-switch__item:has(input:checked)::before {
+    visibility: visible;
+    opacity: 1;
+}
+
+.bean-calculator__top .calculator-switch__item:has(input:checked):hover::after {
+    visibility: visible;
+    opacity: 1;
+}
+
+.bean-calculator__top .calculator-switch__item .text {
+    position: relative;
+    z-index: 3;
+}
+
+.bean-calculator__top .calculator-switch input {
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.bean-calculator__top .calculator-switch__icon {
+    margin: 0 10px;
+}
+
+@media screen and (max-width: 1399px) {
+    .bean-calculator__top .calculator-switch__icon {
+        margin: 0 8px;
+    }
+}
+
+@media screen and (max-width: 424px) {
+    .bean-calculator__top .calculator-switch__icon {
+        margin: 0 auto;
+    }
+}

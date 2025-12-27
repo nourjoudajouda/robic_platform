@@ -223,7 +223,7 @@ class PaymentController extends Controller
             // معالجة الشراء من عدة orders أو order واحد
             if ($deposit->category_id) {
                 // الطريقة القديمة - شراء من batch واحد
-                Asset::buyGold($user, $deposit->category, $deposit->buy_info->amount, $deposit->amount, $deposit->buy_info->quantity, $deposit->buy_info->charge, $deposit->buy_info->vat, $methodName);
+                Asset::buyBean($user, $deposit->category, $deposit->buy_info->amount, $deposit->amount, $deposit->buy_info->quantity, $deposit->buy_info->charge, $deposit->buy_info->vat, $methodName);
             } elseif (isset($deposit->other->order_type) && $deposit->other->order_type == 'multiple' && isset($deposit->other->multiple_orders)) {
                 // الشراء من عدة orders
                 Asset::buyFromMultipleOrders(
@@ -256,7 +256,7 @@ class PaymentController extends Controller
                 $batch = Batch::find($deposit->other->batch_id);
                 $sellOrder = \App\Models\BatchSellOrder::find($deposit->other->sell_order_id);
                 if ($batch && $sellOrder) {
-                    Asset::buyGold(
+                    Asset::buyBean(
                         $user,
                         $batch,
                         $sellOrder,

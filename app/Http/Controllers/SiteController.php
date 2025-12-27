@@ -29,7 +29,7 @@ class SiteController extends Controller
         return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage'));
     }
 
-    public function goldPrice(Request $request)
+    public function beanPrice(Request $request)
     {
         $days = $request->days;
 
@@ -43,7 +43,7 @@ class SiteController extends Controller
 
         $historicalPrice = HistoricalPrice::where('date', '>=', now()->subDays($days));
 
-        $goldPrice   = (clone $historicalPrice)->selectRaw("DATE_FORMAT(date, '$format') as price_date, MAX(price) as max_price")->groupBy('price_date')->get();
+        $beanPrice   = (clone $historicalPrice)->selectRaw("DATE_FORMAT(date, '$format') as price_date, MAX(price) as max_price")->groupBy('price_date')->get();
         $minMaxPrice = (clone $historicalPrice)->selectRaw("MIN(price) as min_price, MAX(price) as max_price")->first();
 
         $firstLastPrice = (clone $historicalPrice)->whereRaw("
@@ -61,7 +61,7 @@ class SiteController extends Controller
         $amountChange          = showAmount(abs($lastPrice - $firstPrice), currencyFormat: false);
         $percentage            = showAmount($amountChange / $firstPrice * 100, currencyFormat: false) . '%';
 
-        return responseSuccess('gold_price', 'Gold Price', ['gold_price' => $goldPrice, 'max_price' => showAmount($minMaxPrice->max_price), 'min_price' => showAmount($minMaxPrice->min_price), 'first_price' => showAmount($firstPrice), 'last_price' => showAmount($lastPrice), 'amount_change_direction' => $amountChangeDirection, 'amount_change' => $amountChange, 'percentage' => $percentage]);
+        return responseSuccess('bean_price', 'Bean Price', ['bean_price' => $beanPrice, 'max_price' => showAmount($minMaxPrice->max_price), 'min_price' => showAmount($minMaxPrice->min_price), 'first_price' => showAmount($firstPrice), 'last_price' => showAmount($lastPrice), 'amount_change_direction' => $amountChangeDirection, 'amount_change' => $amountChange, 'percentage' => $percentage]);
     }
 
     public function getMarketPrices()

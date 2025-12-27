@@ -5,7 +5,7 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
-                    <form action="{{ route('admin.batch.update', $batch->id) }}" method="POST">
+                    <form action="{{ route('admin.batch.update', $batch->id) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="row">
                             <div class="col-md-6">
@@ -99,6 +99,21 @@
                                 <div class="form-group">
                                     <label>@lang('Buy Price')</label>
                                     <input type="number" step="0.01" name="buy_price" id="buy_price" class="form-control" value="{{ old('buy_price', $batch->buy_price) }}">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Attachment')</label>
+                                    <input type="file" name="attachment" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    <small class="form-text text-muted">@lang('Allowed file types: PDF, DOC, DOCX, JPG, JPEG, PNG')</small>
+                                    @if($batch->attachment)
+                                        <div class="mt-2">
+                                            <a href="{{ asset(getFilePath('batchAttachment') . '/' . $batch->attachment) }}" target="_blank" class="btn btn-sm btn--info">
+                                                <i class="las la-file"></i> @lang('View Current Attachment')
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                             

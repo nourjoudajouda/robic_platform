@@ -124,6 +124,8 @@ class ManageUsersController extends Controller
         // Send notification to user
         notify($user, 'ESTABLISHMENT_APPROVED', []);
 
+        $this->audit('establishment_approve', 'تم الموافقة على المنشأة: ' . ($user->establishment_name ?? $user->username), $user, ['status' => Status::USER_BAN], ['status' => Status::USER_ACTIVE]);
+
         $notify[] = ['success', 'Establishment approved successfully'];
         return back()->withNotify($notify);
     }
@@ -147,6 +149,8 @@ class ManageUsersController extends Controller
         notify($user, 'ESTABLISHMENT_REJECTED', [
             'reason' => $request->reason,
         ]);
+
+        $this->audit('establishment_reject', 'تم رفض المنشأة: ' . ($user->establishment_name ?? $user->username) . ' - السبب: ' . $request->reason, $user, ['status' => $user->status], ['status' => Status::USER_BAN, 'reason' => $request->reason]);
 
         $notify[] = ['success', 'Establishment rejected successfully'];
         return back()->withNotify($notify);
@@ -206,6 +210,8 @@ class ManageUsersController extends Controller
 
         notify($user, 'KYC_APPROVE', []);
 
+        $this->audit('kyc_approve', 'تم الموافقة على KYC للمستخدم: ' . $user->username, $user, ['kv' => Status::KYC_UNVERIFIED], ['kv' => Status::KYC_VERIFIED]);
+
         $notify[] = ['success', 'KYC approved successfully'];
         return to_route('admin.users.detail', $user->id)->withNotify($notify);
     }
@@ -223,6 +229,8 @@ class ManageUsersController extends Controller
         notify($user, 'KYC_REJECT', [
             'reason' => $request->reason,
         ]);
+
+        $this->audit('kyc_reject', 'تم رفض KYC للمستخدم: ' . $user->username . ' - السبب: ' . $request->reason, $user, ['kv' => $user->kv], ['kv' => Status::KYC_UNVERIFIED, 'reason' => $request->reason]);
 
         $notify[] = ['success', 'KYC rejected successfully'];
         return to_route('admin.users.detail', $user->id)->withNotify($notify);
@@ -282,7 +290,11 @@ class ManageUsersController extends Controller
         } else {
             $user->kv = Status::KYC_VERIFIED;
         }
+        $oldValues = $user->getOriginal();
         $user->save();
+        $newValues = $user->getChanges();
+
+        $this->audit('update', 'تم تحديث بيانات المستخدم: ' . $user->username, $user, $oldValues, $newValues);
 
         $notify[] = ['success', 'User details updated successfully'];
         return back()->withNotify($notify);
@@ -344,6 +356,9 @@ class ManageUsersController extends Controller
             'post_balance' => showAmount($user->balance, currencyFormat: false),
         ]);
 
+        $actionText = $request->act == 'add' ? 'إضافة' : 'خصم';
+        $this->audit('balance_' . $request->act, "تم {$actionText} رصيد المستخدم: {$user->username} - المبلغ: {$amount}", $user, ['balance' => $user->balance - ($request->act == 'add' ? $amount : -$amount)], ['balance' => $user->balance]);
+
         return back()->withNotify($notify);
     }
 
@@ -368,7 +383,12 @@ class ManageUsersController extends Controller
             $user->ban_reason = null;
             $notify[]         = ['success', 'User unbanned successfully'];
         }
+        $oldStatus = $user->getOriginal('status');
         $user->save();
+        
+        $actionText = $user->status == Status::USER_ACTIVE ? 'إلغاء حظر' : 'حظر';
+        $this->audit('user_status', "تم {$actionText} المستخدم: " . $user->username, $user, ['status' => $oldStatus], ['status' => $user->status]);
+        
         return back()->withNotify($notify);
 
     }

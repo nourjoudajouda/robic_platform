@@ -11,10 +11,10 @@ trait UserNotify
             'allUsers'               => 'All Users',
             'selectedUsers'          => 'Selected Users',
 
-            'buyGoldUsers'           => 'Buy Gold Users',
-            'sellGoldUsers'          => 'Sell Gold Users',
-            'giftGoldUsers'          => 'Gift Gold Users',
-            'redeemGoldUsers'        => 'All Redeem Gold Users',
+            'buyGoldUsers'           => 'Buy Bean Users',
+            'sellGoldUsers'          => 'Sell Bean Users',
+            'giftGoldUsers'          => 'Gift Bean Users',
+            'redeemGoldUsers'        => 'All Redeem Bean Users',
             'processingRedeemUsers'  => 'Processing Redeem Users',
             'deliveredRedeemUsers'   => 'Delivered Redeem Users',
             'cancelledRedeemUsers'   => 'Cancelled Redeem Users',
@@ -53,35 +53,35 @@ trait UserNotify
 
     public function scopeBuyGoldUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($query) {
+        return $query->whereHas('beanHistories', function ($query) {
             $query->buy();
         });
     }
 
     public function scopeSellGoldUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($query) {
+        return $query->whereHas('beanHistories', function ($query) {
             $query->sell();
         });
     }
 
     public function scopeGiftGoldUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($query) {
+        return $query->whereHas('beanHistories', function ($query) {
             $query->gift();
         });
     }
 
     public function scopeRedeemGoldUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($q) {
+        return $query->whereHas('beanHistories', function ($q) {
             $q->redeem();
         });
     }
 
     public function scopeProcessingRedeemUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($query) {
+        return $query->whereHas('beanHistories', function ($query) {
             $query->redeem()->whereHas('redeemData', function ($q) {
                 $q->where('status', Status::REDEEM_STATUS_PROCESSING);
             });
@@ -90,7 +90,7 @@ trait UserNotify
 
     public function scopeDeliveredRedeemUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($query) {
+        return $query->whereHas('beanHistories', function ($query) {
             $query->redeem()->whereHas('redeemData', function ($q) {
                 $q->where('status', Status::REDEEM_STATUS_DELIVERED);
             });
@@ -99,7 +99,7 @@ trait UserNotify
 
     public function scopeCancelledRedeemUsers($query)
     {
-        return $query->whereHas('goldHistories', function ($query) {
+        return $query->whereHas('beanHistories', function ($query) {
             $query->redeem()->whereHas('redeemData', function ($q) {
                 $q->where('status', Status::REDEEM_STATUS_CANCELLED);
             });

@@ -35,6 +35,11 @@ class Asset extends Model
         return $this->belongsTo(Warehouse::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function unit()
     {
         return $this->belongsTo(Unit::class);
@@ -50,7 +55,7 @@ class Asset extends Model
         return $this->belongsTo(Currency::class);
     }
 
-    public static function buyGold($user, $batch, $sellOrder, $amount, $totalAmount, $quantity, $charge, $vat, $methodName = null)
+    public static function buyBean($user, $batch, $sellOrder, $amount, $totalAmount, $quantity, $charge, $vat, $methodName = null)
     {
         return DB::transaction(function () use ($user, $batch, $sellOrder, $amount, $totalAmount, $quantity, $charge, $vat, $methodName) {
             // تحديث رصيد المستخدم
@@ -95,7 +100,7 @@ class Asset extends Model
             $transaction->trx_type     = '-';
             $transaction->details      = 'Buy Green Coffee via ' . ($methodName ?? 'main balance');
             $transaction->trx          = getTrx();
-            $transaction->remark       = 'buy_gold';
+            $transaction->remark       = 'buy_bean';
             $transaction->save();
 
             $buyHistory              = new BeanHistory();
@@ -115,7 +120,7 @@ class Asset extends Model
             $buyHistory->type        = Status::BUY_HISTORY;
             $buyHistory->save();
 
-            notify($user, 'BUY_GOLD', [
+            notify($user, 'BUY_BEAN', [
                 'product' => $batch->product->name ?? 'Green Coffee',
                 'quantity' => showAmount($quantity, 4, currencyFormat: false),
                 'amount'   => showAmount($amount),
@@ -163,7 +168,7 @@ class Asset extends Model
             $sellerTransaction->trx_type = '+';
             $sellerTransaction->details = 'Sell Green Coffee to user #' . $user->id;
             $sellerTransaction->trx = getTrx();
-            $sellerTransaction->remark = 'sell_gold';
+            $sellerTransaction->remark = 'sell_bean';
             $sellerTransaction->save();
 
             // البحث عن asset أو إنشاء جديد
@@ -205,7 +210,7 @@ class Asset extends Model
             $transaction->trx_type = '-';
             $transaction->details = 'Buy Green Coffee from user #' . $seller->id . ' via ' . ($methodName ?? 'main balance');
             $transaction->trx = getTrx();
-            $transaction->remark = 'buy_gold';
+            $transaction->remark = 'buy_bean';
             $transaction->save();
 
             // BeanHistory للمشتري
@@ -244,7 +249,7 @@ class Asset extends Model
                 Batch::updateMarketPrice($userSellOrder->product_id);
             }
 
-            notify($user, 'BUY_GOLD', [
+            notify($user, 'BUY_BEAN', [
                 'product' => $userSellOrder->product->name ?? 'Green Coffee',
                 'quantity' => showAmount($quantity, 4, currencyFormat: false),
                 'amount' => showAmount($amount),
@@ -253,7 +258,7 @@ class Asset extends Model
                 'trx' => $transaction->trx,
             ]);
 
-            notify($seller, 'SELL_GOLD', [
+            notify($seller, 'SELL_BEAN', [
                 'product' => $userSellOrder->product->name ?? 'Green Coffee',
                 'quantity' => showAmount($quantity, 4, currencyFormat: false),
                 'amount' => showAmount($sellerAmount),
@@ -382,7 +387,7 @@ class Asset extends Model
                     $sellerTransaction->trx_type = '+';
                     $sellerTransaction->details = 'Sell Green Coffee to user #' . $user->id;
                     $sellerTransaction->trx = getTrx();
-                    $sellerTransaction->remark = 'sell_gold';
+                    $sellerTransaction->remark = 'sell_bean';
                     $sellerTransaction->save();
                     
                     // البحث عن asset أو إنشاء جديد
@@ -460,13 +465,13 @@ class Asset extends Model
             $transaction->trx_type = '-';
             $transaction->details = 'Buy Green Coffee from multiple orders via ' . ($methodName ?? 'main balance');
             $transaction->trx = $trx;
-            $transaction->remark = 'buy_gold';
+            $transaction->remark = 'buy_bean';
             $transaction->save();
             
             // تحديث سعر السوق للمنتج بعد الشراء
             Batch::updateMarketPrice($productId);
             
-            notify($user, 'BUY_GOLD', [
+            notify($user, 'BUY_BEAN', [
                 'product' => $product->name ?? 'Green Coffee',
                 'quantity' => showAmount($totalQuantity, 4, currencyFormat: false),
                 'amount' => showAmount($totalAmount), // قيمة القهوة فقط

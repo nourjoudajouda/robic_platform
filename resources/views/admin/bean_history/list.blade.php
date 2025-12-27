@@ -3,7 +3,7 @@
 @section('panel')
     <div class="row">
         <div class="col-lg-12">
-            @if (request()->routeIs('admin.gold.history.redeem'))
+            @if (request()->routeIs('admin.bean.history.redeem'))
                 <div class="show-filter mb-3 text-end">
                     <button type="button" class="btn btn-outline--primary showFilterBtn btn-sm"><i class="las la-filter"></i> @lang('Filter')</button>
                 </div>
@@ -45,7 +45,7 @@
                             <thead>
                                 <tr>
                                     <th>@lang('User')</th>
-                                    @if (request()->routeIs('admin.gold.history.gift'))
+                                    @if (request()->routeIs('admin.bean.history.gift'))
                                         <th>@lang('Recipient')</th>
                                     @endif
                                     <th>@lang('Date & Time')</th>
@@ -53,86 +53,86 @@
                                     <th>@lang('Product')</th>
                                     <th>@lang('Quantity')</th>
                                     <th>@lang('Amount & Charge')</th>
-                                    @if (request()->routeIs('admin.gold.history.buy'))
+                                    @if (request()->routeIs('admin.bean.history.buy'))
                                         <th>@lang('Vat')</th>
                                     @endif
-                                    @if (request()->routeIs('admin.gold.history.redeem'))
+                                    @if (request()->routeIs('admin.bean.history.redeem'))
                                         <th>@lang('Status')</th>
                                         <th>@lang('Action')</th>
                                     @endif
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($goldHistories as $goldHistory)
+                                @forelse($beanHistories as $beanHistory)
                                     <tr>
                                         <td>
-                                            <span class="fw-bold">{{ $goldHistory->user->fullname }}</span>
+                                            <span class="fw-bold">{{ $beanHistory->user->fullname }}</span>
                                             <br>
-                                            <span class="small"> <a href="{{ appendQuery('search', $goldHistory->user->username) }}"><span>@</span>{{ $goldHistory->user->username }}</a> </span>
+                                            <span class="small"> <a href="{{ appendQuery('search', $beanHistory->user->username) }}"><span>@</span>{{ $beanHistory->user->username }}</a> </span>
                                         </td>
-                                        @if (request()->routeIs('admin.gold.history.gift'))
+                                        @if (request()->routeIs('admin.bean.history.gift'))
                                             <td>
-                                                <span class="fw-bold">{{ $goldHistory->recipient->fullname }}</span>
+                                                <span class="fw-bold">{{ $beanHistory->recipient->fullname }}</span>
                                                 <br>
-                                                <span class="small"> <a href="{{ appendQuery('search', $goldHistory->recipient->username) }}"><span>@</span>{{ $goldHistory->recipient->username }}</a> </span>
+                                                <span class="small"> <a href="{{ appendQuery('search', $beanHistory->recipient->username) }}"><span>@</span>{{ $beanHistory->recipient->username }}</a> </span>
                                             </td>
                                         @endif
-                                        <td>{{ showDateTime($goldHistory->created_at) }}<br>{{ diffForHumans($goldHistory->created_at) }}</td>
-                                        <td>{{ $goldHistory->trx }}</td>
+                                        <td>{{ showDateTime($beanHistory->created_at) }}<br>{{ diffForHumans($beanHistory->created_at) }}</td>
+                                        <td>{{ $beanHistory->trx }}</td>
                                         <td>
-                                            @if($goldHistory->product)
-                                                {{ __($goldHistory->product->name) }}
-                                            @elseif($goldHistory->batch && $goldHistory->batch->product)
-                                                {{ __($goldHistory->batch->product->name) }}
-                                                @if($goldHistory->batch->quality_grade)
+                                            @if($beanHistory->product)
+                                                {{ __($beanHistory->product->name) }}
+                                            @elseif($beanHistory->batch && $beanHistory->batch->product)
+                                                {{ __($beanHistory->batch->product->name) }}
+                                                @if($beanHistory->batch->quality_grade)
                                                     <br>
-                                                    <small class="text-muted">{{ $goldHistory->batch->quality_grade }}</small>
+                                                    <small class="text-muted">{{ $beanHistory->batch->quality_grade }}</small>
                                                 @endif
                                             @else
                                                 @lang('N/A')
                                             @endif
                                         </td>
-                                        <td>{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }} 
-                                            {{ $goldHistory->itemUnit->symbol ?? ($goldHistory->product && $goldHistory->product->unit ? $goldHistory->product->unit->symbol : ($goldHistory->batch && $goldHistory->batch->product && $goldHistory->batch->product->unit ? $goldHistory->batch->product->unit->symbol : 'Unit')) }}
+                                        <td>{{ showAmount($beanHistory->quantity, 4, currencyFormat: false) }} 
+                                            {{ $beanHistory->itemUnit->symbol ?? ($beanHistory->product && $beanHistory->product->unit ? $beanHistory->product->unit->symbol : ($beanHistory->batch && $beanHistory->batch->product && $beanHistory->batch->product->unit ? $beanHistory->batch->product->unit->symbol : 'Unit')) }}
                                         </td>
                                         <td>
-                                            {{ showAmount($goldHistory->amount) }}
+                                            {{ showAmount($beanHistory->amount) }}
                                             <br>
-                                            {{ showAmount($goldHistory->charge) }}
+                                            {{ showAmount($beanHistory->charge) }}
                                         </td>
 
-                                        @if (request()->routeIs('admin.gold.history.buy'))
-                                            <td>{{ showAmount($goldHistory->vat) }}</td>
+                                        @if (request()->routeIs('admin.bean.history.buy'))
+                                            <td>{{ showAmount($beanHistory->vat) }}</td>
                                         @endif
 
-                                        @if (request()->routeIs('admin.gold.history.redeem'))
+                                        @if (request()->routeIs('admin.bean.history.redeem'))
                                             <td>
-                                                @php echo $goldHistory->redeemData->statusBadge; @endphp
+                                                @php echo $beanHistory->redeemData->statusBadge; @endphp
                                             </td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline--primary detailsBtn" 
-                                                    data-product_name="{{ $goldHistory->product ? $goldHistory->product->name : 'N/A' }}"
-                                                    data-quantity="{{ showAmount($goldHistory->quantity, 4, currencyFormat: false) }}"
-                                                    data-unit="{{ $goldHistory->product && $goldHistory->product->unit ? $goldHistory->product->unit->symbol : 'Unit' }}"
-                                                    data-shipping_cost="{{ showAmount($goldHistory->charge) }}"
-                                                    data-delivery_type="{{ $goldHistory->redeemData->delivery_type }}"
-                                                    data-delivery_address="{{ $goldHistory->redeemData->delivery_address }}"
-                                                    data-shipping_method="{{ $goldHistory->redeemData->shippingMethod ? $goldHistory->redeemData->shippingMethod->name : 'N/A' }}"
-                                                    data-distance="{{ $goldHistory->redeemData->distance ? showAmount($goldHistory->redeemData->distance, 2, currencyFormat: false) : 'N/A' }}">
+                                                    data-product_name="{{ $beanHistory->product ? $beanHistory->product->name : 'N/A' }}"
+                                                    data-quantity="{{ showAmount($beanHistory->quantity, 4, currencyFormat: false) }}"
+                                                    data-unit="{{ $beanHistory->product && $beanHistory->product->unit ? $beanHistory->product->unit->symbol : 'Unit' }}"
+                                                    data-shipping_cost="{{ showAmount($beanHistory->charge) }}"
+                                                    data-delivery_type="{{ $beanHistory->redeemData->delivery_type }}"
+                                                    data-delivery_address="{{ $beanHistory->redeemData->delivery_address }}"
+                                                    data-shipping_method="{{ $beanHistory->redeemData->shippingMethod ? $beanHistory->redeemData->shippingMethod->name : 'N/A' }}"
+                                                    data-distance="{{ $beanHistory->redeemData->distance ? showAmount($beanHistory->redeemData->distance, 2, currencyFormat: false) : 'N/A' }}">
                                                     <i class="la la-desktop"></i> @lang('Details')
                                                 </button>
-                                                @if ($goldHistory->redeemData->status == Status::REDEEM_STATUS_PROCESSING)
-                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_SHIPPED]) }}" data-question="@lang('Are you sure to mark this order as shipped?')">
+                                                @if ($beanHistory->redeemData->status == Status::REDEEM_STATUS_PROCESSING)
+                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.bean.history.redeem.status', [$beanHistory->redeemData->id, Status::REDEEM_STATUS_SHIPPED]) }}" data-question="@lang('Are you sure to mark this order as shipped?')">
                                                         <i class="la la-truck"></i>@lang('Ship')
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this order as cancelled?')">
+                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.bean.history.redeem.status', [$beanHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this order as cancelled?')">
                                                         <i class="la la-times"></i>@lang('Cancel')
                                                     </button>
-                                                @elseif($goldHistory->redeemData->status == Status::REDEEM_STATUS_SHIPPED)
-                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_DELIVERED]) }}" data-question="@lang('Are you sure to mark this order as delivered?')">
+                                                @elseif($beanHistory->redeemData->status == Status::REDEEM_STATUS_SHIPPED)
+                                                    <button type="button" class="btn btn-sm btn-outline--success confirmationBtn mx-1" data-action="{{ route('admin.bean.history.redeem.status', [$beanHistory->redeemData->id, Status::REDEEM_STATUS_DELIVERED]) }}" data-question="@lang('Are you sure to mark this order as delivered?')">
                                                         <i class="la la-check"></i>@lang('Deliver')
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.gold.history.redeem.status', [$goldHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this order as cancelled?')">
+                                                    <button type="button" class="btn btn-sm btn-outline--danger confirmationBtn" data-action="{{ route('admin.bean.history.redeem.status', [$beanHistory->redeemData->id, Status::REDEEM_STATUS_CANCELLED]) }}" data-question="@lang('Are you sure to mark this order as cancelled?')">
                                                         <i class="la la-times"></i>@lang('Cancel')
                                                     </button>
                                                 @endif
@@ -149,9 +149,9 @@
                         </table><!-- table end -->
                     </div>
                 </div>
-                @if ($goldHistories->hasPages())
+                @if ($beanHistories->hasPages())
                     <div class="card-footer py-4">
-                        {{ paginateLinks($goldHistories) }}
+                        {{ paginateLinks($beanHistories) }}
                     </div>
                 @endif
             </div><!-- card end -->
@@ -185,13 +185,13 @@
     <x-confirmation-modal />
 @endsection
 
-@if (!request()->routeIs('admin.gold.history.redeem'))
+@if (!request()->routeIs('admin.bean.history.redeem'))
     @push('breadcrumb-plugins')
         <x-search-form placeholder="Username/Product" dateSearch='yes' />
     @endpush
 @endif
 
-@if (request()->routeIs('admin.gold.history.redeem'))
+@if (request()->routeIs('admin.bean.history.redeem'))
     @push('script')
         <script>
             (function($) {

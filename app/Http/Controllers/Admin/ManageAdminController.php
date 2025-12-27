@@ -59,6 +59,8 @@ class ManageAdminController extends Controller
             $admin->roles()->attach($request->roles);
         }
 
+        $this->audit('create', 'تم إنشاء أدمن جديد: ' . $admin->username, $admin);
+
         $notify[] = ['success', 'Admin created successfully'];
         return redirect()->route('admin.admin.index')->withNotify($notify);
     }
@@ -96,7 +98,12 @@ class ManageAdminController extends Controller
         
         $admin->save();
 
+        $oldValues = $admin->getOriginal();
         $admin->roles()->sync($request->roles ?? []);
+        $admin->save();
+        $newValues = $admin->getChanges();
+
+        $this->audit('update', 'تم تحديث بيانات الأدمن: ' . $admin->username, $admin, $oldValues, $newValues);
 
         $notify[] = ['success', 'Admin updated successfully'];
         return redirect()->route('admin.admin.index')->withNotify($notify);
@@ -112,8 +119,11 @@ class ManageAdminController extends Controller
             return back()->withNotify($notify);
         }
         
+        $adminName = $admin->username;
         $admin->roles()->detach();
         $admin->delete();
+
+        $this->audit('delete', 'تم حذف الأدمن: ' . $adminName, $admin);
 
         $notify[] = ['success', 'Admin deleted successfully'];
         return back()->withNotify($notify);

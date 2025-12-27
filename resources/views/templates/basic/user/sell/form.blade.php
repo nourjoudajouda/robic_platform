@@ -24,11 +24,11 @@
                         </span>
                     </li>
                 </ul>
-                <div class="gold-calculator">
+                <div class="bean-calculator">
                     <form action="{{ route('user.sell.submit') }}" method="POST">
                         @csrf
-                        <div class="gold-calculator__top">
-                            <div class="gold-calculator__top-left">
+                        <div class="bean-calculator__top">
+                            <div class="bean-calculator__top-left">
                                 <div class="customNiceSelect">
                                     <select name="product_id" id="product_id" required>
                                         @foreach ($groupedAssets as $groupedAsset)
@@ -63,18 +63,18 @@
                             </div>
                             <div class="calculator-switch">
                                 <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" id="goldCalculatorSwitch1" name="purchase_type" value="amount" checked>
-                                    <label class="text" for="goldCalculatorSwitch1">@lang('Sell in USD')</label>
+                                    <input class="form-check-input" type="radio" id="beanCalculatorSwitch1" name="purchase_type" value="amount" checked>
+                                    <label class="text" for="beanCalculatorSwitch1">@lang('Sell in USD')</label>
                                 </div>
                                 <span class="calculator-switch__icon"><i class="fa-solid fa-right-left"></i></span>
                                 <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" id="goldCalculatorSwitch2" name="purchase_type" value="quantity">
-                                    <label class="text" for="goldCalculatorSwitch2">@lang('Sell in Quantity')</label>
+                                    <input class="form-check-input" type="radio" id="beanCalculatorSwitch2" name="purchase_type" value="quantity">
+                                    <label class="text" for="beanCalculatorSwitch2">@lang('Sell in Quantity')</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="gold-calculator__bottom">
-                            <div class="gold-calculator__inputs">
+                        <div class="bean-calculator__bottom">
+                            <div class="bean-calculator__inputs">
                                 <div class="form-group position-relative">
                                     <input type="number" step="any" min="0" class="form--control" placeholder="00.00" name="amount" id="amount">
                                     <label class="form--label">{{ __(gs('cur_text')) }}</label>

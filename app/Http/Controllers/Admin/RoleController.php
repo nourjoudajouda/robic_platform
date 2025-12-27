@@ -58,6 +58,8 @@ class RoleController extends Controller
             $role->permissions()->attach($request->permissions);
         }
 
+        $this->audit('create', 'تم إنشاء دور جديد: ' . $role->name, $role);
+
         $notify[] = ['success', 'Role created successfully'];
         return redirect()->route('admin.role.index')->withNotify($notify);
     }
@@ -92,7 +94,12 @@ class RoleController extends Controller
             'status' => $request->status,
         ]);
 
+        $oldValues = $role->getOriginal();
         $role->permissions()->sync($request->permissions ?? []);
+        $role->save();
+        $newValues = $role->getChanges();
+
+        $this->audit('update', 'تم تحديث الدور: ' . $role->name, $role, $oldValues, $newValues);
 
         $notify[] = ['success', 'Role updated successfully'];
         return redirect()->route('admin.role.index')->withNotify($notify);
@@ -108,9 +115,12 @@ class RoleController extends Controller
             return back()->withNotify($notify);
         }
         
+        $roleName = $role->name;
         $role->permissions()->detach();
         $role->admins()->detach();
         $role->delete();
+
+        $this->audit('delete', 'تم حذف الدور: ' . $roleName, $role);
 
         $notify[] = ['success', 'Role deleted successfully'];
         return back()->withNotify($notify);

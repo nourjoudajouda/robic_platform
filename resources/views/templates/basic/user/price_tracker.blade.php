@@ -3,43 +3,56 @@
     <div class="dashboard-card gradient-one gradient-two lg">
         <div class="dashboard-card__top">
             <div class="dashboard-card__top-left">
-                <span class="liveprice">@lang('Last Price')</span>
-                <h2 class="price lastPrice">
-                    {{ showAmount($currentPrice ?? 0) }}
-                    @if($product && $product->unit)
-                        /<span class="unitName">{{ $product->unit->name }}</span>
-                    @endif
-                </h2>
-                <div class="positive {{ ($percentChange ?? 0) < 0 ? 'd-none' : '' }}">
-                    <span class="badge badge--success">
-                        <i class="las la-arrow-right"></i> 
-                        <span class="priceChange">{{ showAmount(abs($priceChange ?? 0)) }}</span>
-                        @if($product && $product->unit)/<span class="unitName">{{ $product->unit->name }}</span>@endif
-                    </span>
-                    <span class="badge badge--success"><span class="percentChange">{{ number_format($percentChange ?? 0, 2) }}</span>%</span>
-                </div>
-                <div class="negative {{ ($percentChange ?? 0) >= 0 ? 'd-none' : '' }}">
-                    <span class="badge badge--danger">
-                        <i class="las la-arrow-left"></i> 
-                        <span class="priceChange">{{ showAmount(abs($priceChange ?? 0)) }}</span>
-                        @if($product && $product->unit)/<span class="unitName">{{ $product->unit->name }}</span>@endif
-                    </span>
-                    <span class="badge badge--danger"><span class="percentChange">{{ number_format(abs($percentChange ?? 0), 2) }}</span>%</span>
-                </div>
+                <span class="liveprice">@lang('Price Tracker')</span>
+                <h2 class="price">@lang('All Products')</h2>
             </div>
             <div class="dashboard-card__top-right">
                 <div class="customNiceSelect">
                     <select name="days">
-                        <option value="1" selected>@lang('Last 24 Hours')</option>
-                        <option value="7">@lang('Last 7 Days')</option>
-                        <option value="30">@lang('Last 30 Days')</option>
-                        <option value="90">@lang('Last 90 Days')</option>
-                        <option value="180">@lang('Last 180 Days')</option>
-                        <option value="365">@lang('Last 1 Year')</option>
+                        <option value="1" {{ ($days ?? 1) == 1 ? 'selected' : '' }}>@lang('Last 24 Hours')</option>
+                        <option value="7" {{ ($days ?? 1) == 7 ? 'selected' : '' }}>@lang('Last 7 Days')</option>
+                        <option value="30" {{ ($days ?? 1) == 30 ? 'selected' : '' }}>@lang('Last 30 Days')</option>
+                        <option value="90" {{ ($days ?? 1) == 90 ? 'selected' : '' }}>@lang('Last 90 Days')</option>
+                        <option value="180" {{ ($days ?? 1) == 180 ? 'selected' : '' }}>@lang('Last 180 Days')</option>
+                        <option value="365" {{ ($days ?? 1) == 365 ? 'selected' : '' }}>@lang('Last 1 Year')</option>
                     </select>
                 </div>
             </div>
         </div>
+        
+        @if($products && $products->count() > 0)
+        <div class="products-list" style="padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 15px;">
+            <h4 style="color: #fff; margin-bottom: 10px; font-size: 14px; font-weight: 600;">@lang('Products in Chart'):</h4>
+            <div class="row">
+                @foreach($products as $index => $product)
+                    @php
+                        $colors = [
+                            gs('base_color'),
+                            '#16C47F',
+                            '#ffb22e',
+                            '#23953f',
+                            '#CD853F',
+                            '#FFD65A',
+                            '#B43F3F',
+                            '#8b5cf6',
+                            '#06b6d4',
+                            '#f97316'
+                        ];
+                        $color = $colors[$index % count($colors)] ?? gs('base_color');
+                        // التأكد من وجود # في اللون
+                        $colorValue = (strpos($color, '#') === 0) ? $color : '#' . $color;
+                    @endphp
+                    <div class="col-md-3 col-sm-4 col-6" style="margin-bottom: 10px;">
+                        <div class="product-item" style="display: flex; align-items: center; gap: 8px;">
+                            <span class="product-color" style="width: 16px; height: 16px; background: {{ $colorValue }}; border-radius: 4px; display: inline-block;"></span>
+                            <span class="product-name" style="color: #fff; font-size: 13px;">{{ $product->name }}</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+        
         <div id="apex_chart_three"></div>
     </div>
 @endsection
@@ -48,18 +61,6 @@
     <img src="{{ asset($activeTemplateTrue . 'images/icons/30.png') }}" alt="image">
 @endsection
 
-@push('pageHeaderButton')
-    @if($products && $products->count() > 0)
-    <div class="price-tracker-tap">
-        @foreach ($products as $singleProduct)
-            <button class="price-tracker-tap__item productBtn {{ $loop->first ? 'active' : '' }}" data-product="{{ $singleProduct->id }}">
-                <span>{{ $singleProduct->name }}</span>
-            </button>
-        @endforeach
-    </div>
-    @endif
-@endpush
-
 
 @push('script')
     <script>
@@ -67,10 +68,21 @@
 
             "use strict";
 
-            let product = `{{ $product ? $product->id : '' }}`;
             let days = {{ $days ?? 1 }};
-            let baseColor = `#{{ gs('base_color') }}`;
-            let secondaryColor = `#{{ gs('secondary_color') }}`;
+            
+            // ألوان مختلفة لكل منتج
+            const productColors = [
+                '#{{ gs('base_color') }}', // اللون الأساسي
+                '#16C47F', // أخضر
+                '#ffb22e', // أصفر
+                '#23953f', // أخضر داكن
+                '#CD853F', // بني
+                '#FFD65A', // أصفر فاتح
+                '#B43F3F', // أحمر
+                '#8b5cf6', // بنفسجي
+                '#06b6d4', // أزرق فاتح
+                '#f97316'  // برتقالي
+            ];
             
             // الساعات بالعربية
             let hoursArabic = [
@@ -79,14 +91,6 @@
                 '12 م', '1 م', '2 م', '3 م', '4 م', '5 م', 
                 '6 م', '7 م', '8 م', '9 م', '10 م', '11 م'
             ];
-
-            // تغيير المنتج
-            $('.productBtn').on('click', function() {
-                product = $(this).data('product');
-                $('.productBtn').removeClass('active');
-                $(this).addClass('active');
-                updateChart();
-            });
 
             // تغيير الفترة
             $('[name="days"]').on('change', function() {
@@ -121,39 +125,21 @@
 
             function updateChart() {
                 $.get("{{ route('user.price.tracker') }}", {
-                    product,
                     days
                 }, function(response) {
-                    let percentChange = response.percent_change;
-                    let priceChange = response.price_change;
-                    let currentPrice = response.current_price;
-                    let unit = response.unit || 'unit';
-
-                    // تحديث السعر الحالي
-                    $('.lastPrice').html(currentPrice + '/<span class="unitName">' + unit + '</span>');
-
-                    // تحديث نسبة التغيير
-                    $('.percentChange').text(parseFloat(percentChange).toFixed(2));
-                    $('.priceChange').text(Math.abs(parseFloat(priceChange).toFixed(2)));
-
-                    if (percentChange > 0) {
-                        $('.positive').removeClass('d-none');
-                        $('.negative').addClass('d-none');
-                    } else if (percentChange < 0) {
-                        $('.positive').addClass('d-none');
-                        $('.negative').removeClass('d-none');
-                    } else {
-                        $('.positive').addClass('d-none');
-                        $('.negative').addClass('d-none');
-                    }
+                    // تحويل البيانات لصيغة series
+                    const series = response.products.map(function(product, index) {
+                        return {
+                            name: product.name,
+                            data: product.data
+                        };
+                    });
 
                     let xAxisLabels = getXAxisLabels(response.labels, response.days);
 
                     chart.updateOptions({
-                        series: [{
-                            name: 'Market Price',
-                            data: response.prices
-                        }],
+                        series: series,
+                        colors: productColors.slice(0, series.length),
                         xaxis: {
                             categories: xAxisLabels,
                             labels: {
@@ -167,30 +153,28 @@
             }
 
             // تحديد التسميات الأولية
-            let initialLabels = @json($labels);
+            let initialLabels = @json($labels ?? []);
             let xAxisLabels = getXAxisLabels(initialLabels, days);
 
-            var options = {
-                series: [{
-                    name: '@lang("Market Price")',
-                    data: @json($chartData)
-                }],
-                colors: [baseColor],
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        type: 'vertical',
-                        shade: 'light',
-                        gradientToColors: [secondaryColor],
-                        stops: [0, 100]
-                    }
-                },
+            // تحويل البيانات الأولية لصيغة series
+            const initialSeries = @json($allProductsData ?? []).map(function(product, index) {
+                return {
+                    name: product.name,
+                    data: product.data
+                };
+            });
 
+            var options = {
+                series: initialSeries,
+                colors: productColors.slice(0, initialSeries.length),
                 chart: {
-                    height: 256,
-                    type: 'area',
+                    height: 400,
+                    type: 'line',
                     toolbar: {
-                        show: false
+                        show: true,
+                        tools: {
+                            download: true
+                        }
                     }
                 },
                 dataLabels: {
@@ -198,7 +182,7 @@
                 },
                 stroke: {
                     curve: 'smooth',
-                    width: 2
+                    width: 3
                 },
                 xaxis: {
                     categories: xAxisLabels,
@@ -226,6 +210,20 @@
                         formatter: function(value) {
                             return value.toFixed(2) + ' {{ __(gs("cur_text")) }}';
                         }
+                    }
+                },
+                legend: {
+                    show: true,
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    labels: {
+                        colors: '#fff',
+                        useSeriesColors: false
+                    },
+                    markers: {
+                        width: 12,
+                        height: 12,
+                        radius: 6
                     }
                 },
                 grid: {

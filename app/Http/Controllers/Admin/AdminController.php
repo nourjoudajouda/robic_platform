@@ -9,7 +9,7 @@ use App\Lib\CurlRequest;
 use App\Constants\Status;
 use App\Models\UserLogin;
 use App\Models\Withdrawal;
-use App\Models\GoldHistory;
+use App\Models\BeanHistory;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use App\Models\HistoricalPrice;
@@ -53,28 +53,28 @@ class AdminController extends Controller
         $withdrawals['total_withdraw_rejected'] = Withdrawal::rejected()->count();
         $withdrawals['total_withdraw_charge']   = Withdrawal::approved()->sum('charge');
 
-        $goldHistory['buy_amount']    = GoldHistory::buy()->sum('amount');
-        $goldHistory['sell_amount']   = GoldHistory::sell()->sum('amount');
-        $goldHistory['redeem_amount'] = GoldHistory::redeem()->sum('amount');
-        $goldHistory['gift_amount']   = GoldHistory::gift()->sum('amount');
+        $beanHistory['buy_amount']    = BeanHistory::buy()->sum('amount');
+        $beanHistory['sell_amount']   = BeanHistory::sell()->sum('amount');
+        $beanHistory['redeem_amount'] = BeanHistory::redeem()->sum('amount');
+        $beanHistory['gift_amount']   = BeanHistory::gift()->sum('amount');
 
-        $goldHistory['buy_charge']    = GoldHistory::buy()->sum('charge');
-        $goldHistory['sell_charge']   = GoldHistory::sell()->sum('charge');
-        $goldHistory['redeem_charge'] = GoldHistory::redeem()->sum('charge');
-        $goldHistory['gift_charge']   = GoldHistory::gift()->sum('charge');
+        $beanHistory['buy_charge']    = BeanHistory::buy()->sum('charge');
+        $beanHistory['sell_charge']   = BeanHistory::sell()->sum('charge');
+        $beanHistory['redeem_charge'] = BeanHistory::redeem()->sum('charge');
+        $beanHistory['gift_charge']   = BeanHistory::gift()->sum('charge');
 
-        $redeem['processing_count'] = GoldHistory::redeem()->whereHas('redeemData', function ($query) {
+        $redeem['processing_count'] = BeanHistory::redeem()->whereHas('redeemData', function ($query) {
             $query->where('status', Status::REDEEM_STATUS_PROCESSING);
         })->count();
-        $redeem['delivered_count'] = GoldHistory::redeem()->whereHas('redeemData', function ($query) {
+        $redeem['delivered_count'] = BeanHistory::redeem()->whereHas('redeemData', function ($query) {
             $query->where('status', Status::REDEEM_STATUS_DELIVERED);
         })->count();
-        $redeem['cancelled_count'] = GoldHistory::redeem()->whereHas('redeemData', function ($query) {
+        $redeem['cancelled_count'] = BeanHistory::redeem()->whereHas('redeemData', function ($query) {
             $query->where('status', Status::REDEEM_STATUS_CANCELLED);
         })->count();
-        $redeem['total_amount'] = GoldHistory::redeem()->count();
+        $redeem['total_amount'] = BeanHistory::redeem()->count();
 
-        return view('admin.dashboard', compact('pageTitle', 'widget', 'chart', 'deposit', 'withdrawals', 'goldHistory', 'redeem'));
+        return view('admin.dashboard', compact('pageTitle', 'widget', 'chart', 'deposit', 'withdrawals', 'beanHistory', 'redeem'));
     }
 
     public function depositAndWithdrawReport(Request $request)

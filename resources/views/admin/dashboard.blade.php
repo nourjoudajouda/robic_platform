@@ -167,45 +167,45 @@
 
     <div class="row gy-4 mt-2">
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.gold.history.redeem') }}?status={{ Status::REDEEM_STATUS_PROCESSING }}" title="Processing Redeem" icon="fas fa-spinner" value="{{ $redeem['processing_count'] }}" bg="warning" outline="true" />
+            <x-widget style="6" link="{{ route('admin.bean.history.redeem') }}?status={{ Status::REDEEM_STATUS_PROCESSING }}" title="Processing Redeem" icon="fas fa-spinner" value="{{ $redeem['processing_count'] }}" bg="warning" outline="true" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.gold.history.redeem') }}?status={{ Status::REDEEM_STATUS_DELIVERED }}" title="Delivered Redeem" icon="fas fa-check-circle" value="{{ $redeem['delivered_count'] }}" bg="success" outline="true" />
+            <x-widget style="6" link="{{ route('admin.bean.history.redeem') }}?status={{ Status::REDEEM_STATUS_DELIVERED }}" title="Delivered Redeem" icon="fas fa-check-circle" value="{{ $redeem['delivered_count'] }}" bg="success" outline="true" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.gold.history.redeem') }}?status={{ Status::REDEEM_STATUS_CANCELLED }}" title="Cancelled Redeem" icon="fas fa-times-circle" value="{{ $redeem['cancelled_count'] }}" bg="danger" outline="true" />
+            <x-widget style="6" link="{{ route('admin.bean.history.redeem') }}?status={{ Status::REDEEM_STATUS_CANCELLED }}" title="Cancelled Redeem" icon="fas fa-times-circle" value="{{ $redeem['cancelled_count'] }}" bg="danger" outline="true" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="6" link="{{ route('admin.gold.history.redeem') }}" title="Total Redeem" icon="fas fa-exchange-alt" value="{{ $redeem['total_amount'] }}" bg="primary" outline="true" />
+            <x-widget style="6" link="{{ route('admin.bean.history.redeem') }}" title="Total Redeem" icon="fas fa-exchange-alt" value="{{ $redeem['total_amount'] }}" bg="primary" outline="true" />
         </div><!-- dashboard-w1 end -->
     </div><!-- row end-->
     <div class="row gy-4 mt-2">
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="5" link="{{ route('admin.gold.history.buy') }}" icon="fas fa-shopping-cart" title="Buy" value="{{ showAmount($goldHistory['buy_amount']) }}" bg="primary" />
+            <x-widget style="5" link="{{ route('admin.bean.history.buy') }}" icon="fas fa-shopping-cart" title="Buy" value="{{ showAmount($beanHistory['buy_amount']) }}" bg="primary" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="5" link="{{ route('admin.gold.history.sell') }}" icon="fas fa-store" title="Sell" value="{{ showAmount($goldHistory['sell_amount']) }}" bg="danger" />
+            <x-widget style="5" link="{{ route('admin.bean.history.sell') }}" icon="fas fa-store" title="Sell" value="{{ showAmount($beanHistory['sell_amount']) }}" bg="danger" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="5" link="{{ route('admin.gold.history.redeem') }}" icon="fas fa-exchange-alt" title="Redeem" value="{{ showAmount($goldHistory['redeem_amount']) }}" bg="info" />
+            <x-widget style="5" link="{{ route('admin.bean.history.redeem') }}" icon="fas fa-exchange-alt" title="Redeem" value="{{ showAmount($beanHistory['redeem_amount']) }}" bg="info" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="5" link="{{ route('admin.gold.history.gift') }}" icon="fas fa-gift" title="Gift" value="{{ showAmount($goldHistory['gift_amount']) }}" bg="success" />
+            <x-widget style="5" link="{{ route('admin.bean.history.gift') }}" icon="fas fa-gift" title="Gift" value="{{ showAmount($beanHistory['gift_amount']) }}" bg="success" />
         </div><!-- dashboard-w1 end -->
     </div><!-- row end-->
 
     <div class="row gy-4 mt-2">
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="7" link="{{ route('admin.gold.history.buy') }}" title="Buy Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($goldHistory['buy_charge']) }}" bg="primary" type="1" />
+            <x-widget style="7" link="{{ route('admin.bean.history.buy') }}" title="Buy Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($beanHistory['buy_charge']) }}" bg="primary" type="1" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="7" link="{{ route('admin.gold.history.sell') }}" title="Sell Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($goldHistory['sell_charge']) }}" bg="danger" type="1" />
+            <x-widget style="7" link="{{ route('admin.bean.history.sell') }}" title="Sell Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($beanHistory['sell_charge']) }}" bg="danger" type="1" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="7" link="{{ route('admin.gold.history.redeem') }}" title="Redeem Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($goldHistory['redeem_charge']) }}" bg="info" type="1" />
+            <x-widget style="7" link="{{ route('admin.bean.history.redeem') }}" title="Redeem Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($beanHistory['redeem_charge']) }}" bg="info" type="1" />
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
-            <x-widget style="7" link="{{ route('admin.gold.history.gift') }}" title="Gift Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($goldHistory['gift_charge']) }}" bg="success" type="1" />
+            <x-widget style="7" link="{{ route('admin.bean.history.gift') }}" title="Gift Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($beanHistory['gift_charge']) }}" bg="success" type="1" />
         </div><!-- dashboard-w1 end -->
     </div>
 

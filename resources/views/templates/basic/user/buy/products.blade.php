@@ -35,9 +35,57 @@
                             </div>
                             <div class="product-card__info">
                                 @php
-                                    $batches = $productData['batches'] ?? [];
-                                    $qualityGrade = $batches[0]->quality_grade ?? null;
-                                    $originCountry = $batches[0]->origin_country ?? null;
+                                    // جلب batch من أول sell order لهذا المنتج المحدد
+                                    // بما أن sell orders تم فلترتها حسب product_id في Controller،
+                                    // يمكننا استخدام أول batch مباشرة
+                                    $batch = null;
+                                    
+                                    // البحث في sell orders - استخدام أول batch مرتبط بنفس المنتج
+                                    if (!empty($sellOrders)) {
+                                        foreach ($sellOrders as $sellOrder) {
+                                            if (isset($sellOrder['order'])) {
+                                                $orderObj = $sellOrder['order'];
+                                                
+                                                // التحقق من product_id من order مباشرة
+                                                $orderProductId = $orderObj->product_id ?? null;
+                                                
+                                                // إذا كان product_id يطابق المنتج الحالي
+                                                if ($orderProductId == $productId) {
+                                                    // إذا كان batch sell order
+                                                    if ($sellOrder['type'] == 'batch' && $orderObj->batch) {
+                                                        // التأكد من أن batch مرتبط بنفس المنتج
+                                                        $batchProductId = $orderObj->batch->product_id ?? null;
+                                                        if ($batchProductId == $productId) {
+                                                            $batch = $orderObj->batch;
+                                                            break;
+                                                        }
+                                                    }
+                                                    // إذا كان user sell order
+                                                    elseif ($sellOrder['type'] == 'user' && $orderObj->batch) {
+                                                        // التأكد من أن batch مرتبط بنفس المنتج
+                                                        $batchProductId = $orderObj->batch->product_id ?? null;
+                                                        if ($batchProductId == $productId) {
+                                                            $batch = $orderObj->batch;
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // إذا لم يوجد batch من orders، جرب batches array (التي تم فلترتها في Controller)
+                                    if (!$batch && !empty($productData['batches'])) {
+                                        foreach ($productData['batches'] as $batchItem) {
+                                            if ($batchItem && isset($batchItem->product_id) && $batchItem->product_id == $productId) {
+                                                $batch = $batchItem;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
+                                    $qualityGrade = $batch ? ($batch->quality_grade ?? null) : null;
+                                    $originCountry = $batch ? ($batch->origin_country ?? null) : null;
                                 @endphp
                                 @if($qualityGrade)
                                 <p class="info-item">

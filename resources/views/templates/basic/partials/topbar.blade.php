@@ -11,7 +11,11 @@
         </form>
     </div>
     <div class="dashboard-header__right flex-align justify-content-end">
-
+        @if (gs('multi_language'))
+            <div class="language-dropdown me-3">
+                @include($activeTemplate . 'partials.language')
+            </div>
+        @endif
         <div class="user-info">
             <button class="user-info__button flex-align">
                 <span class="user-info__button-thumb">
@@ -214,6 +218,27 @@
                     $(`#searchInput`).focus();
                 }
                 search = $(this).val();
+            });
+
+            // Language Change Handler
+            $('.langChange').on('click', function() {
+                let selectedThumb = $(this).find('.thumb').html();
+                let selectedText = $(this).find('.text').text();
+                let lang = $(this).data('value');
+                let route = "{{ route('lang') }}";
+
+                $('.language-dropdown__selected .thumb').html(selectedThumb);
+                $('.language-dropdown__selected .text').text(selectedText);
+
+                window.location.href = route + '/' + lang;
+            });
+
+            // Close language dropdown when clicking outside
+            $(document).on('click', function(event) {
+                var target = $(event.target);
+                if (!target.closest('.language-dropdown').length) {
+                    $('.language-dropdown').removeClass('open');
+                }
             });
 
         })(jQuery);

@@ -53,7 +53,7 @@
                             </div>
                         </li>
 
-                        <li class="list-group-item d-flex flex-wrap flex-sm-nowrap gap-2 justify-content-between align-items-center">
+                        {{-- <li class="list-group-item d-flex flex-wrap flex-sm-nowrap gap-2 justify-content-between align-items-center">
                             <div>
                                 <p class="fw-bold mb-0">@lang('KYC Verification')</p>
                                 <p class="mb-0">
@@ -63,7 +63,7 @@
                             <div class="form-group">
                                 <input type="checkbox" data-width="100%" data-size="large" data-onstyle="-success" data-offstyle="-danger" data-bs-toggle="toggle" data-height="35" data-on="@lang('Enable')" data-off="@lang('Disable')" name="kv" @if(gs('kv')) checked @endif>
                             </div>
-                        </li>
+                        </li> --}}
 
                         <li class="list-group-item d-flex flex-wrap flex-sm-nowrap gap-2 justify-content-between align-items-center">
                             <div>
@@ -153,7 +153,7 @@
                             <div>
                                 <p class="fw-bold mb-0">@lang('Redeem Option')</p>
                                 <p class="mb-0">
-                                    <small>@lang('If you enable this module, users can request for redeem gold via pickup point or delivery address.')</small>
+                                    <small>@lang('If you enable this module, users can request for redeem bean via pickup point or delivery address.')</small>
                                 </p>
                             </div>
                             <div class="form-group">

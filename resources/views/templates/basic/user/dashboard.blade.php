@@ -336,7 +336,7 @@
 
             var options = {
                 series: [{
-                    name: 'Gold Price',
+                    name: 'Bean Price',
                     data: []
                 }],
                 chart: {

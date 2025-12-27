@@ -8,38 +8,38 @@ use App\Models\BeanHistory;
 use App\Models\RedeemData;
 use App\Models\Transaction;
 
-class GoldHistoryController extends Controller
+class BeanHistoryController extends Controller
 {
     public function buy($userId = 0)
     {
         $pageTitle     = 'Buy History';
-        $goldHistories = BeanHistory::buy();
+        $beanHistories = BeanHistory::buy();
         if ($userId) {
-            $goldHistories->where('user_id', $userId);
+            $beanHistories->where('user_id', $userId);
         }
-        $goldHistories = $goldHistories->with('batch.product', 'user', 'itemUnit', 'currency')->searchable(['user:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
-        return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
+        $beanHistories = $beanHistories->with('batch.product', 'user', 'itemUnit', 'currency')->searchable(['user:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        return view('admin.bean_history.list', compact('pageTitle', 'beanHistories'));
     }
 
     public function sell()
     {
         $pageTitle     = 'Sell History';
-        $goldHistories = BeanHistory::sell()->with('batch.product', 'user', 'itemUnit', 'currency')->searchable(['user:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
-        return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
+        $beanHistories = BeanHistory::sell()->with('batch.product', 'user', 'itemUnit', 'currency')->searchable(['user:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        return view('admin.bean_history.list', compact('pageTitle', 'beanHistories'));
     }
 
     public function redeem()
     {
         $pageTitle     = 'Shipping & Receiving History';
-        $goldHistories = BeanHistory::redeem()->with('product.unit', 'user', 'redeemData.shippingMethod', 'itemUnit', 'currency')->searchable(['user:username'])->filter(['redeemData:status'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
-        return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
+        $beanHistories = BeanHistory::redeem()->with('product.unit', 'user', 'redeemData.shippingMethod', 'itemUnit', 'currency')->searchable(['user:username'])->filter(['redeemData:status'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        return view('admin.bean_history.list', compact('pageTitle', 'beanHistories'));
     }
 
     public function gift()
     {
         $pageTitle     = 'Gift History';
-        $goldHistories = BeanHistory::gift()->with('batch.product', 'user', 'recipient', 'itemUnit', 'currency')->searchable(['user:username', 'recipient:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
-        return view('admin.gold_history.list', compact('pageTitle', 'goldHistories'));
+        $beanHistories = BeanHistory::gift()->with('batch.product', 'user', 'recipient', 'itemUnit', 'currency')->searchable(['user:username', 'recipient:username'])->dateFilter()->orderBy('id', 'desc')->paginate(getPaginate());
+        return view('admin.bean_history.list', compact('pageTitle', 'beanHistories'));
     }
 
     public function redeemStatus($id, $status)

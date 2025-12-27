@@ -10,14 +10,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>@lang('Name') <span class="text--danger">*</span></label>
-                                    <input type="text" name="name" class="form-control" value="{{ old('name', $warehouse->name) }}" required>
+                                    <label>@lang('Name') (@lang('English')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="name_en" class="form-control" value="{{ old('name_en', $warehouse->name_en) }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>@lang('Location') <span class="text--danger">*</span></label>
-                                    <input type="text" name="location" class="form-control" value="{{ old('location', $warehouse->location) }}" required>
+                                    <label>@lang('Name') (@lang('Arabic')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="name_ar" class="form-control" value="{{ old('name_ar', $warehouse->name_ar) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Location') (@lang('English')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="location_en" class="form-control" value="{{ old('location_en', $warehouse->location_en) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Location') (@lang('Arabic')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="location_ar" class="form-control" value="{{ old('location_ar', $warehouse->location_ar) }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -29,8 +41,14 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>@lang('Manager Name') <span class="text--danger">*</span></label>
-                                    <input type="text" name="manager_name" class="form-control" value="{{ old('manager_name', $warehouse->manager_name) }}" required>
+                                    <label>@lang('Manager Name') (@lang('English')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="manager_name_en" class="form-control" value="{{ old('manager_name_en', $warehouse->manager_name_en) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Manager Name') (@lang('Arabic')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="manager_name_ar" class="form-control" value="{{ old('manager_name_ar', $warehouse->manager_name_ar) }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -57,10 +75,16 @@
                                     <input type="number" step="0.01" name="area_sqm" class="form-control" value="{{ old('area_sqm', $warehouse->area_sqm) }}">
                                 </div>
                             </div>
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>@lang('Address')</label>
-                                    <textarea name="address" class="form-control" rows="3">{{ old('address', $warehouse->address) }}</textarea>
+                                    <label>@lang('Address') (@lang('English'))</label>
+                                    <textarea name="address_en" class="form-control" rows="3">{{ old('address_en', $warehouse->address_en) }}</textarea>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Address') (@lang('Arabic'))</label>
+                                    <textarea name="address_ar" class="form-control" rows="3">{{ old('address_ar', $warehouse->address_ar) }}</textarea>
                                 </div>
                             </div>
                             <div class="col-md-6">

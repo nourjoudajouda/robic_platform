@@ -18,10 +18,10 @@
         <div class="row">
             <div class="col-12">
                 <div class="gradient-border">
-                    <div class="gold-price">
-                        <div class="gold-price-header">
-                            <h4 class="gold-price-header__title">@lang('Green Coffee Price in ') {{ __(gs('cur_text')) }}</h4>
-                            <p class="gold-price-header__desc">
+                    <div class="bean-price">
+                        <div class="bean-price-header">
+                            <h4 class="bean-price-header__title">@lang('Green Coffee Price in ') {{ __(gs('cur_text')) }}</h4>
+                            <p class="bean-price-header__desc">
                                 @lang('High'):<span class="highPrice me-3"></span>
                                 @lang('Low'):<span class="lowPrice"></span>
                                 <span class="amountChangeClass"><i class="fa-solid fa-caret-down iconClass"></i> 
@@ -49,11 +49,11 @@
         <div class="row gy-4 pt-60">
             <div class="col-xxl-5 col-lg-6">
                 <div class="gradient-border">
-                    <div class="gold-rate">
-                        <h5 class="gold-rate__title">@lang('Today\'s Gold Rate')</h5>
-                        <ul class="gold-rate__list">
+                    <div class="bean-rate">
+                        <h5 class="bean-rate__title">@lang('Today\'s Bean Rate')</h5>
+                        <ul class="bean-rate__list">
                             @foreach ($categories as $category)
-                                <li class="gold-rate__list-item">
+                                <li class="bean-rate__list-item">
                                     <span class="product">{{ $category->name }}</span>
                                     <span class="price">{{ showAmount($category->price) }}/@lang('gram')</span>
                                 </li>
@@ -64,12 +64,12 @@
             </div>
             <div class="col-xxl-7 col-lg-6">
                 <div class="gradient-border">
-                    <div class="gold-calculator">
-                        <h5 class="gold-calculator__title">@lang('Gold Price Calculator')</h5>
-                        <form class="gold-calculator__form">
-                            <div class="gold-calculator__top">
-                                <div class="gold-category">
-                                    <span class="gold-category__title">@lang('Product Quality')</span>
+                    <div class="bean-calculator">
+                        <h5 class="bean-calculator__title">@lang('Bean Price Calculator')</h5>
+                        <form class="bean-calculator__form">
+                            <div class="bean-calculator__top">
+                                <div class="bean-category">
+                                    <span class="bean-category__title">@lang('Product Quality')</span>
                                     <div class="customNiceSelect">
                                         <select name="category">
                                             @foreach ($categories as $category)
@@ -80,17 +80,17 @@
                                 </div>
                                 <div class="calculator-switch">
                                     <div class="calculator-switch__item">
-                                        <input class="form-check-input" type="radio" name="goldCalculatorSwitch" id="goldCalculatorSwitch1" value="1" checked>
-                                        <label class="text cursor-pointer" for="goldCalculatorSwitch1">@lang('Calculate in '){{ __(gs('cur_text')) }}</label>
+                                        <input class="form-check-input" type="radio" name="beanCalculatorSwitch" id="beanCalculatorSwitch1" value="1" checked>
+                                        <label class="text cursor-pointer" for="beanCalculatorSwitch1">@lang('Calculate in '){{ __(gs('cur_text')) }}</label>
                                     </div>
                                     <span class="calculator-switch__icon"><i class="fa-solid fa-right-left"></i></span>
                                     <div class="calculator-switch__item">
-                                        <input class="form-check-input" type="radio" name="goldCalculatorSwitch" id="goldCalculatorSwitch2" value="2">
-                                        <label class="text cursor-pointer" for="goldCalculatorSwitch2">@lang('Calculate in Quantity')</label>
+                                        <input class="form-check-input" type="radio" name="beanCalculatorSwitch" id="beanCalculatorSwitch2" value="2">
+                                        <label class="text cursor-pointer" for="beanCalculatorSwitch2">@lang('Calculate in Quantity')</label>
                                     </div>
                                 </div>
                             </div>
-                            <div class="gold-calculator__inputs">
+                            <div class="bean-calculator__inputs">
                                 <div class="form-group">
                                     <label class="form--label">{{ __(gs('cur_text')) }}</label>
                                     <input type="number" step="any" class="form--control" placeholder="0.00" name="amount">
@@ -102,7 +102,7 @@
                                 </div>
                             </div>
 
-                            <div class="gold-calculator__bottom">
+                            <div class="bean-calculator__bottom">
                                 @if ($chargeLimit->fixed_charge || $chargeLimit->percent_charge || $chargeLimit->vat)
                                     <span class="info font-small"><i class="fa-solid fa-circle-info me-1"></i>
                                         {{ getChargeText($chargeLimit) }}
@@ -131,7 +131,7 @@
                 $('.amountChange').text('--');
                 $('.percentageChange').text('--');
 
-                $.get(`{{ route('gold.price') }}`, {days}, function(response) {
+                $.get(`{{ route('bean.price') }}`, {days}, function(response) {
                     if (response.status == 'error') {
                         notify('error', response.message);
                         return false;
@@ -157,7 +157,7 @@
                         $('.iconClass').removeClass('fa-caret-up');
                     }
 
-                    updateChart(response.data.gold_price);
+                    updateChart(response.data.bean_price);
                 });
 
             }).trigger('change');
@@ -165,7 +165,7 @@
             function updateChart(data) {
                 chart.updateOptions({
                     series: [{
-                        name: 'Gold Price',
+                        name: 'Bean Price',
                         data: data.map(item => Number(item.max_price).toFixed(2))
                     }],
                     xaxis: {
@@ -178,7 +178,7 @@
 
             var options = {
                 series: [{
-                    name: 'Gold Price',
+                    name: 'Bean Price',
                     data: []
                 }],
                 chart: {
@@ -219,7 +219,7 @@
             chart.render();
 
 
-            // Gold Price Calculator
+            // Bean Price Calculator
 
             let amount = 0;
             let gram = 0;
@@ -227,21 +227,21 @@
 
             $('[name=category]').on('change', function() {
                 categoryPrice = $(this).find('option:selected').data('price');
-                calculateGoldPriceQuantity();
+                calculateBeanPriceQuantity();
             }).trigger('change');
 
             $('[name=amount]').on('keyup', function() {
                 amount = $(this).val();
-                calculateGoldPriceQuantity();
+                calculateBeanPriceQuantity();
             });
 
             $('[name=gram]').on('keyup', function() {
                 gram = $(this).val();
-                calculateGoldPriceQuantity();
+                calculateBeanPriceQuantity();
             });
 
-            function calculateGoldPriceQuantity() {
-                let switchValue = $('[name=goldCalculatorSwitch]:checked').val();
+            function calculateBeanPriceQuantity() {
+                let switchValue = $('[name=beanCalculatorSwitch]:checked').val();
                 if (switchValue == 1) {
                     $('[name=gram]').val(parseFloat(amount / categoryPrice).toFixed(8));
                 } else {
@@ -249,7 +249,7 @@
                 }
             }
 
-            $('[name=goldCalculatorSwitch]').on('change', function() {
+            $('[name=beanCalculatorSwitch]').on('change', function() {
                 let switchValue = $(this).val();
 
                 if (switchValue == 1) {

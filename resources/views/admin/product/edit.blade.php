@@ -8,10 +8,16 @@
                     <form action="{{ route('admin.product.update', $product->id) }}" method="POST">
                         @csrf
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-md-6">
                                 <div class="form-group">
-                                    <label>@lang('Name') <span class="text--danger">*</span></label>
-                                    <input type="text" name="name" class="form-control" value="{{ old('name', $product->name) }}" required>
+                                    <label>@lang('Name') (@lang('English')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="name_en" class="form-control" value="{{ old('name_en', $product->name_en) }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>@lang('Name') (@lang('Arabic')) <span class="text--danger">*</span></label>
+                                    <input type="text" name="name_ar" class="form-control" value="{{ old('name_ar', $product->name_ar) }}" required>
                                 </div>
                             </div>
                             <div class="col-md-6">

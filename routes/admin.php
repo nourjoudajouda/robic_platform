@@ -48,7 +48,7 @@ Route::middleware('admin')->group(function () {
         Route::get('download-attachments/{file_hash}', 'downloadAttachment')->name('download.attachment');
     });
 
-    Route::controller('GoldHistoryController')->name('gold.history.')->prefix('gold-history')->group(function () {
+    Route::controller('BeanHistoryController')->name('bean.history.')->prefix('bean-history')->group(function () {
         Route::get('buy/{user_id?}', 'buy')->name('buy');
         Route::get('sell', 'sell')->name('sell');
         Route::get('redeem', 'redeem')->name('redeem');
@@ -80,6 +80,7 @@ Route::middleware('admin')->group(function () {
         Route::post('update/{id}', 'update')->name('update');
         Route::post('delete/{id}', 'delete')->name('delete');
         Route::post('status/{id}', 'status')->name('status');
+        Route::get('statistics/{id}', 'statistics')->name('statistics');
     });
 
     Route::controller('BatchController')->name('batch.')->prefix('batch')->group(function () {

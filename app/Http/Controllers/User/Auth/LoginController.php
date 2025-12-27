@@ -95,8 +95,13 @@ class LoginController extends Controller
 
     public function logout()
     {
+        $user = auth()->user();
         $this->guard()->logout();
         request()->session()->invalidate();
+
+        if ($user) {
+            $this->audit('logout', 'تسجيل خروج المستخدم: ' . $user->username, $user);
+        }
 
         $notify[] = ['success', 'You have been logged out.'];
         return to_route('user.login')->withNotify($notify);
@@ -132,6 +137,8 @@ class LoginController extends Controller
         $userLogin->browser = @$userAgent['browser'];
         $userLogin->os = @$userAgent['os_platform'];
         $userLogin->save();
+
+        $this->audit('login', 'تسجيل دخول المستخدم: ' . $user->username, $user);
 
         $redirection = Intended::getRedirection();
         return $redirection ? $redirection : to_route('user.home');

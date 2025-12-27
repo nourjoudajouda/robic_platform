@@ -180,75 +180,104 @@ class BuyController extends Controller
     {
         $pageTitle = 'Buy Green Coffee';
         
-        // جلب جميع المنتجات التي لديها sell orders نشطة (من batch_sell_orders أو user_sell_orders)
+        // البدء من جدول المنتجات - جلب جميع المنتجات النشطة
+        $products = \App\Models\Product::where('status', Status::ENABLE)
+            ->with(['unit', 'currency'])
+            ->get();
+        
         $productsWithSellOrders = [];
         
-        // جلب batch_sell_orders نشطة
-        $batchSellOrders = \App\Models\BatchSellOrder::where('status', Status::SELL_ORDER_ACTIVE)
-            ->where(function($q) {
-                $q->whereRaw('(available_quantity IS NOT NULL AND available_quantity > 0)')
-                  ->orWhereRaw('(available_quantity IS NULL AND quantity > 0)');
-            })
-            ->with(['batch.product.unit', 'batch.product.currency', 'batch.warehouse', 'batch', 'product'])
-            ->get();
-        
-        // جلب user_sell_orders نشطة
-        $userSellOrders = \App\Models\UserSellOrder::where('status', Status::SELL_ORDER_ACTIVE)
-            ->where(function($q) {
-                $q->whereRaw('(available_quantity IS NOT NULL AND available_quantity > 0)')
-                  ->orWhereRaw('(available_quantity IS NULL AND quantity > 0)');
-            })
-            ->with(['product.unit', 'product.currency', 'warehouse', 'product', 'batch'])
-            ->get();
-        
-        // دمج sell orders حسب product_id
-        foreach ($batchSellOrders as $order) {
-            $productId = $order->product_id;
-            if (!isset($productsWithSellOrders[$productId])) {
+        // لكل منتج، البحث عن batches فعالة مرتبطة بـ batch_sell_orders نشطة
+        foreach ($products as $product) {
+            $productId = $product->id;
+            $hasSellOrders = false;
+            
+            // جلب batches فعالة لهذا المنتج والتي لديها batch_sell_orders نشطة
+            $batches = Batch::where('product_id', $productId)
+                ->where('status', Status::ENABLE)
+                ->whereHas('sellOrders', function($query) {
+                    $query->where('status', Status::SELL_ORDER_ACTIVE)
+                        ->where(function($q) {
+                            $q->whereRaw('(available_quantity IS NOT NULL AND available_quantity > 0)')
+                              ->orWhereRaw('(available_quantity IS NULL AND quantity > 0)');
+                        });
+                })
+                ->with(['sellOrders' => function($query) {
+                    $query->where('status', Status::SELL_ORDER_ACTIVE)
+                        ->where(function($q) {
+                            $q->whereRaw('(available_quantity IS NOT NULL AND available_quantity > 0)')
+                              ->orWhereRaw('(available_quantity IS NULL AND quantity > 0)');
+                        })
+                        ->orderBy('sell_price', 'asc');
+                }])
+                ->get();
+            
+            // جمع batch_sell_orders من batches
+            $batchSellOrders = [];
+            $productBatches = [];
+            foreach ($batches as $batch) {
+                foreach ($batch->sellOrders as $sellOrder) {
+                    $batchSellOrders[] = [
+                        'type' => 'batch',
+                        'order' => $sellOrder,
+                        'sell_price' => $sellOrder->sell_price,
+                        'available_quantity' => $sellOrder->available_quantity ?? $sellOrder->quantity,
+                    ];
+                    $hasSellOrders = true;
+                }
+                // إضافة batch للمنتج
+                $productBatches[] = $batch;
+            }
+            
+            // جلب user_sell_orders نشطة لهذا المنتج
+            $userSellOrders = \App\Models\UserSellOrder::where('product_id', $productId)
+                ->where('status', Status::SELL_ORDER_ACTIVE)
+                ->where(function($q) {
+                    $q->whereRaw('(available_quantity IS NOT NULL AND available_quantity > 0)')
+                      ->orWhereRaw('(available_quantity IS NULL AND quantity > 0)');
+                })
+                ->with(['batch', 'warehouse'])
+                ->orderBy('sell_price', 'asc')
+                ->get();
+            
+            // جمع user_sell_orders
+            $userSellOrdersArray = [];
+            foreach ($userSellOrders as $sellOrder) {
+                $userSellOrdersArray[] = [
+                    'type' => 'user',
+                    'order' => $sellOrder,
+                    'sell_price' => $sellOrder->sell_price,
+                    'available_quantity' => $sellOrder->available_quantity ?? $sellOrder->quantity,
+                ];
+                $hasSellOrders = true;
+                
+                // إضافة batch من user_sell_order إذا كان موجوداً ومرتبطاً بنفس المنتج
+                if ($sellOrder->batch && $sellOrder->batch->product_id == $productId) {
+                    $existingBatchIds = array_map(function($b) { 
+                        return is_object($b) ? ($b->id ?? null) : null; 
+                    }, $productBatches);
+                    if (!in_array($sellOrder->batch->id, $existingBatchIds)) {
+                        $productBatches[] = $sellOrder->batch;
+                    }
+                }
+            }
+            
+            // إذا كان المنتج لديه sell orders، أضفه للقائمة
+            if ($hasSellOrders) {
+                // دمج batch_sell_orders و user_sell_orders
+                $allSellOrders = array_merge($batchSellOrders, $userSellOrdersArray);
+                
+                // ترتيب حسب السعر (أرخص سعر أولاً)
+                usort($allSellOrders, function($a, $b) {
+                    return $a['sell_price'] <=> $b['sell_price'];
+                });
+                
                 $productsWithSellOrders[$productId] = [
-                    'product' => $order->product ?? $order->batch->product,
-                    'sell_orders' => [],
-                    'batches' => []
+                    'product' => $product,
+                    'sell_orders' => $allSellOrders,
+                    'batches' => $productBatches
                 ];
             }
-            $productsWithSellOrders[$productId]['sell_orders'][] = [
-                'type' => 'batch',
-                'order' => $order,
-                'sell_price' => $order->sell_price,
-                'available_quantity' => $order->available_quantity ?? $order->quantity,
-            ];
-            // جمع معلومات من batches
-            if ($order->batch && !in_array($order->batch->id, array_column($productsWithSellOrders[$productId]['batches'], 'id'))) {
-                $productsWithSellOrders[$productId]['batches'][] = $order->batch;
-            }
-        }
-        
-        foreach ($userSellOrders as $order) {
-            $productId = $order->product_id;
-            if (!isset($productsWithSellOrders[$productId])) {
-                $productsWithSellOrders[$productId] = [
-                    'product' => $order->product,
-                    'sell_orders' => [],
-                    'batches' => []
-                ];
-            }
-            $productsWithSellOrders[$productId]['sell_orders'][] = [
-                'type' => 'user',
-                'order' => $order,
-                'sell_price' => $order->sell_price,
-                'available_quantity' => $order->available_quantity ?? $order->quantity,
-            ];
-            // جمع معلومات من batches
-            if ($order->batch && !in_array($order->batch->id, array_column($productsWithSellOrders[$productId]['batches'], 'id'))) {
-                $productsWithSellOrders[$productId]['batches'][] = $order->batch;
-            }
-        }
-        
-        // ترتيب sell orders حسب السعر (أرخص سعر أولاً) لكل منتج
-        foreach ($productsWithSellOrders as $productId => &$productData) {
-            usort($productData['sell_orders'], function($a, $b) {
-                return $a['sell_price'] <=> $b['sell_price'];
-            });
         }
         
         // حساب سعر السوق لكل منتج
@@ -256,7 +285,8 @@ class BuyController extends Controller
         foreach ($productsWithSellOrders as $productId => $productData) {
             $marketPrices[$productId] = Batch::calculateMarketPrice($productId);
         }
-        
+        // return $productData;
+
         return view('Template::user.buy.products', compact('pageTitle', 'productsWithSellOrders', 'marketPrices'));
     }
     
@@ -701,7 +731,7 @@ class BuyController extends Controller
 
     public function paymentForm(Request $request)
     {
-        $pageTitle = 'Buy Gold';
+        $pageTitle = 'Buy Bean';
         $buyData   = session('buy_data');
 
         if (!$buyData) {
@@ -779,6 +809,9 @@ class BuyController extends Controller
                     $vat
                 );
                 
+                $product = \App\Models\Product::find($buyData->product_id);
+                $this->audit('buy', "تم شراء {$quantity} من المنتج: " . ($product->name_en ?? 'N/A'), $product, null, ['quantity' => $quantity, 'amount' => $buyData->amount, 'total' => $totalAmount]);
+                
                 $notify[] = ['success', 'Green Coffee purchased successfully'];
                 return to_route('user.buy.success')->withNotify($notify)->with('buy_history', $buyHistory);
             }
@@ -813,6 +846,8 @@ class BuyController extends Controller
 
                 $buyHistory = Asset::buyFromUserSellOrder($user, $userSellOrder, $buyData->amount, $totalAmount, $quantity, $charge, $vat);
 
+                $this->audit('buy', "تم شراء {$quantity} من المنتج: " . ($product->name_en ?? 'N/A'), $product, null, ['quantity' => $quantity, 'amount' => $buyData->amount, 'total' => $totalAmount]);
+
                 $notify[] = ['success', 'Green Coffee purchased successfully'];
                 return to_route('user.buy.success')->withNotify($notify)->with('buy_history', $buyHistory);
             }
@@ -840,7 +875,9 @@ class BuyController extends Controller
                     return back()->withNotify($notify);
                 }
 
-                $buyHistory = Asset::buyGold($user, $batch, $sellOrder, $buyData->amount, $totalAmount, $quantity, $charge, $vat);
+                $buyHistory = Asset::buyBean($user, $batch, $sellOrder, $buyData->amount, $totalAmount, $quantity, $charge, $vat);
+
+                $this->audit('buy', "تم شراء {$quantity} من المنتج: " . ($batch->product->name_en ?? 'N/A'), $batch->product, null, ['quantity' => $quantity, 'amount' => $buyData->amount, 'total' => $totalAmount]);
 
                 $notify[] = ['success', 'Green Coffee purchased successfully'];
                 return to_route('user.buy.success')->withNotify($notify)->with('buy_history', $buyHistory);
@@ -880,7 +917,7 @@ class BuyController extends Controller
         
         // جلب آخر transaction للمستخدم (عملية الشراء)
         $lastTransaction = \App\Models\Transaction::where('user_id', auth()->id())
-            ->where('remark', 'buy_gold')
+            ->where('remark', 'buy_bean')
             ->orderBy('id', 'desc')
             ->first();
         

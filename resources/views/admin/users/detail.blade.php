@@ -8,7 +8,7 @@
                     <x-widget style="7" link="{{ route('admin.report.transaction', $user->id) }}" title="Balance" icon="las la-money-bill-wave-alt" value="{{ showAmount($user->balance) }}" bg="indigo" type="2" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
-                    <x-widget style="7" link="{{ route('admin.gold.history.buy', $user->id) }}" title="Asset Value" icon="las la-coins" value="{{ showAmount($totalAssetAmount) }}" bg="info" type="2" />
+                    <x-widget style="7" link="{{ route('admin.bean.history.buy', $user->id) }}" title="Asset Value" icon="las la-coins" value="{{ showAmount($totalAssetAmount) }}" bg="info" type="2" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
                     <x-widget style="7" link="{{ route('admin.deposit.list', $user->id) }}" title="Deposits" icon="las la-wallet" value="{{ showAmount($totalDeposit) }}" bg="8" type="2" />

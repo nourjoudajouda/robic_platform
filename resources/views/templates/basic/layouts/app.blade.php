@@ -1,5 +1,9 @@
 <!doctype html>
-<html lang="{{ config('app.locale') }}" itemscope itemtype="http://schema.org/WebPage">
+@php
+    $currentLang = session('lang', config('app.locale'));
+    $isRTL = in_array($currentLang, ['ar', 'he', 'fa', 'ur']);
+@endphp
+<html lang="{{ $currentLang }}" dir="{{ $isRTL ? 'rtl' : 'ltr' }}" itemscope itemtype="http://schema.org/WebPage">
 
 <head>
     <!-- Required meta tags -->
@@ -8,7 +12,11 @@
     <title> {{ gs()->siteName(__($pageTitle)) }}</title>
     @include('partials.seo')
     <!-- Bootstrap CSS -->
-    <link href="{{ asset('assets/global/css/bootstrap.min.css') }}" rel="stylesheet">
+    @if($isRTL)
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    @else
+        <link href="{{ asset('assets/global/css/bootstrap.min.css') }}" rel="stylesheet">
+    @endif
 
     <link href="{{ asset('assets/global/css/all.min.css') }}" rel="stylesheet">
 

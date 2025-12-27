@@ -24,12 +24,12 @@
                         </span>
                     </li>
                 </ul>
-                <div class="gold-calculator">
+                <div class="bean-calculator">
                     <form action="{{ route('user.buy.store') }}" method="POST">
                         @csrf
                         <input type="hidden" name="batch_id" value="{{ $selectedBatch->id }}" id="selected_batch_id">
-                        <div class="gold-calculator__top">
-                            <div class="gold-calculator__top-left">
+                        <div class="bean-calculator__top">
+                            <div class="bean-calculator__top-left">
                                 <div class="customNiceSelect">
                                     <select name="batch_id" id="batch_select">
                                         @foreach ($batches as $batch)
@@ -47,25 +47,25 @@
                                         @endforeach
                                     </select>
                                 </div>
-                                <h4 class="gold-calculator__top-amount"> 
+                                <h4 class="bean-calculator__top-amount"> 
                                     <span class="currentPrice">{{ showAmount($cheapestSellOrder->sell_price ?? $selectedBatch->sell_price, 2, true, false, false) }}</span> 
                                     {{ $selectedBatch->product->currency->code ?? gs('cur_sym') }} / {{ $selectedBatch->product->unit->symbol ?? 'Unit' }}
                                 </h4>
                             </div>
                             <div class="calculator-switch">
                                 <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" id="goldCalculatorSwitch1" name="purchase_type" checked>
-                                    <label class="text" for="goldCalculatorSwitch1">@lang('Purchase in '){{ __(gs('cur_text')) }}</label>
+                                    <input class="form-check-input" type="radio" id="beanCalculatorSwitch1" name="purchase_type" checked>
+                                    <label class="text" for="beanCalculatorSwitch1">@lang('Purchase in '){{ __(gs('cur_text')) }}</label>
                                 </div>
                                 <span class="calculator-switch__icon"><i class="fa-solid fa-right-left"></i></span>
                                 <div class="calculator-switch__item">
-                                    <input class="form-check-input" type="radio" id="goldCalculatorSwitch2" name="purchase_type">
-                                    <label class="text" for="goldCalculatorSwitch2">@lang('Purchase in Quantity')</label>
+                                    <input class="form-check-input" type="radio" id="beanCalculatorSwitch2" name="purchase_type">
+                                    <label class="text" for="beanCalculatorSwitch2">@lang('Purchase in Quantity')</label>
                                 </div>
                             </div>
                         </div>
-                        <div class="gold-calculator__bottom">
-                            <div class="gold-calculator__inputs">
+                        <div class="bean-calculator__bottom">
+                            <div class="bean-calculator__inputs">
                                 <div class="form-group position-relative">
                                     <input type="number" step="any" class="form--control" placeholder="00.00" name="amount">
                                     <label class="form--label">{{ __(gs('cur_text')) }}</label>

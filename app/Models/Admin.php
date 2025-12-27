@@ -63,4 +63,9 @@ class Admin extends Authenticatable
         }
         return false;
     }
+
+    public function audits()
+    {
+        return $this->hasMany(Audit::class)->where('user_type', 'admin');
+    }
 }

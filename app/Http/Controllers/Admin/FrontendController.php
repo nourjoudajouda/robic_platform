@@ -47,13 +47,89 @@ class FrontendController extends Controller
     {
         $pageTitle = 'SEO Configuration';
         $seo = Frontend::where('data_keys', 'seo.data')->first();
+        
+        // Default coffee image path
+        $defaultCoffeeImage = 'coffee-seo-default.png';
+        $seoImagePath = public_path('assets/images/seo/' . $defaultCoffeeImage);
+        $sourceImagePath = public_path('assets/images/coffee-beans-pattern.png');
+        
+        // Copy coffee image to SEO folder if it doesn't exist
+        if (!file_exists($seoImagePath) && file_exists($sourceImagePath)) {
+            $seoDir = public_path('assets/images/seo');
+            if (!is_dir($seoDir)) {
+                mkdir($seoDir, 0755, true);
+            }
+            copy($sourceImagePath, $seoImagePath);
+        }
+        
         if(!$seo){
-            $data_values = '{"keywords":[],"description":"","social_title":"","social_description":"","image":null}';
-            $data_values = json_decode($data_values, true);
+            $data_values = [
+                'keywords' => ['coffee', 'bean', 'green coffee', 'coffee beans', 'coffee trading'],
+                'description' => 'Buy and sell green coffee beans online. Trade coffee beans with secure transactions.',
+                'social_title' => 'Coffee Bean Trading Platform',
+                'social_description' => 'Buy and sell green coffee beans online. Trade coffee beans with secure transactions.',
+                'image' => file_exists($seoImagePath) ? $defaultCoffeeImage : null
+            ];
             $frontend = new Frontend();
             $frontend->data_keys = 'seo.data';
             $frontend->data_values = $data_values;
             $frontend->save();
+        } else {
+            // Update existing SEO data to replace gold with coffee/bean
+            $dataValues = $seo->data_values;
+            if (is_object($dataValues)) {
+                $dataValues = (array) $dataValues;
+            }
+            
+            // Set default coffee image if no image exists
+            if (empty($dataValues['image']) && file_exists($seoImagePath)) {
+                $dataValues['image'] = $defaultCoffeeImage;
+            }
+            
+            // Replace gold-related keywords with coffee/bean
+            if (isset($dataValues['keywords']) && is_array($dataValues['keywords'])) {
+                $dataValues['keywords'] = array_map(function($keyword) {
+                    $keyword = str_ireplace('gold', 'coffee', $keyword);
+                    $keyword = str_ireplace('ذهب', 'قهوة', $keyword);
+                    return $keyword;
+                }, $dataValues['keywords']);
+                
+                // Add coffee/bean keywords if not present
+                $coffeeKeywords = ['coffee', 'bean', 'green coffee', 'coffee beans', 'coffee trading'];
+                foreach ($coffeeKeywords as $coffeeKeyword) {
+                    if (!in_array($coffeeKeyword, $dataValues['keywords'])) {
+                        $dataValues['keywords'][] = $coffeeKeyword;
+                    }
+                }
+            }
+            
+            // Replace gold in descriptions
+            if (isset($dataValues['description'])) {
+                $dataValues['description'] = str_ireplace('gold', 'coffee', $dataValues['description']);
+                $dataValues['description'] = str_ireplace('ذهب', 'قهوة', $dataValues['description']);
+                if (empty($dataValues['description'])) {
+                    $dataValues['description'] = 'Buy and sell green coffee beans online. Trade coffee beans with secure transactions.';
+                }
+            }
+            
+            if (isset($dataValues['social_title'])) {
+                $dataValues['social_title'] = str_ireplace('gold', 'coffee', $dataValues['social_title']);
+                $dataValues['social_title'] = str_ireplace('ذهب', 'قهوة', $dataValues['social_title']);
+                if (empty($dataValues['social_title'])) {
+                    $dataValues['social_title'] = 'Coffee Bean Trading Platform';
+                }
+            }
+            
+            if (isset($dataValues['social_description'])) {
+                $dataValues['social_description'] = str_ireplace('gold', 'coffee', $dataValues['social_description']);
+                $dataValues['social_description'] = str_ireplace('ذهب', 'قهوة', $dataValues['social_description']);
+                if (empty($dataValues['social_description'])) {
+                    $dataValues['social_description'] = 'Buy and sell green coffee beans online. Trade coffee beans with secure transactions.';
+                }
+            }
+            
+            $seo->data_values = $dataValues;
+            $seo->save();
         }
         return view('admin.frontend.seo', compact('pageTitle', 'seo'));
     }
