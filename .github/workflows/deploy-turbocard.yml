@@ -65,62 +65,94 @@ jobs:
             **/storage/**
             **/*.md
 
-      # 5️⃣ Setup .env file via HTTP endpoint
+      # 5️⃣ Wait for site to be available
+      - name: Wait for site availability
+        continue-on-error: true
+        run: |
+          if [ -n "${{ secrets.APP_URL }}" ]; then
+            echo "⏳ Waiting for site to be available..."
+            for i in {1..10}; do
+              if curl -f -s "${{ secrets.APP_URL }}" > /dev/null 2>&1; then
+                echo "✅ Site is available"
+                exit 0
+              fi
+              echo "Attempt $i/10: Site not ready yet, waiting 5 seconds..."
+              sleep 5
+            done
+            echo "⚠️ Site may not be fully available yet"
+          fi
+
+      # 6️⃣ Setup .env file via HTTP endpoint
       - name: Setup .env file
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Setting up .env file..."
-            curl -X POST "${{ secrets.APP_URL }}/deploy/setup-env?token=${{ secrets.DEPLOY_TOKEN }}" \
+            echo "URL: ${{ secrets.APP_URL }}/deploy/setup-env?token=***"
+            RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/setup-env?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               -d "{\"db_database\":\"${{ secrets.DB_DATABASE }}\",\"db_username\":\"${{ secrets.DB_USERNAME }}\",\"db_password\":\"${{ secrets.DB_PASSWORD }}\"}" \
               --max-time 60 \
-              --fail-with-body || echo "⚠️ .env setup endpoint not available or failed"
+              -w "\n%{http_code}" 2>&1) || true
+            echo "Response: $RESPONSE"
+            if echo "$RESPONSE" | grep -q "200\|201"; then
+              echo "✅ .env file setup completed"
+            else
+              echo "⚠️ .env setup may have failed - check response above"
+            fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping .env setup"
+            echo "APP_URL: ${{ secrets.APP_URL }}"
+            echo "DEPLOY_TOKEN: $([ -n '${{ secrets.DEPLOY_TOKEN }}' ] && echo 'set' || echo 'not set')"
           fi
 
-      # 6️⃣ Run composer install via HTTP endpoint
+      # 7️⃣ Run composer install via HTTP endpoint
       - name: Run composer install
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Running composer install..."
+            echo "URL: ${{ secrets.APP_URL }}/deploy/composer-install?token=***"
             RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/composer-install?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
-              --max-time 300 \
-              --fail-with-body -w "\n%{http_code}" 2>&1) || true
-            echo "$RESPONSE"
+              --max-time 600 \
+              -w "\n%{http_code}" 2>&1) || true
+            echo "Response: $RESPONSE"
             if echo "$RESPONSE" | grep -q "200\|201"; then
               echo "✅ Composer install completed"
             else
-              echo "⚠️ Composer install may have failed"
+              echo "⚠️ Composer install may have failed - check response above"
             fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping composer install"
+            echo "APP_URL: ${{ secrets.APP_URL }}"
+            echo "DEPLOY_TOKEN: $([ -n '${{ secrets.DEPLOY_TOKEN }}' ] && echo 'set' || echo 'not set')"
           fi
 
-      # 7️⃣ Run migrations via HTTP endpoint
+      # 8️⃣ Run migrations via HTTP endpoint
       - name: Run migrations
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Running migrations..."
+            echo "URL: ${{ secrets.APP_URL }}/deploy/migrate?token=***"
             RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/migrate?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               --max-time 300 \
-              --fail-with-body -w "\n%{http_code}" 2>&1) || true
-            echo "$RESPONSE"
+              -w "\n%{http_code}" 2>&1) || true
+            echo "Response: $RESPONSE"
             if echo "$RESPONSE" | grep -q "200\|201"; then
               echo "✅ Migrations completed"
             else
-              echo "⚠️ Migrations may have failed"
+              echo "⚠️ Migrations may have failed - check response above"
             fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping migrations"
+            echo "APP_URL: ${{ secrets.APP_URL }}"
+            echo "DEPLOY_TOKEN: $([ -n '${{ secrets.DEPLOY_TOKEN }}' ] && echo 'set' || echo 'not set')"
           fi
 
-      # 8️⃣ Clear cache via HTTP endpoint
+      # 9️⃣ Clear cache via HTTP endpoint
       - name: Clear cache
         continue-on-error: true
         run: |
