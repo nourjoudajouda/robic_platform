@@ -45,6 +45,8 @@ jobs:
           fi
 
       - name: Setup SSH
+        env:
+          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -52,84 +54,75 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.CPANEL_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
-
-      - name: Install sshpass (if needed)
-        env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
-        run: |
+          
+          # Install expect and create SSH helper script if passphrase is needed
           if [ -n "$SSH_PASSPHRASE" ]; then
-            sudo apt-get update && sudo apt-get install -y sshpass
+            sudo apt-get update && sudo apt-get install -y expect
+            # Create SSH helper script that uses expect
+            cat > ~/.ssh/ssh-with-passphrase.sh << HELPER_EOF
+          #!/bin/bash
+          PASSPHRASE="$SSH_PASSPHRASE"
+          expect << EOF
+            set timeout 30
+            spawn ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "\$@"
+            expect {
+              "Enter passphrase" {
+                send "\$PASSPHRASE\r"
+                exp_continue
+              }
+              timeout {
+                exit 1
+              }
+              eof
+            }
+            catch wait result
+            exit [lindex \\\$result 3]
+          EOF
+          HELPER_EOF
+            chmod +x ~/.ssh/ssh-with-passphrase.sh
+            echo "SSH_CMD=~/.ssh/ssh-with-passphrase.sh" >> $GITHUB_ENV
+          else
+            echo "SSH_CMD=ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" >> $GITHUB_ENV
           fi
 
       - name: Test SSH connection and prepare server
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
-              mkdir -p ${{ secrets.CPANEL_PATH }} && \
-              which rsync || (echo 'rsync not found, installing...' && yum install -y rsync || apt-get update && apt-get install -y rsync) && \
-              echo 'Server ready'
-            "
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
-              mkdir -p ${{ secrets.CPANEL_PATH }} && \
-              which rsync || (echo 'rsync not found, installing...' && yum install -y rsync || apt-get update && apt-get install -y rsync) && \
-              echo 'Server ready'
-            "
-          fi
+          $SSH_CMD -o ConnectTimeout=10 ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
+            mkdir -p ${{ secrets.CPANEL_PATH }} && \
+            which rsync || (echo 'rsync not found, installing...' && yum install -y rsync || apt-get update && apt-get install -y rsync) && \
+            echo 'Server ready'
+          "
 
       - name: Verify server path and permissions
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
-              echo 'Checking path: ${{ secrets.CPANEL_PATH }}' && \
-              ls -la ${{ secrets.CPANEL_PATH }} || echo 'Path does not exist, will be created' && \
-              echo 'Checking rsync:' && \
-              which rsync && \
-              rsync --version | head -1
-            "
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
-              echo 'Checking path: ${{ secrets.CPANEL_PATH }}' && \
-              ls -la ${{ secrets.CPANEL_PATH }} || echo 'Path does not exist, will be created' && \
-              echo 'Checking rsync:' && \
-              which rsync && \
-              rsync --version | head -1
-            "
-          fi
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
+            echo 'Checking path: ${{ secrets.CPANEL_PATH }}' && \
+            ls -la ${{ secrets.CPANEL_PATH }} || echo 'Path does not exist, will be created' && \
+            echo 'Checking rsync:' && \
+            which rsync && \
+            rsync --version | head -1
+          "
 
       - name: Deploy to server
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          RSYNC_EXIT_CODE=0
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" rsync -avz --delete --progress \
-              -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30" \
-              --exclude='.git' \
-              --exclude='.github' \
-              --exclude='node_modules' \
-              --exclude='storage' \
-              --exclude='.env' \
-              --exclude='vendor' \
-              ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }} || RSYNC_EXIT_CODE=$?
-          else
-            rsync -avz --delete --progress \
-              -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30" \
-              --exclude='.git' \
-              --exclude='.github' \
-              --exclude='node_modules' \
-              --exclude='storage' \
-              --exclude='.env' \
-              --exclude='vendor' \
-              ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }} || RSYNC_EXIT_CODE=$?
-          fi
+          rsync -avz --delete --progress \
+            -e "$SSH_CMD -o ConnectTimeout=30" \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='storage' \
+            --exclude='.env' \
+            --exclude='vendor' \
+            ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }} || RSYNC_EXIT_CODE=$?
           
-          if [ $RSYNC_EXIT_CODE -ne 0 ]; then
-            echo "❌ Rsync failed with exit code: $RSYNC_EXIT_CODE"
+          if [ ${RSYNC_EXIT_CODE:-0} -ne 0 ]; then
+            echo "❌ Rsync failed with exit code: ${RSYNC_EXIT_CODE:-unknown}"
             echo "Common exit codes:"
             echo "  1 - Syntax or usage error"
             echo "  2 - Protocol incompatibility"
@@ -149,101 +142,61 @@ jobs:
             echo "  25 - The --max-delete limit stopped deletions"
             echo "  30 - Timeout in data send/receive"
             echo "  35 - Timeout waiting for daemon connection"
-            exit $RSYNC_EXIT_CODE
+            exit ${RSYNC_EXIT_CODE:-1}
           fi
           echo "✅ Rsync completed successfully"
 
       - name: Setup .env file
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              if [ ! -f .env ]; then \
-                if [ -f .env.example ]; then \
-                  cp .env.example .env; \
-                else \
-                  touch .env; \
-                fi; \
-                php artisan key:generate --force; \
-              fi && \
-              sed -i 's/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/' .env || echo 'DB_DATABASE=${{ secrets.DB_DATABASE }}' >> .env && \
-              sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/' .env || echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env && \
-              sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/' .env || echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env"
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              if [ ! -f .env ]; then \
-                if [ -f .env.example ]; then \
-                  cp .env.example .env; \
-                else \
-                  touch .env; \
-                fi; \
-                php artisan key:generate --force; \
-              fi && \
-              sed -i 's/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/' .env || echo 'DB_DATABASE=${{ secrets.DB_DATABASE }}' >> .env && \
-              sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/' .env || echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env && \
-              sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/' .env || echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env"
-          fi
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            if [ ! -f .env ]; then \
+              if [ -f .env.example ]; then \
+                cp .env.example .env; \
+              else \
+                touch .env; \
+              fi; \
+              php artisan key:generate --force; \
+            fi && \
+            sed -i 's/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/' .env || echo 'DB_DATABASE=${{ secrets.DB_DATABASE }}' >> .env && \
+            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/' .env || echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env && \
+            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/' .env || echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env"
 
       - name: Install Composer Dependencies (if changed)
         if: steps.composer_changed.outputs.changed == 'true'
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              composer install --no-dev --optimize-autoloader --no-interaction"
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              composer install --no-dev --optimize-autoloader --no-interaction"
-          fi
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            composer install --no-dev --optimize-autoloader --no-interaction"
 
       - name: Run Database Migrations (if changed)
         if: steps.migrations_changed.outputs.changed == 'true'
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              php artisan migrate --force"
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              php artisan migrate --force"
-          fi
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            php artisan migrate --force"
 
       - name: Run deployment commands on server
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              php artisan config:cache && \
-              php artisan route:cache && \
-              php artisan view:cache && \
-              php artisan queue:restart || true"
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              php artisan config:cache && \
-              php artisan route:cache && \
-              php artisan view:cache && \
-              php artisan queue:restart || true"
-          fi
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            php artisan config:cache && \
+            php artisan route:cache && \
+            php artisan view:cache && \
+            php artisan queue:restart || true"
 
       - name: Clear application cache
         env:
-          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          SSH_CMD: ${{ env.SSH_CMD }}
         run: |
-          if [ -n "$SSH_PASSPHRASE" ]; then
-            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              php artisan cache:clear && \
-              php artisan optimize:clear && \
-              php artisan optimize"
-          else
-            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
-              php artisan cache:clear && \
-              php artisan optimize:clear && \
-              php artisan optimize"
-          fi
+          $SSH_CMD ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "cd ${{ secrets.CPANEL_PATH }} && \
+            php artisan cache:clear && \
+            php artisan optimize:clear && \
+            php artisan optimize"
 
       - name: Deployment notification
         if: success()
