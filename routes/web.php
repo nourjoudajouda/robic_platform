@@ -6,6 +6,12 @@ Route::get('/clear', function(){
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });
 
+// Deployment endpoints (protected with token)
+Route::prefix('deploy')->name('deploy.')->withoutMiddleware('maintenance')->group(function () {
+    Route::post('composer-install', 'DeployController@composerInstall')->name('composer.install');
+    Route::post('migrate', 'DeployController@migrate')->name('migrate');
+    Route::post('clear-cache', 'DeployController@clearCache')->name('clear.cache');
+});
 
 Route::get('cron', 'CronController@cron')->name('cron');
 

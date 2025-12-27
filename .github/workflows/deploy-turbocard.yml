@@ -23,60 +23,98 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 2️⃣ Setup SSH agent with private key
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
+      # 2️⃣ Check for composer changes
+      - name: Check for composer changes
+        id: composer_changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE 'composer\.(json|lock)$'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 3️⃣ Check for migration changes
+      - name: Check for migration changes
+        id: migrations_changed
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE 'database/migrations/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      # 4️⃣ Deploy files with FTP
+      - name: Deploy files via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
-          ssh-private-key: ${{ secrets.CPANEL_SSH_KEY }}
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.CPANEL_PATH }}/
+          port: ${{ secrets.FTP_PORT || '21' }}
+          exclude: |
+            **/.git*
+            **/.github*
+            **/node_modules/**
+            **/vendor/**
+            **/.env
+            **/storage/**
+            **/*.md
 
-      # 3️⃣ Add server to known_hosts
-      - name: Add server to known hosts
+      # 5️⃣ Run composer install via HTTP endpoint
+      - name: Run composer install
+        if: steps.composer_changed.outputs.changed == 'true'
+        continue-on-error: true
         run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.CPANEL_HOST }} >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
+          if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
+            echo "🔄 Running composer install..."
+            curl -X POST "${{ secrets.APP_URL }}/deploy/composer-install?token=${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              --max-time 300 \
+              --fail-with-body || echo "⚠️ Composer install endpoint not available or failed"
+          else
+            echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping composer install"
+          fi
 
-      # 4️⃣ Deploy files with rsync
-      - name: Deploy files to server
+      # 6️⃣ Run migrations via HTTP endpoint
+      - name: Run migrations
+        if: steps.migrations_changed.outputs.changed == 'true'
+        continue-on-error: true
         run: |
-          rsync -avz --delete \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='node_modules' \
-            --exclude='vendor' \
-            --exclude='.env' \
-            ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }}
+          if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
+            echo "🔄 Running migrations..."
+            curl -X POST "${{ secrets.APP_URL }}/deploy/migrate?token=${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              --max-time 300 \
+              --fail-with-body || echo "⚠️ Migration endpoint not available or failed"
+          else
+            echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping migrations"
+          fi
 
-      # 5️⃣ Setup .env
-      - name: Setup .env file
+      # 7️⃣ Clear cache via HTTP endpoint
+      - name: Clear cache
+        continue-on-error: true
         run: |
-          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
-            cd ${{ secrets.CPANEL_PATH }} || exit 1
-            if [ ! -f .env ]; then
-              cp .env.example .env 2>/dev/null || touch .env
-            fi
-            grep -q '^APP_KEY=' .env || php artisan key:generate --force
-            sed -i 's/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/' .env || echo 'DB_DATABASE=${{ secrets.DB_DATABASE }}' >> .env
-            sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/' .env || echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env
-            sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/' .env || echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env
-          "
+          if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
+            echo "🔄 Clearing cache..."
+            curl -X POST "${{ secrets.APP_URL }}/deploy/clear-cache?token=${{ secrets.DEPLOY_TOKEN }}" \
+              -H "Content-Type: application/json" \
+              --max-time 60 \
+              --fail-with-body || echo "⚠️ Cache clear endpoint not available or failed"
+          else
+            echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping cache clear"
+          fi
 
-      # 6️⃣ Run Laravel commands
-      - name: Run Laravel commands
-        run: |
-          ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
-            cd ${{ secrets.CPANEL_PATH }} || exit 1
-            composer install --no-dev --optimize-autoloader --no-interaction
-            php artisan migrate --force || true
-            php artisan optimize || true
-          "
-
-      # 7️⃣ Deployment success
+      # 8️⃣ Deployment success
       - name: Deployment success
         if: success()
         run: echo "✅ Deployment to Turbocard completed successfully!"
 
-      # 8️⃣ Deployment failed
+      # 9️⃣ Deployment failed
       - name: Deployment failed
         if: failure()
         run: echo "❌ Deployment to Turbocard failed!"
