@@ -78,12 +78,12 @@ class RegisterController extends Controller
         }
         $this->validator($request->all())->validate();
 
-        $request->session()->regenerateToken();
-
         if (!verifyCaptcha()) {
             $notify[] = ['error', 'Invalid captcha provided'];
             return back()->withNotify($notify);
         }
+
+        $request->session()->regenerateToken();
 
         // Prepare data array - exclude file to avoid serialization issues
         $data = $request->except(['commercial_registration']);
@@ -206,27 +206,39 @@ class RegisterController extends Controller
         $exist     = UserLogin::where('user_ip', $ip)->first();
         $userLogin = new UserLogin();
 
-        if ($exist) {
-            $userLogin->longitude    = $exist->longitude;
-            $userLogin->latitude     = $exist->latitude;
-            $userLogin->city         = $exist->city;
-            $userLogin->country_code = $exist->country_code;
-            $userLogin->country      = $exist->country;
-        } else {
-            $info                    = json_decode(json_encode(getIpInfo()), true);
-            $userLogin->longitude    = @implode(',', $info['long']);
-            $userLogin->latitude     = @implode(',', $info['lat']);
-            $userLogin->city         = @implode(',', $info['city']);
-            $userLogin->country_code = @implode(',', $info['code']);
-            $userLogin->country      = @implode(',', $info['country']);
+        try {
+            if ($exist) {
+                $userLogin->longitude    = $exist->longitude;
+                $userLogin->latitude     = $exist->latitude;
+                $userLogin->city         = $exist->city;
+                $userLogin->country_code = $exist->country_code;
+                $userLogin->country      = $exist->country;
+            } else {
+                $info                    = @json_decode(@json_encode(getIpInfo()), true);
+                $userLogin->longitude    = @implode(',', $info['long'] ?? []);
+                $userLogin->latitude     = @implode(',', $info['lat'] ?? []);
+                $userLogin->city         = @implode(',', $info['city'] ?? []);
+                $userLogin->country_code = @implode(',', $info['code'] ?? []);
+                $userLogin->country      = @implode(',', $info['country'] ?? []);
+            }
+        } catch (\Exception $e) {
+            // If IP info fails, continue with empty values
+            \Log::warning('Failed to get IP info during registration: ' . $e->getMessage());
         }
 
-        $userAgent          = osBrowser();
+        try {
+            $userAgent          = osBrowser();
+            $userLogin->browser = @$userAgent['browser'] ?? 'Unknown';
+            $userLogin->os      = @$userAgent['os_platform'] ?? 'Unknown';
+        } catch (\Exception $e) {
+            // If browser info fails, use defaults
+            \Log::warning('Failed to get browser info during registration: ' . $e->getMessage());
+            $userLogin->browser = 'Unknown';
+            $userLogin->os      = 'Unknown';
+        }
+
         $userLogin->user_id = $user->id;
         $userLogin->user_ip = $ip;
-
-        $userLogin->browser = @$userAgent['browser'];
-        $userLogin->os      = @$userAgent['os_platform'];
         $userLogin->save();
 
         $userType = $user->type == 'establishment' ? 'منشأة' : 'مستخدم';

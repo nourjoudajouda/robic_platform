@@ -77,9 +77,14 @@ class Captcha{
         $pass = true;
         $googleCaptcha = Extension::where('act', 'google-recaptcha2')->where('status', Status::ENABLE)->first();
         if ($googleCaptcha) {
-            $resp = json_decode(file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=".$googleCaptcha->shortcode->secret_key->value."&response=".request()['g-recaptcha-response']."&remoteip=".getRealIP()), true);
-            if (!$resp['success']) {
+            $gRecaptchaResponse = request()->input('g-recaptcha-response');
+            if (!$gRecaptchaResponse) {
                 $pass = false;
+            } else {
+                $resp = @json_decode(@file_get_contents("https://www.google.com/recaptcha/api/siteverify?secret=".$googleCaptcha->shortcode->secret_key->value."&response=".$gRecaptchaResponse."&remoteip=".getRealIP()), true);
+                if (!$resp || !isset($resp['success']) || !$resp['success']) {
+                    $pass = false;
+                }
             }
         }
         return $pass;

@@ -22,7 +22,6 @@ class LoginController extends Controller
     public function __construct()
     {
         parent::__construct();
-        $this->username = $this->findUsername();
     }
 
     public function showLoginForm()
@@ -34,6 +33,8 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
+        // Determine username field type before validation
+        $this->username = $this->findUsername();
 
         $this->validateLogin($request);
 
@@ -76,6 +77,10 @@ class LoginController extends Controller
 
     public function username()
     {
+        // If username is not set yet, determine it from request
+        if (!$this->username) {
+            $this->username = $this->findUsername();
+        }
         return $this->username;
     }
 
@@ -110,32 +115,47 @@ class LoginController extends Controller
 
     public function authenticated(Request $request, $user)
     {
-        $user->tv = $user->ts == Status::VERIFIED ? Status::UNVERIFIED : Status::VERIFIED;
-        $user->save();
+        // Don't toggle verification status - this was causing issues
+        // $user->tv = $user->ts == Status::VERIFIED ? Status::UNVERIFIED : Status::VERIFIED;
+        // $user->save();
+        
         $ip = getRealIP();
         $exist = UserLogin::where('user_ip',$ip)->first();
         $userLogin = new UserLogin();
-        if ($exist) {
-            $userLogin->longitude =  $exist->longitude;
-            $userLogin->latitude =  $exist->latitude;
-            $userLogin->city =  $exist->city;
-            $userLogin->country_code = $exist->country_code;
-            $userLogin->country =  $exist->country;
-        }else{
-            $info = json_decode(json_encode(getIpInfo()), true);
-            $userLogin->longitude =  @implode(',',$info['long']);
-            $userLogin->latitude =  @implode(',',$info['lat']);
-            $userLogin->city =  @implode(',',$info['city']);
-            $userLogin->country_code = @implode(',',$info['code']);
-            $userLogin->country =  @implode(',', $info['country']);
+        
+        try {
+            if ($exist) {
+                $userLogin->longitude =  $exist->longitude;
+                $userLogin->latitude =  $exist->latitude;
+                $userLogin->city =  $exist->city;
+                $userLogin->country_code = $exist->country_code;
+                $userLogin->country =  $exist->country;
+            }else{
+                $info = @json_decode(@json_encode(getIpInfo()), true);
+                $userLogin->longitude =  @implode(',', $info['long'] ?? []);
+                $userLogin->latitude =  @implode(',', $info['lat'] ?? []);
+                $userLogin->city =  @implode(',', $info['city'] ?? []);
+                $userLogin->country_code = @implode(',', $info['code'] ?? []);
+                $userLogin->country =  @implode(',', $info['country'] ?? []);
+            }
+        } catch (\Exception $e) {
+            // If IP info fails, continue with empty values
+            \Log::warning('Failed to get IP info during login: ' . $e->getMessage());
         }
 
-        $userAgent = osBrowser();
+        try {
+            $userAgent = osBrowser();
+            $userLogin->browser = @$userAgent['browser'] ?? 'Unknown';
+            $userLogin->os = @$userAgent['os_platform'] ?? 'Unknown';
+        } catch (\Exception $e) {
+            // If browser info fails, use defaults
+            \Log::warning('Failed to get browser info during login: ' . $e->getMessage());
+            $userLogin->browser = 'Unknown';
+            $userLogin->os = 'Unknown';
+        }
+        
         $userLogin->user_id = $user->id;
         $userLogin->user_ip =  $ip;
-
-        $userLogin->browser = @$userAgent['browser'];
-        $userLogin->os = @$userAgent['os_platform'];
         $userLogin->save();
 
         $this->audit('login', 'تسجيل دخول المستخدم: ' . $user->username, $user);
