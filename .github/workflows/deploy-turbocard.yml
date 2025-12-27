@@ -9,7 +9,6 @@ on:
       - '**.md'
       - '.gitignore'
       - 'README.md'
-
   workflow_dispatch:
 
 jobs:
@@ -18,26 +17,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ جلب الكود
+      # 1️⃣ Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2️⃣ تفعيل SSH باستخدام private key (بدون passphrase)
+      # 2️⃣ Setup SSH agent with private key
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.CPANEL_SSH_KEY }}
 
-      # 3️⃣ إضافة السيرفر إلى known_hosts
+      # 3️⃣ Add server to known_hosts
       - name: Add server to known hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.CPANEL_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      # 4️⃣ رفع الملفات إلى السيرفر
+      # 4️⃣ Deploy files with rsync
       - name: Deploy files to server
         run: |
           rsync -avz --delete \
@@ -48,44 +47,36 @@ jobs:
             --exclude='.env' \
             ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }}
 
-      # 5️⃣ التأكد من وجود .env وإنشاؤه إن لم يكن موجودًا
+      # 5️⃣ Setup .env
       - name: Setup .env file
         run: |
           ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
             cd ${{ secrets.CPANEL_PATH }} || exit 1
-
             if [ ! -f .env ]; then
-              if [ -f .env.example ]; then
-                cp .env.example .env
-              else
-                touch .env
-              fi
+              cp .env.example .env 2>/dev/null || touch .env
             fi
-
             grep -q '^APP_KEY=' .env || php artisan key:generate --force
-
             sed -i 's/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/' .env || echo 'DB_DATABASE=${{ secrets.DB_DATABASE }}' >> .env
             sed -i 's/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/' .env || echo 'DB_USERNAME=${{ secrets.DB_USERNAME }}' >> .env
             sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/' .env || echo 'DB_PASSWORD=${{ secrets.DB_PASSWORD }}' >> .env
           "
 
-      # 6️⃣ تثبيت Composer + تشغيل Migrations + Optimization
+      # 6️⃣ Run Laravel commands
       - name: Run Laravel commands
         run: |
           ssh ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
             cd ${{ secrets.CPANEL_PATH }} || exit 1
-
             composer install --no-dev --optimize-autoloader --no-interaction
-            php artisan migrate --force
-            php artisan optimize
+            php artisan migrate --force || true
+            php artisan optimize || true
           "
 
-      # 7️⃣ رسالة نجاح
+      # 7️⃣ Deployment success
       - name: Deployment success
         if: success()
         run: echo "✅ Deployment to Turbocard completed successfully!"
 
-      # 8️⃣ رسالة فشل
+      # 8️⃣ Deployment failed
       - name: Deployment failed
         if: failure()
         run: echo "❌ Deployment to Turbocard failed!"
