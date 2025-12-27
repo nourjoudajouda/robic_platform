@@ -53,14 +53,40 @@ jobs:
           ssh-keyscan -H ${{ secrets.CPANEL_HOST }} >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
 
-      - name: Deploy to server
+      - name: Install sshpass (if needed)
         env:
           SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
         run: |
           if [ -n "$SSH_PASSPHRASE" ]; then
-            apt-get update && apt-get install -y sshpass
-            sshpass -p "$SSH_PASSPHRASE" rsync -avz --delete \
-              -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            sudo apt-get update && sudo apt-get install -y sshpass
+          fi
+
+      - name: Test SSH connection and prepare server
+        env:
+          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+        run: |
+          if [ -n "$SSH_PASSPHRASE" ]; then
+            sshpass -p "$SSH_PASSPHRASE" ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
+              mkdir -p ${{ secrets.CPANEL_PATH }} && \
+              which rsync || (echo 'rsync not found, installing...' && yum install -y rsync || apt-get update && apt-get install -y rsync) && \
+              echo 'Server ready'
+            "
+          else
+            ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }} "
+              mkdir -p ${{ secrets.CPANEL_PATH }} && \
+              which rsync || (echo 'rsync not found, installing...' && yum install -y rsync || apt-get update && apt-get install -y rsync) && \
+              echo 'Server ready'
+            "
+          fi
+
+      - name: Deploy to server
+        env:
+          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+        run: |
+          set -e
+          if [ -n "$SSH_PASSPHRASE" ]; then
+            sshpass -p "$SSH_PASSPHRASE" rsync -avz --delete --progress \
+              -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 -v" \
               --exclude='.git' \
               --exclude='.github' \
               --exclude='node_modules' \
@@ -69,8 +95,8 @@ jobs:
               --exclude='vendor' \
               ./ ${{ secrets.CPANEL_USER }}@${{ secrets.CPANEL_HOST }}:${{ secrets.CPANEL_PATH }}
           else
-            rsync -avz --delete \
-              -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            rsync -avz --delete --progress \
+              -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=10 -v" \
               --exclude='.git' \
               --exclude='.github' \
               --exclude='node_modules' \
