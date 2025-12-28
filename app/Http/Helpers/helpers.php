@@ -621,3 +621,15 @@ function adminHasAnyRole(array $roles)
     }
     return $admin->hasAnyRole($roles);
 }
+
+// Helper function to get asset URL with ASSET_URL support
+function asset_url($path, $secure = null)
+{
+    $assetUrl = config('app.asset_url');
+    if ($assetUrl) {
+        $assetUrl = rtrim($assetUrl, '/');
+        $path = ltrim($path, '/');
+        return $assetUrl . '/' . $path;
+    }
+    return asset($path, $secure);
+}
