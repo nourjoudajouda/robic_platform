@@ -189,9 +189,6 @@
         <div class="col-xxl-3 col-sm-6">
             <x-widget style="5" link="{{ route('admin.bean.history.redeem') }}" icon="fas fa-exchange-alt" title="Redeem" value="{{ showAmount($beanHistory['redeem_amount']) }}" bg="info" />
         </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget style="5" link="{{ route('admin.bean.history.gift') }}" icon="fas fa-gift" title="Gift" value="{{ showAmount($beanHistory['gift_amount']) }}" bg="success" />
-        </div><!-- dashboard-w1 end -->
     </div><!-- row end-->
 
     <div class="row gy-4 mt-2">
@@ -203,9 +200,6 @@
         </div><!-- dashboard-w1 end -->
         <div class="col-xxl-3 col-sm-6">
             <x-widget style="7" link="{{ route('admin.bean.history.redeem') }}" title="Redeem Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($beanHistory['redeem_charge']) }}" bg="info" type="1" />
-        </div><!-- dashboard-w1 end -->
-        <div class="col-xxl-3 col-sm-6">
-            <x-widget style="7" link="{{ route('admin.bean.history.gift') }}" title="Gift Charge" icon="fas fa-hand-holding-usd" value="{{ showAmount($beanHistory['gift_charge']) }}" bg="success" type="1" />
         </div><!-- dashboard-w1 end -->
     </div>
 

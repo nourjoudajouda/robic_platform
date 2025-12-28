@@ -53,18 +53,6 @@
             }
         ]
     },
-    "categories": {
-        "keyword": [
-            "Categories",
-            "Bean Category",
-            "Bean Type",
-            "Karat"
-        ],
-        "title": "Category",
-        "icon": "las la-tree",
-        "route_name": "admin.category.list",
-        "menu_active": "admin.category*"
-    },
     "products": {
         "keyword": [
             "Products",

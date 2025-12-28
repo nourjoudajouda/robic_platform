@@ -56,12 +56,10 @@ class AdminController extends Controller
         $beanHistory['buy_amount']    = BeanHistory::buy()->sum('amount');
         $beanHistory['sell_amount']   = BeanHistory::sell()->sum('amount');
         $beanHistory['redeem_amount'] = BeanHistory::redeem()->sum('amount');
-        $beanHistory['gift_amount']   = BeanHistory::gift()->sum('amount');
 
         $beanHistory['buy_charge']    = BeanHistory::buy()->sum('charge');
         $beanHistory['sell_charge']   = BeanHistory::sell()->sum('charge');
         $beanHistory['redeem_charge'] = BeanHistory::redeem()->sum('charge');
-        $beanHistory['gift_charge']   = BeanHistory::gift()->sum('charge');
 
         $redeem['processing_count'] = BeanHistory::redeem()->whereHas('redeemData', function ($query) {
             $query->where('status', Status::REDEEM_STATUS_PROCESSING);

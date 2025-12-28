@@ -287,7 +287,6 @@
     @if (gs('redeem_option'))
         <a href="{{ route('user.redeem.form') }}" class="btn btn--orange btn--lg"><i class="fas fa-truck"></i> @lang('Shipping and receiving')</a>
     @endif
-    <a href="{{ route('user.gift.form') }}" class="btn btn--warning btn--lg"><i class="fas fa-gift"></i> @lang('Gift Green Coffee')</a>
 @endpush
 
 @if ($portfolioData['total_asset_quantity'] > 0)

@@ -35,46 +35,7 @@ jobs:
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
 
-      # 3️⃣ Create .env file locally
-      - name: Create .env file
-        run: |
-          echo "🔄 Creating .env file..."
-          if [ -f .env.example ]; then
-            cp .env.example .env
-            echo "✅ Copied from .env.example"
-          else
-            touch .env
-            echo "✅ Created empty .env file"
-          fi
-          
-          # Generate APP_KEY
-          APP_KEY=$(openssl rand -base64 32)
-          echo "APP_KEY=base64:$APP_KEY" >> .env
-          
-          # Update database credentials
-          if [ -n "${{ secrets.DB_DATABASE }}" ]; then
-            sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${{ secrets.DB_DATABASE }}/" .env || echo "DB_DATABASE=${{ secrets.DB_DATABASE }}" >> .env
-          fi
-          if [ -n "${{ secrets.DB_USERNAME }}" ]; then
-            sed -i "s/^DB_USERNAME=.*/DB_USERNAME=${{ secrets.DB_USERNAME }}/" .env || echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-          fi
-          if [ -n "${{ secrets.DB_PASSWORD }}" ]; then
-            sed -i "s/^DB_PASSWORD=.*/DB_PASSWORD=${{ secrets.DB_PASSWORD }}/" .env || echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          fi
-          
-          # Update APP_URL if provided
-          if [ -n "${{ secrets.APP_URL }}" ]; then
-            sed -i "s|^APP_URL=.*|APP_URL=${{ secrets.APP_URL }}|" .env || echo "APP_URL=${{ secrets.APP_URL }}" >> .env
-          fi
-          
-          # Add DEPLOY_TOKEN if provided
-          if [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
-            sed -i "s/^DEPLOY_TOKEN=.*/DEPLOY_TOKEN=${{ secrets.DEPLOY_TOKEN }}/" .env || echo "DEPLOY_TOKEN=${{ secrets.DEPLOY_TOKEN }}" >> .env
-          fi
-          
-          echo "✅ .env file created successfully"
-
-      # 4️⃣ Deploy files with FTP (including .env)
+      # 3️⃣ Deploy files with FTP (WITHOUT .env)
       - name: Deploy files via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.0
         with:
@@ -90,8 +51,9 @@ jobs:
             **/vendor/**
             **/storage/**
             **/*.md
+            **/.env
 
-      # 5️⃣ Wait for site to be available
+      # 4️⃣ Wait for site to be available
       - name: Wait for site availability
         continue-on-error: true
         run: |
@@ -108,53 +70,37 @@ jobs:
             echo "⚠️ Site may not be fully available yet"
           fi
 
-      # 6️⃣ Run composer install via HTTP endpoint
+      # 5️⃣ Run composer install via HTTP endpoint
       - name: Run composer install
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Running composer install..."
-            echo "URL: ${{ secrets.APP_URL }}/deploy/composer-install?token=***"
             RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/composer-install?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               --max-time 600 \
               -w "\n%{http_code}" 2>&1) || true
             echo "Response: $RESPONSE"
-            if echo "$RESPONSE" | grep -q "200\|201"; then
-              echo "✅ Composer install completed"
-            else
-              echo "⚠️ Composer install may have failed - check response above"
-            fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping composer install"
-            echo "APP_URL: ${{ secrets.APP_URL }}"
-            echo "DEPLOY_TOKEN: $([ -n '${{ secrets.DEPLOY_TOKEN }}' ] && echo 'set' || echo 'not set')"
           fi
 
-      # 7️⃣ Run migrations via HTTP endpoint
+      # 6️⃣ Run migrations via HTTP endpoint
       - name: Run migrations
         continue-on-error: true
         run: |
           if [ -n "${{ secrets.APP_URL }}" ] && [ -n "${{ secrets.DEPLOY_TOKEN }}" ]; then
             echo "🔄 Running migrations..."
-            echo "URL: ${{ secrets.APP_URL }}/deploy/migrate?token=***"
             RESPONSE=$(curl -X POST "${{ secrets.APP_URL }}/deploy/migrate?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               --max-time 300 \
               -w "\n%{http_code}" 2>&1) || true
             echo "Response: $RESPONSE"
-            if echo "$RESPONSE" | grep -q "200\|201"; then
-              echo "✅ Migrations completed"
-            else
-              echo "⚠️ Migrations may have failed - check response above"
-            fi
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping migrations"
-            echo "APP_URL: ${{ secrets.APP_URL }}"
-            echo "DEPLOY_TOKEN: $([ -n '${{ secrets.DEPLOY_TOKEN }}' ] && echo 'set' || echo 'not set')"
           fi
 
-      # 8️⃣ Clear cache via HTTP endpoint
+      # 7️⃣ Clear cache via HTTP endpoint
       - name: Clear cache
         continue-on-error: true
         run: |
@@ -163,7 +109,7 @@ jobs:
             curl -X POST "${{ secrets.APP_URL }}/deploy/clear-cache?token=${{ secrets.DEPLOY_TOKEN }}" \
               -H "Content-Type: application/json" \
               --max-time 60 \
-              --fail-with-body || echo "⚠️ Cache clear endpoint not available or failed"
+              --fail-with-body || echo "⚠️ Cache clear endpoint failed"
           else
             echo "⚠️ APP_URL or DEPLOY_TOKEN not configured, skipping cache clear"
           fi
