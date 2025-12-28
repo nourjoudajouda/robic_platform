@@ -56,7 +56,7 @@
                     <div class="col-lg-12 col-md-10">
                         <div class="login-card">
                             <h2 class="login-title">قم بتسجيل الدخول في المنصة و ما تفوت فرصتك في التداول</h2>
-                            <a href="http://localhost/robic_platform/public/user/login" class="btn btn-login" id="loginBtn">
+                            <a href="{{ route('user.login') }}" class="btn btn-login" id="loginBtn">
                                 <i class="fas fa-sign-in-alt me-2"></i>
                                 تسجيل دخول
                             </a>
