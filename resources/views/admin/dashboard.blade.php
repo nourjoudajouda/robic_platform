@@ -268,11 +268,13 @@
 
     @include('admin.partials.cron_modal')
 @endsection
+{{-- Hidden Cron Setup button
 @push('breadcrumb-plugins')
     <button class="btn btn-outline--primary btn-sm" data-bs-toggle="modal" data-bs-target="#cronModal">
         <i class="las la-server"></i>@lang('Cron Setup')
     </button>
 @endpush
+--}}
 
 
 @push('script-lib')

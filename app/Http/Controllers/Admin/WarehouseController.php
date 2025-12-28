@@ -240,9 +240,20 @@ class WarehouseController extends Controller
 
         // 4. جميع الـ Batches الموجودة في المستودع
         $batches = Batch::where('warehouse_id', $warehouse->id)
-            ->with(['product', 'unit', 'itemUnit', 'currency', 'user'])
+            ->with(['product', 'unit', 'itemUnit', 'currency', 'user', 'sellOrders' => function($q) {
+                $q->with(['product', 'unit', 'itemUnit', 'currency'])->orderBy('created_at', 'desc');
+            }])
             ->orderBy('created_at', 'desc')
             ->paginate(getPaginate());
+
+        // حساب الكميات المتاحة والمستخدمة لكل batch
+        $batchQuantities = [];
+        foreach ($batches as $batch) {
+            $batchQuantities[$batch->id] = [
+                'available' => $batch->getAvailableQuantityForSellOrder(),
+                'used' => $batch->units_count - $batch->getAvailableQuantityForSellOrder()
+            ];
+        }
 
         // 5. الكمية لكل مستخدم في هذا المستودع
         $userQuantities = Asset::where('warehouse_id', $warehouse->id)
@@ -271,7 +282,8 @@ class WarehouseController extends Controller
             'incomingTransactions',
             'outgoingTransactions',
             'batches',
-            'userQuantities'
+            'userQuantities',
+            'batchQuantities'
         ));
     }
 }

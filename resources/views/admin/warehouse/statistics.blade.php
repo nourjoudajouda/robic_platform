@@ -301,9 +301,43 @@
                                         <td>{{ $batch->exp_date ? showDateTime($batch->exp_date, 'Y-m-d') : '-' }}</td>
                                         <td>{{ showDateTime($batch->created_at) }}</td>
                                         <td>
-                                            <a href="{{ route('admin.batch.edit', $batch->id) }}" class="btn btn-sm btn-outline--primary">
-                                                <i class="la la-pen"></i> @lang('Edit')
-                                            </a>
+                                            <div class="d-flex gap-1">
+                                                <button type="button" class="btn btn-sm btn-outline--info viewBatchDetailsBtn" 
+                                                    data-batch-id="{{ $batch->id }}"
+                                                    data-batch-code="{{ $batch->batch_code }}"
+                                                    data-product="{{ __($batch->product->name ?? 'N/A') }}"
+                                                    data-product-id="{{ $batch->product_id ?? '' }}"
+                                                    data-quality-grade="{{ $batch->quality_grade ?? 'N/A' }}"
+                                                    data-origin-country="{{ $batch->origin_country ?? 'N/A' }}"
+                                                    data-units-count="{{ showAmount($batch->units_count, currencyFormat: false) }}"
+                                                    data-unit-symbol="{{ $batch->unit->symbol ?? '' }}"
+                                                    data-buy-price-per-unit="{{ $batch->buy_price ? showAmount($batch->buy_price, currencyFormat: false) : '-' }}"
+                                                    data-buy-price-total="{{ $batch->buy_price ? showAmount($batch->buy_price * $batch->units_count, currencyFormat: false) : '-' }}"
+                                                    data-currency-symbol="{{ $batch->currency->symbol ?? '' }}"
+                                                    data-exp-date="{{ $batch->exp_date ? showDateTime($batch->exp_date, 'Y-m-d') : '-' }}"
+                                                    data-created-at="{{ showDateTime($batch->created_at) }}"
+                                                    data-status="{{ $batch->status }}"
+                                                    data-available-quantity="{{ showAmount(($batchQuantities[$batch->id]['available'] ?? $batch->units_count), currencyFormat: false) }}"
+                                                    data-used-quantity="{{ showAmount(($batchQuantities[$batch->id]['used'] ?? 0), currencyFormat: false) }}"
+                                                    data-sell-orders="{{ json_encode($batch->sellOrders->map(function($so) {
+                                                        return [
+                                                            'id' => $so->id,
+                                                            'sell_order_code' => $so->sell_order_code,
+                                                            'quantity' => $so->quantity,
+                                                            'available_quantity' => $so->available_quantity ?? $so->quantity,
+                                                            'sell_price' => $so->sell_price,
+                                                            'status' => $so->status,
+                                                            'created_at' => $so->created_at->format('Y-m-d H:i:s'),
+                                                            'currency_symbol' => $so->currency->symbol ?? '',
+                                                            'unit_symbol' => $so->itemUnit->symbol ?? ''
+                                                        ];
+                                                    })) }}">
+                                                    <i class="las la-eye"></i> @lang('View Details')
+                                                </button>
+                                                <a href="{{ route('admin.batch.edit', $batch->id) }}" class="btn btn-sm btn-outline--primary">
+                                                    <i class="la la-pen"></i> @lang('Edit')
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -399,6 +433,26 @@
         </div>
     </div>
 
+    <!-- Batch Details Modal -->
+    <div class="modal fade" id="batchDetailsModal" tabindex="-1" aria-labelledby="batchDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="batchDetailsModalLabel">@lang('Batch Details')</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="batchDetailsContent">
+                        <!-- Content will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@lang('Close')</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- User Assets Details Modal -->
     <div class="modal fade" id="userAssetsModal" tabindex="-1" aria-labelledby="userAssetsModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -431,12 +485,103 @@
     (function ($) {
         "use strict";
         
+        // Batch Details Modal
+        $('.viewBatchDetailsBtn').on('click', function() {
+            const batchId = $(this).data('batch-id');
+            const batchCode = $(this).data('batch-code');
+            const product = $(this).data('product');
+            const qualityGrade = $(this).data('quality-grade');
+            const originCountry = $(this).data('origin-country');
+            const unitsCount = $(this).data('units-count');
+            const unitSymbol = $(this).data('unit-symbol');
+            const buyPricePerUnit = $(this).data('buy-price-per-unit');
+            const buyPriceTotal = $(this).data('buy-price-total');
+            const currencySymbol = $(this).data('currency-symbol');
+            const expDate = $(this).data('exp-date');
+            const createdAt = $(this).data('created-at');
+            const status = $(this).data('status');
+            const availableQuantity = $(this).data('available-quantity');
+            const usedQuantity = $(this).data('used-quantity');
+            const sellOrders = $(this).data('sell-orders') || [];
+            
+            const statusText = status == 1 ? '{{ __("Active") }}' : '{{ __("Inactive") }}';
+            const statusBadge = status == 1 ? 'bg--success' : 'bg--danger';
+            
+            let html = '<div class="row mb-4">';
+            html += '<div class="col-md-6">';
+            html += '<table class="table table-borderless table-sm">';
+            html += '<tr><th width="40%">{{ __("Batch Code") }}:</th><td><span class="badge bg--primary">' + batchCode + '</span></td></tr>';
+            html += '<tr><th>{{ __("Product") }}:</th><td><strong class="text--primary">' + product + '</strong></td></tr>';
+            html += '<tr><th>{{ __("Quality Grade") }}:</th><td>' + qualityGrade + '</td></tr>';
+            html += '<tr><th>{{ __("Origin Country") }}:</th><td>' + originCountry + '</td></tr>';
+            html += '<tr><th>{{ __("Status") }}:</th><td><span class="badge ' + statusBadge + '">' + statusText + '</span></td></tr>';
+            html += '</table>';
+            html += '</div>';
+            
+            html += '<div class="col-md-6">';
+            html += '<table class="table table-borderless table-sm">';
+            html += '<tr><th width="40%">{{ __("Total Quantity") }}:</th><td><strong>' + unitsCount + ' ' + unitSymbol + '</strong></td></tr>';
+            html += '<tr><th>{{ __("Used Quantity") }}:</th><td><span class="text--warning">' + usedQuantity + ' ' + unitSymbol + '</span></td></tr>';
+            html += '<tr><th>{{ __("Available Quantity") }}:</th><td><span class="text--success">' + availableQuantity + ' ' + unitSymbol + '</span></td></tr>';
+            if (buyPricePerUnit !== '-') {
+                html += '<tr><th>{{ __("Buy Price per Unit") }}:</th><td>' + buyPricePerUnit + ' ' + currencySymbol + '</td></tr>';
+                html += '<tr><th>{{ __("Total Buy Price") }}:</th><td><strong>' + buyPriceTotal + ' ' + currencySymbol + '</strong></td></tr>';
+            }
+            html += '<tr><th>{{ __("Expiration Date") }}:</th><td>' + expDate + '</td></tr>';
+            html += '<tr><th>{{ __("Created At") }}:</th><td>' + createdAt + '</td></tr>';
+            html += '</table>';
+            html += '</div>';
+            html += '</div>';
+            
+            // Sell Orders Section
+            if (sellOrders && sellOrders.length > 0) {
+                html += '<hr><h6 class="mb-3"><strong>{{ __("Sell Orders") }}</strong> (' + sellOrders.length + ')</h6>';
+                html += '<div class="table-responsive">';
+                html += '<table class="table table-sm table-bordered">';
+                html += '<thead class="table-light">';
+                html += '<tr>';
+                html += '<th>{{ __("Order Code") }}</th>';
+                html += '<th>{{ __("Quantity") }}</th>';
+                html += '<th>{{ __("Available") }}</th>';
+                html += '<th>{{ __("Sell Price") }}</th>';
+                html += '<th>{{ __("Status") }}</th>';
+                html += '<th>{{ __("Created At") }}</th>';
+                html += '</tr>';
+                html += '</thead>';
+                html += '<tbody>';
+                
+                sellOrders.forEach(function(order) {
+                    const orderStatusBadge = order.status == 1 ? 'bg--success' : (order.status == 2 ? 'bg--info' : (order.status == 3 ? 'bg--danger' : 'bg--warning'));
+                    const orderStatusText = order.status == 1 ? '{{ __("Active") }}' : (order.status == 2 ? '{{ __("Sold") }}' : (order.status == 3 ? '{{ __("Cancelled") }}' : '{{ __("Inactive") }}'));
+                    
+                    html += '<tr>';
+                    html += '<td><span class="badge bg--primary">' + order.sell_order_code + '</span></td>';
+                    html += '<td>' + parseFloat(order.quantity).toFixed(4) + ' ' + order.unit_symbol + '</td>';
+                    html += '<td>' + parseFloat(order.available_quantity).toFixed(4) + ' ' + order.unit_symbol + '</td>';
+                    html += '<td>' + parseFloat(order.sell_price).toFixed(2) + ' ' + order.currency_symbol + '</td>';
+                    html += '<td><span class="badge ' + orderStatusBadge + '">' + orderStatusText + '</span></td>';
+                    html += '<td>' + order.created_at + '</td>';
+                    html += '</tr>';
+                });
+                
+                html += '</tbody>';
+                html += '</table>';
+                html += '</div>';
+            } else {
+                html += '<hr><div class="alert alert-info mb-0"><i class="las la-info-circle"></i> {{ __("No sell orders found for this batch") }}</div>';
+            }
+            
+            $('#batchDetailsContent').html(html);
+            $('#batchDetailsModal').modal('show');
+        });
+        
+        // User Assets Details Modal
         $('.viewDetailsBtn').on('click', function() {
             const userId = $(this).data('user-id');
             const assets = $(this).data('assets');
             
             let html = '<table class="table table-sm">';
-            html += '<thead><tr><th>@lang("Product")</th><th>@lang("Quantity")</th><th>@lang("Unit")</th></tr></thead>';
+            html += '<thead><tr><th>{{ __("Product") }}</th><th>{{ __("Quantity") }}</th><th>{{ __("Unit") }}</th></tr></thead>';
             html += '<tbody>';
             
             if (assets && assets.length > 0) {
@@ -448,7 +593,7 @@
                     html += '</tr>';
                 });
             } else {
-                html += '<tr><td colspan="3" class="text-center text-muted">@lang("No assets found")</td></tr>';
+                html += '<tr><td colspan="3" class="text-center text-muted">{{ __("No assets found") }}</td></tr>';
             }
             
             html += '</tbody></table>';

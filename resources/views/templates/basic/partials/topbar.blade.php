@@ -34,6 +34,7 @@
                         <span class="text">@lang('My Profile')</span>
                     </a>
                 </li>
+                {{-- Hidden 2FA Setting option
                 <li class="user-info-dropdown__item">
                     <a class="user-info-dropdown__link {{ menuActive('user.twofactor') }}" href="{{ route('user.twofactor') }}">
                         <span class="icon"><i class="fas
@@ -41,6 +42,7 @@
                         <span class="text">@lang('2fa Setting')</span>
                     </a>
                 </li>
+                --}}
                 <li class="user-info-dropdown__item">
                     <a class="user-info-dropdown__link {{ menuActive('user.change.password') }}" href="{{ route('user.change.password') }}">
                         <span class="icon"><i class="fas fa-key"></i></span>
