@@ -1205,3 +1205,215 @@ button .spinner-border {
         margin: 0 auto;
     }
 }
+
+/* ================================= RTL Support for Sidebar Menu =========================== */
+[dir="rtl"] .dashboard .sidebar-menu {
+    left: auto !important;
+    right: 0 !important;
+    border-right: 0 !important;
+    border-left: 1px solid hsl(var(--white)/0.25) !important;
+}
+
+@media screen and (max-width: 1399px) {
+    [dir="rtl"] .dashboard .sidebar-menu {
+        border-left: 0 !important;
+        border-right: 0 !important;
+    }
+}
+
+@media screen and (max-width: 1199px) {
+    [dir="rtl"] .dashboard .sidebar-menu {
+        transform: translateX(100%) !important;
+        -webkit-transform: translateX(100%) !important;
+    }
+}
+
+[dir="rtl"] .dashboard .sidebar-menu.show {
+    transform: translateX(0) !important;
+    -webkit-transform: translateX(0) !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-menu__close {
+    right: auto !important;
+    left: 5px !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-logo {
+    padding: 44px 44px 70px 20px !important;
+}
+
+@media screen and (max-width: 1399px) {
+    [dir="rtl"] .dashboard .sidebar-logo {
+        padding: 10px 10px 10px 15px !important;
+    }
+}
+
+[dir="rtl"] .dashboard .sidebar-menu-list__item::after {
+    right: auto !important;
+    left: 0 !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-menu-list__link {
+    padding: 13px 25px 13px 15px !important;
+}
+
+@media screen and (max-width: 1399px) {
+    [dir="rtl"] .dashboard .sidebar-menu-list__link {
+        padding: 11px 18px 11px 12px !important;
+    }
+}
+
+[dir="rtl"] .dashboard .sidebar-menu-list__link::after {
+    right: auto !important;
+    left: 0 !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-menu-list__item.has-dropdown>a:after {
+    right: auto !important;
+    left: 16px !important;
+    content: "\f104" !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-menu-list__item.has-dropdown.active>a:after {
+    right: auto !important;
+    left: 18px !important;
+    transform: rotate(-90deg) !important;
+    -webkit-transform: rotate(-90deg) !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-submenu-list__link {
+    margin-left: 0 !important;
+    margin-right: 20px !important;
+    padding-left: 15px !important;
+    padding-right: 25px !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-submenu-list__link::before {
+    left: auto !important;
+    right: 10px !important;
+}
+
+[dir="rtl"] .dashboard .sidebar-submenu-list__link .icon {
+    margin-right: 0 !important;
+    margin-left: 8px !important;
+}
+
+[dir="rtl"] .dashboard__right {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+    width: calc(100% - 312px) !important;
+}
+
+@media screen and (max-width: 1399px) {
+    [dir="rtl"] .dashboard__right {
+        width: calc(100% - 260px) !important;
+    }
+}
+
+@media screen and (max-width: 1199px) {
+    [dir="rtl"] .dashboard__right {
+        width: 100% !important;
+    }
+}
+
+[dir="rtl"] body, [dir="rtl"] html {
+    overflow-x: hidden !important;
+}
+
+/* ================================= RTL Support for Language Dropdown =========================== */
+[dir="rtl"] .language-dropdown.me-3 {
+    margin-right: 0 !important;
+    margin-left: 1rem !important;
+}
+
+[dir="rtl"] .language-dropdown {
+    padding-right: 0 !important;
+    padding-left: 8px !important;
+}
+
+[dir="rtl"] .language-dropdown::after {
+    right: auto !important;
+    left: 0 !important;
+    content: "\f0d8" !important;
+}
+
+[dir="rtl"] .language-dropdown.open::after {
+    transform: translateY(-50%) rotate(180deg) !important;
+    -webkit-transform: translateY(-50%) rotate(180deg) !important;
+}
+
+@media screen and (max-width: 991px) {
+    [dir="rtl"] .language-dropdown::after {
+        left: 5px !important;
+    }
+    
+    [dir="rtl"] .language-dropdown {
+        margin-left: auto !important;
+        margin-right: 0 !important;
+    }
+}
+
+[dir="rtl"] .language-dropdown__selected .text {
+    padding-right: 0 !important;
+    padding-left: 8px !important;
+}
+
+@media screen and (max-width: 1199px) {
+    [dir="rtl"] .language-dropdown__selected .text {
+        padding-left: 5px !important;
+    }
+}
+
+[dir="rtl"] .language-dropdown__list {
+    left: 0 !important;
+    right: auto !important;
+    transform-origin: top left !important;
+    -webkit-transform-origin: top left !important;
+}
+
+@media screen and (max-width: 991px) {
+    [dir="rtl"] .language-dropdown__list {
+        left: 0 !important;
+        right: auto !important;
+    }
+}
+/* ================================= RTL Support for Language Dropdown End =========================== */
+
+/* ================================= RTL Support for User Info Dropdown =========================== */
+[dir="rtl"] .dashboard .dashboard-header .user-info__button {
+    padding-right: 0 !important;
+    padding-left: 25px !important;
+}
+
+@media screen and (max-width: 767px) {
+    [dir="rtl"] .dashboard .dashboard-header .user-info__button {
+        padding-left: 0 !important;
+    }
+}
+
+[dir="rtl"] .dashboard .dashboard-header .user-info__button-icon {
+    right: auto !important;
+    left: 0 !important;
+}
+
+[dir="rtl"] .dashboard .dashboard-header .user-info__button-content {
+    padding-left: 0 !important;
+    padding-right: 10px !important;
+    text-align: right !important;
+}
+
+[dir="rtl"] .dashboard .dashboard-header .user-info .user-info-dropdown {
+    right: auto !important;
+    left: 0 !important;
+}
+
+[dir="rtl"] .dashboard .dashboard-header .user-info .user-info-dropdown__link {
+    text-align: right !important;
+}
+
+[dir="rtl"] .dashboard .dashboard-header .user-info .user-info-dropdown__link .icon {
+    margin-right: 0 !important;
+    margin-left: 8px !important;
+}
+/* ================================= RTL Support for User Info Dropdown End =========================== */
+/* ================================= RTL Support for Sidebar Menu End =========================== */

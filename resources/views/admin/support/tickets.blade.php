@@ -76,5 +76,5 @@
 
 
 @push('breadcrumb-plugins')
-    <x-search-form placeholder="Search here..." />
+    <x-search-form placeholder="@lang('Search here...')" />
 @endpush

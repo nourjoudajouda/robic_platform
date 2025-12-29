@@ -4,7 +4,7 @@
         <span class="sm-search-btn d-inline-flex d-sm-none"><i class="las la-search"></i></span>
         <form action="#" method="#" class="position-relative">
             <div class="form-group mb-0 position-relative">
-                <input type="text" class="form--control navbar-search-field" id="searchInput" placeholder="Search here...">
+                <input type="text" class="form--control navbar-search-field" id="searchInput" placeholder="@lang('Search here...')">
                 <button type="submit"><i class="las la-search"></i></button>
             </div>
             <ul class="search-list"></ul>
