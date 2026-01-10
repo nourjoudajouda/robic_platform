@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>روييـك, عالاصل دوّر - استثمر في Green Coffee</title>
+    <title>روبيك, عالاصل دوّر - استثمر في Green Coffee</title>
     <link rel="shortcut icon" href="{{ asset('assets/images/logo_icon/favicon.png') }}" type="image/x-icon">
     
     <!-- Bootstrap 5 RTL CSS -->
@@ -26,7 +26,7 @@
                         <div class="header-logo">
                             <img src="{{ asset('assets/images/logo_icon/main-logo.png') }}" alt="ROBIC Logo" class="header-logo-img">
                         </div>
-                        <h1 class="main-title">روييـك, عالاصل دوّر</h1>
+                        <h1 class="main-title">روبيك, عالاصل دوّر</h1>
                         <p class="main-subtitle">استثمر في Green Coffee... مستقبلك التجاري يبدأ من الحبة الأولى</p>
                     </div>
                 </div>
@@ -78,7 +78,7 @@
                                 <img src="{{ asset('assets/images/logo_icon/logo-footer.png') }}" alt="ROBIC Logo" class="logo-img">
                             </a>
                         </div>
-                        <h4 class="footer-title">روييـك, عالاصل دوّر</h4>
+                        <h4 class="footer-title">روبيك, عالاصل دوّر</h4>
                         <p class="footer-description">استثمر في Green Coffee... مستقبلك التجاري يبدأ من الحبة الأولى</p>
                        
                     </div>
@@ -124,7 +124,7 @@
             <div class="footer-bottom">
                 <div class="row align-items-center">
                     <div class="col-lg-6 col-md-12 mb-3 mb-lg-0">
-                        <p class="copyright">&copy; 2024 روييـك, عالاصل دوّر. جميع الحقوق محفوظة.</p>
+                        <p class="copyright">&copy; 2024 روبيك, عالاصل دوّر. جميع الحقوق محفوظة.</p>
                     </div>
                     <div class="col-lg-6 col-md-12">
                         <div class="payment-methods">

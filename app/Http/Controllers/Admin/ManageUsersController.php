@@ -166,7 +166,21 @@ class ManageUsersController extends Controller
 
         $totalDeposit     = Deposit::where('user_id', $user->id)->successful()->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->approved()->sum('amount');
-        $totalAssetAmount = $user->assets->sum(fn($asset) => $asset->quantity * $asset->category->price);
+        $totalAssetAmount = $user->assets->sum(function($asset) {
+            // استخدام buy_price من asset أو سعر السوق من batch/product
+            $price = $asset->buy_price ?? 0;
+            if (!$price && $asset->batch) {
+                $price = $asset->batch->sell_price ?? $asset->batch->buy_price ?? 0;
+            }
+            if (!$price && $asset->product) {
+                // جلب آخر سعر سوق
+                $latestMarketPrice = \App\Models\MarketPriceHistory::where('product_id', $asset->product_id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                $price = $latestMarketPrice ? $latestMarketPrice->market_price : 0;
+            }
+            return $asset->quantity * $price;
+        });
 
         return view('admin.users.establishment_detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalAssetAmount'));
     }
@@ -188,7 +202,21 @@ class ManageUsersController extends Controller
 
         $totalDeposit     = Deposit::where('user_id', $user->id)->successful()->sum('amount');
         $totalWithdrawals = Withdrawal::where('user_id', $user->id)->approved()->sum('amount');
-        $totalAssetAmount = $user->assets->sum(fn($asset) => $asset->quantity * $asset->category->price);
+        $totalAssetAmount = $user->assets->sum(function($asset) {
+            // استخدام buy_price من asset أو سعر السوق من batch/product
+            $price = $asset->buy_price ?? 0;
+            if (!$price && $asset->batch) {
+                $price = $asset->batch->sell_price ?? $asset->batch->buy_price ?? 0;
+            }
+            if (!$price && $asset->product) {
+                // جلب آخر سعر سوق
+                $latestMarketPrice = \App\Models\MarketPriceHistory::where('product_id', $asset->product_id)
+                    ->orderBy('created_at', 'desc')
+                    ->first();
+                $price = $latestMarketPrice ? $latestMarketPrice->market_price : 0;
+            }
+            return $asset->quantity * $price;
+        });
 
         $assets    = Asset::where('user_id', $user->id)->get();
         $countries = json_decode(file_get_contents(resource_path('views/partials/country.json')));

@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('general_settings', function (Blueprint $table) {
-            $table->decimal('chart_price_from', 10, 2)->default(0)->after('redeem_option');
-            $table->decimal('chart_price_to', 10, 2)->default(20)->after('chart_price_from');
-        });
+        if (Schema::hasTable('general_settings')) {
+            Schema::table('general_settings', function (Blueprint $table) {
+                if (!Schema::hasColumn('general_settings', 'chart_price_from')) {
+                    $table->decimal('chart_price_from', 10, 2)->default(0)->after('redeem_option');
+                }
+                if (!Schema::hasColumn('general_settings', 'chart_price_to')) {
+                    $table->decimal('chart_price_to', 10, 2)->default(20)->after('chart_price_from');
+                }
+            });
+        }
     }
 
     /**
@@ -22,8 +28,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('general_settings', function (Blueprint $table) {
-            $table->dropColumn(['chart_price_from', 'chart_price_to']);
-        });
+        if (Schema::hasTable('general_settings')) {
+            Schema::table('general_settings', function (Blueprint $table) {
+                $table->dropColumn(['chart_price_from', 'chart_price_to']);
+            });
+        }
     }
 };

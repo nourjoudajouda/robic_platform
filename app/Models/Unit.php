@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Unit extends Model
 {
+    use HasFactory;
     protected $fillable = ['name', 'name_en', 'name_ar', 'code', 'symbol', 'description', 'description_en', 'description_ar'];
     
     // Accessors to get values based on current locale

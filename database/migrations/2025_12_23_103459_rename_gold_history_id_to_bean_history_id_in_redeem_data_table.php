@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('redeem_data', function (Blueprint $table) {
-            $table->renameColumn('gold_history_id', 'bean_history_id');
-        });
+        if (Schema::hasTable('redeem_data') && Schema::hasColumn('redeem_data', 'gold_history_id')) {
+            Schema::table('redeem_data', function (Blueprint $table) {
+                $table->renameColumn('gold_history_id', 'bean_history_id');
+            });
+        }
     }
 
     /**

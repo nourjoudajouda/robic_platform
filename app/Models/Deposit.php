@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Constants\Status;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Deposit extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'user_id', 'category_id', 'method_code', 'buy_info', 'amount', 'method_currency',
         'charge', 'rate', 'final_amount', 'detail', 'btc_amount', 'btc_wallet', 'trx',

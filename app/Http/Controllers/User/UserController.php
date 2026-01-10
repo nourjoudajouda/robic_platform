@@ -21,7 +21,7 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
-    public function home()
+    public function home(Request $request)
     {
         $pageTitle     = 'Dashboard';
         $user          = auth()->user();
@@ -34,7 +34,86 @@ class UserController extends Controller
         $giftRedeems = BeanHistory::redeemOrGift()->where('user_id', $user->id)->with('batch.product.unit')->orderBy('id', 'desc')->limit(5)->get();
         $buySells    = BeanHistory::buyOrSell()->where('user_id', $user->id)->with('batch.product.unit')->orderBy('id', 'desc')->limit(6)->get();
 
-        return view('Template::user.dashboard', compact('pageTitle', 'portfolioData', 'assets', 'assetValue', 'user', 'chargeLimit', 'giftRedeems', 'buySells'));
+        // بيانات التشارت (نفس منطق price tracker)
+        $days = $request->days ?? 90; // الافتراضي 90 يوم
+        $priceFrom = gs('chart_price_from') ?? 0;
+        $priceTo = gs('chart_price_to') ?? 20;
+        $products = \App\Models\Product::active()->with(['unit', 'currency'])->get();
+        
+        $allProductsData = [];
+        $labels = collect();
+        
+        foreach ($products as $product) {
+            if ($days == 1) {
+                // عرض آخر 24 ساعة (hourly)
+                $priceHistory = \App\Models\MarketPriceHistory::where('product_id', $product->id)
+                    ->where('created_at', '>=', now()->subHours(24))
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                
+                $lastKnownPrice = $product->market_price ?? (($priceFrom + $priceTo) / 2);
+                $startOfDay = now()->startOfDay();
+                $productData = [];
+                
+                // ملء البيانات لكل ساعة
+                for ($hour = 0; $hour < 24; $hour++) {
+                    $hourStart = $startOfDay->copy()->addHours($hour);
+                    $hourEnd = $hourStart->copy()->addHour();
+                    
+                    $priceInHour = $priceHistory->filter(function($record) use ($hourStart, $hourEnd) {
+                        return $record->created_at >= $hourStart && $record->created_at < $hourEnd;
+                    })->first();
+                    
+                    if ($priceInHour) {
+                        $lastKnownPrice = $priceInHour->market_price;
+                    }
+                    
+                    $productData[] = round($lastKnownPrice, 2);
+                    
+                    if ($labels->count() < 24) {
+                        $labels->push($hour);
+                    }
+                }
+            } else {
+                // عرض حسب الأيام (daily)
+                $priceHistory = \App\Models\MarketPriceHistory::where('product_id', $product->id)
+                    ->where('created_at', '>=', now()->subDays($days))
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+                
+                $lastKnownPrice = $product->market_price ?? (($priceFrom + $priceTo) / 2);
+                $productData = [];
+                
+                // ملء البيانات لكل يوم
+                for ($day = $days - 1; $day >= 0; $day--) {
+                    $dayStart = now()->subDays($day)->startOfDay();
+                    $dayEnd = $dayStart->copy()->endOfDay();
+                    
+                    $priceInDay = $priceHistory->filter(function($record) use ($dayStart, $dayEnd) {
+                        return $record->created_at >= $dayStart && $record->created_at <= $dayEnd;
+                    })->last(); // آخر سعر في اليوم
+                    
+                    if ($priceInDay) {
+                        $lastKnownPrice = $priceInDay->market_price;
+                    }
+                    
+                    $productData[] = round($lastKnownPrice, 2);
+                    
+                    if ($labels->count() < $days) {
+                        $labels->push($dayStart->format('Y-m-d'));
+                    }
+                }
+            }
+            
+            $allProductsData[] = [
+                'name' => $product->name,
+                'data' => $productData,
+                'unit' => $product->unit ? $product->unit->name : 'unit',
+                'current_price' => $product->market_price ?? 0
+            ];
+        }
+
+        return view('Template::user.dashboard', compact('pageTitle', 'portfolioData', 'assets', 'assetValue', 'user', 'chargeLimit', 'giftRedeems', 'buySells', 'allProductsData', 'labels', 'priceFrom', 'priceTo', 'products', 'days'));
     }
 
     public function getPriceHistory()
@@ -276,9 +355,35 @@ class UserController extends Controller
             ->get();
         
         // تجميع الـ assets حسب product_id
-        $groupedAssets = $allAssets->groupBy('product_id')->map(function($productAssets) {
+        $groupedAssets = $allAssets->groupBy('product_id')->map(function($productAssets) use ($user) {
             $firstAsset = $productAssets->first();
             $product = $firstAsset->product ?? $firstAsset->batch->product;
+            
+            // حساب الكمية المتاحة الفعلية (بعد خصم الكميات المستخدمة في sell orders نشطة)
+            $totalQuantity = $productAssets->sum('quantity');
+            $totalUsedQuantity = 0;
+            $totalSoldQuantity = 0;
+            
+            foreach ($productAssets as $asset) {
+                // حساب الكمية المستخدمة في sell orders نشطة (نستخدم quantity وليس available_quantity)
+                // لأن quantity هي الكمية الأصلية المخصصة للبيع
+                $usedQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                    ->where('status', Status::SELL_ORDER_ACTIVE)
+                    ->sum('quantity'); // استخدام quantity وليس available_quantity
+                $totalUsedQuantity += $usedQuantity;
+                
+                // حساب الكمية المباعة (status = SELL_ORDER_SOLD)
+                $soldQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                    ->where('status', Status::SELL_ORDER_SOLD)
+                    ->sum('quantity');
+                $totalSoldQuantity += $soldQuantity;
+            }
+            
+            $availableQuantity = max(0, $totalQuantity - $totalUsedQuantity - $totalSoldQuantity);
+            
+            // التحقق إذا كان المنتج تم بيعه بالكامل (جميع الكميات في sell orders مباعة)
+            $isFullySold = ($totalQuantity > 0 && $totalSoldQuantity >= $totalQuantity) || 
+                           ($availableQuantity == 0 && $totalSoldQuantity > 0);
             
             // جلب آخر سعر سوق من market_price_history
             $latestMarketPrice = \App\Models\MarketPriceHistory::where('product_id', $firstAsset->product_id)
@@ -290,12 +395,16 @@ class UserController extends Controller
             return (object)[
                 'product_id' => $firstAsset->product_id,
                 'product' => $product,
-                'total_quantity' => $productAssets->sum('quantity'),
+                'total_quantity' => $totalQuantity, // الكمية الإجمالية
+                'available_quantity' => $availableQuantity, // الكمية المتاحة الفعلية
+                'used_quantity' => $totalUsedQuantity, // الكمية المستخدمة في sell orders نشطة
+                'sold_quantity' => $totalSoldQuantity, // الكمية المباعة
+                'is_fully_sold' => $isFullySold, // flag للتحقق إذا تم البيع بالكامل
                 'total_value' => $productAssets->sum(function($asset) {
                     // استخدام buy_price (سعر الشراء) وليس sell_price (السعر الحالي)
                     return $asset->quantity * ($asset->buy_price ?? 0);
                 }),
-                'current_market_value' => $productAssets->sum('quantity') * $currentMarketPrice,
+                'current_market_value' => $availableQuantity * $currentMarketPrice, // استخدام الكمية المتاحة فقط
                 'current_market_price' => $currentMarketPrice, // حفظ السعر للعرض
                 'batches' => $productAssets, // كل الـ batches للمنتج
                 'batches_count' => $productAssets->count(),
@@ -427,13 +536,40 @@ class UserController extends Controller
         $assetData             = Asset::with('batch.product', 'product')->where('user_id', $user->id)->where('quantity', '>', 0)->get();
         
         // تجميع الـ assets حسب product_id لحساب النسب بشكل صحيح
-        $groupedByProduct = $assetData->groupBy('product_id')->map(function($productAssets) {
+        $groupedByProduct = $assetData->groupBy('product_id')->map(function($productAssets) use ($user) {
             $firstAsset = $productAssets->first();
             $product = $firstAsset->product ?? $firstAsset->batch->product;
+            
+            // حساب الكمية المتاحة الفعلية (بعد خصم الكميات المستخدمة في sell orders نشطة والمباعة)
+            $totalQuantity = $productAssets->sum('quantity');
+            $totalUsedQuantity = 0;
+            $totalSoldQuantity = 0;
+            
+            foreach ($productAssets as $asset) {
+                // حساب الكمية المستخدمة في sell orders نشطة (نستخدم quantity وليس available_quantity)
+                // لأن quantity هي الكمية الأصلية المخصصة للبيع
+                $usedQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                    ->where('status', Status::SELL_ORDER_ACTIVE)
+                    ->sum('quantity'); // استخدام quantity وليس available_quantity
+                $totalUsedQuantity += $usedQuantity;
+                
+                // حساب الكمية المباعة (status = SELL_ORDER_SOLD)
+                $soldQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                    ->where('status', Status::SELL_ORDER_SOLD)
+                    ->sum('quantity');
+                $totalSoldQuantity += $soldQuantity;
+            }
+            
+            $availableQuantity = max(0, $totalQuantity - $totalUsedQuantity - $totalSoldQuantity);
+            
             return [
                 'name' => $product->name ?? 'N/A',
-                'quantity' => $productAssets->sum('quantity'),
+                'quantity' => $availableQuantity, // استخدام الكمية المتاحة فقط (باستثناء المباعة)
             ];
+        })->filter(function($product) {
+            // إخفاء المنتجات التي تم بيعها بالكامل من الـ chart (الكمية المتاحة = 0)
+            // لكن سيتم عرضها في قائمة المنتجات مع علامة Sold
+            return $product['quantity'] > 0;
         });
         
         $assetProductName      = $groupedByProduct->pluck('name');

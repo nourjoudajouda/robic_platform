@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use App\Traits\GlobalStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
-    use GlobalStatus;
+    use HasFactory, GlobalStatus;
     
     protected $fillable = ['name', 'name_en', 'name_ar', 'sku', 'status', 'market_price', 'unit_id', 'currency_id'];
 

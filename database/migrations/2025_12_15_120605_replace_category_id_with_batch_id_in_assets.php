@@ -12,31 +12,37 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('assets', function (Blueprint $table) {
-            // التحقق من وجود foreign key قبل حذفه
-            $foreignKeys = DB::select("
-                SELECT CONSTRAINT_NAME 
-                FROM information_schema.KEY_COLUMN_USAGE 
-                WHERE TABLE_SCHEMA = DATABASE() 
-                AND TABLE_NAME = 'assets' 
-                AND COLUMN_NAME = 'category_id' 
-                AND REFERENCED_TABLE_NAME IS NOT NULL
-            ");
-            
-            foreach ($foreignKeys as $foreignKey) {
-                $table->dropForeign([$foreignKey->CONSTRAINT_NAME]);
-            }
-            
-            // إزالة category_id
-            if (Schema::hasColumn('assets', 'category_id')) {
-                $table->dropColumn('category_id');
-            }
-            
-            // إضافة batch_id
-            if (!Schema::hasColumn('assets', 'batch_id')) {
-                $table->foreignId('batch_id')->nullable()->after('user_id')->constrained('batches')->onDelete('set null');
-            }
-        });
+        if (Schema::hasTable('assets')) {
+            Schema::table('assets', function (Blueprint $table) {
+                // التحقق من وجود foreign key قبل حذفه
+                $foreignKeys = DB::select("
+                    SELECT CONSTRAINT_NAME 
+                    FROM information_schema.KEY_COLUMN_USAGE 
+                    WHERE TABLE_SCHEMA = DATABASE() 
+                    AND TABLE_NAME = 'assets' 
+                    AND COLUMN_NAME = 'category_id' 
+                    AND REFERENCED_TABLE_NAME IS NOT NULL
+                ");
+                
+                foreach ($foreignKeys as $foreignKey) {
+                    try {
+                        $table->dropForeign([$foreignKey->CONSTRAINT_NAME]);
+                    } catch (\Exception $e) {
+                        // Foreign key might not exist
+                    }
+                }
+                
+                // إزالة category_id
+                if (Schema::hasColumn('assets', 'category_id')) {
+                    $table->dropColumn('category_id');
+                }
+                
+                // إضافة batch_id (إذا لم يكن موجوداً)
+                if (!Schema::hasColumn('assets', 'batch_id')) {
+                    $table->foreignId('batch_id')->nullable()->after('user_id')->constrained('batches')->onDelete('set null');
+                }
+            });
+        }
     }
 
     /**

@@ -82,7 +82,7 @@
                                     @lang('Portfolio Overview')
                                 </span>
                             </p>
-                            @if ($assets->sum('quantity') > 0)
+                            @if ($portfolioData['total_asset_quantity'] > 0)
                                 <div id="apex_chart_two"></div>
                             @else
                                 <x-empty-card empty-message="No asset found" />
@@ -101,9 +101,12 @@
                                 <div class="dashboard-card__top-right">
                                     <div class="customNiceSelect">
                                         <select name="days">
-                                            <option value="7">@lang('7 Days')</option>
-                                            <option value="30">@lang('30 Days')</option>
-                                            <option value="90" selected>@lang('90 Days')</option>
+                                            <option value="1" {{ ($days ?? 90) == 1 ? 'selected' : '' }}>@lang('Last 24 Hours')</option>
+                                            <option value="7" {{ ($days ?? 90) == 7 ? 'selected' : '' }}>@lang('Last 7 Days')</option>
+                                            <option value="30" {{ ($days ?? 90) == 30 ? 'selected' : '' }}>@lang('Last 30 Days')</option>
+                                            <option value="90" {{ ($days ?? 90) == 90 ? 'selected' : '' }}>@lang('Last 90 Days')</option>
+                                            <option value="180" {{ ($days ?? 90) == 180 ? 'selected' : '' }}>@lang('Last 180 Days')</option>
+                                            <option value="365" {{ ($days ?? 90) == 365 ? 'selected' : '' }}>@lang('Last 1 Year')</option>
                                         </select>
                                     </div>
                                 </div>
@@ -314,58 +317,125 @@
             @endif
 
 
-            $('[name=days]').on('change', function() {
-                let days = $(this).find('option:selected').val();
-                $.get("{{ route('user.price.history') }}", {
+            // كود التشارت (نفس منطق price tracker)
+            let days = {{ $days ?? 90 }};
+            
+            // ألوان مختلفة لكل منتج
+            const productColors = [
+                '#{{ gs('base_color') }}', // اللون الأساسي
+                '#16C47F', // أخضر
+                '#ffb22e', // أصفر
+                '#23953f', // أخضر داكن
+                '#CD853F', // بني
+                '#FFD65A', // أصفر فاتح
+                '#B43F3F', // أحمر
+                '#8b5cf6', // بنفسجي
+                '#06b6d4', // أزرق فاتح
+                '#f97316'  // برتقالي
+            ];
+            
+            // الساعات بالعربية
+            let hoursArabic = [
+                '12 ص', '1 ص', '2 ص', '3 ص', '4 ص', '5 ص', 
+                '6 ص', '7 ص', '8 ص', '9 ص', '10 ص', '11 ص',
+                '12 م', '1 م', '2 م', '3 م', '4 م', '5 م', 
+                '6 م', '7 م', '8 م', '9 م', '10 م', '11 م'
+            ];
+
+            // تغيير الفترة
+            $('[name="days"]').on('change', function() {
+                days = $(this).val();
+                updateChart();
+            });
+
+            function getXAxisLabels(labels, daysFilter) {
+                if (daysFilter == 1) {
+                    // عرض الساعات
+                    return hoursArabic;
+                } else if (daysFilter <= 30) {
+                    // للفترات القصيرة (7، 30 يوم): عرض التاريخ بصيغة رقمية (يوم/شهر)
+                    return labels.map(function(date) {
+                        let d = new Date(date);
+                        let day = d.getDate();
+                        let month = d.getMonth() + 1;
+                        return day + '/' + month;
+                    });
+                } else {
+                    // للفترات الطويلة (90، 180، 365 يوم): عرض اسم الشهر
+                    const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 
+                                       'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+                    return labels.map(function(date) {
+                        let d = new Date(date);
+                        let day = d.getDate();
+                        let month = monthNames[d.getMonth()];
+                        return day + ' ' + month;
+                    });
+                }
+            }
+
+            function updateChart() {
+                $.get("{{ route('user.price.tracker') }}", {
                     days
                 }, function(response) {
+                    // تحويل البيانات لصيغة series
+                    const series = response.products.map(function(product, index) {
+                        return {
+                            name: product.name,
+                            data: product.data
+                        };
+                    });
+
+                    let xAxisLabels = getXAxisLabels(response.labels, response.days);
+
                     chart.updateOptions({
-                        series: [{
-                            name: 'Green Coffee Price',
-                            data: response.prices
-                        }],
+                        series: series,
+                        colors: productColors.slice(0, series.length),
                         xaxis: {
-                            categories: response.dates
+                            categories: xAxisLabels,
+                            labels: {
+                                style: {
+                                    colors: '#fff',
+                                }
+                            }
                         }
                     });
                 });
-            }).change();
+            }
 
-            let baseColor = `#{{ gs('base_color') }}`;
-            let secondaryColor = `#{{ gs('secondary_color') }}`;
+            // تحديد التسميات الأولية
+            let initialLabels = @json($labels ?? []);
+            let xAxisLabels = getXAxisLabels(initialLabels, days);
+
+            // تحويل البيانات الأولية لصيغة series
+            const initialSeries = @json($allProductsData ?? []).map(function(product, index) {
+                return {
+                    name: product.name,
+                    data: product.data
+                };
+            });
 
             var options = {
-                series: [{
-                    name: 'Bean Price',
-                    data: []
-                }],
+                series: initialSeries,
+                colors: productColors.slice(0, initialSeries.length),
                 chart: {
                     height: 256,
-                    type: 'area',
+                    type: 'line',
                     toolbar: {
-                        show: false
-                    },
+                        show: true,
+                        tools: {
+                            download: true
+                        }
+                    }
                 },
-
                 dataLabels: {
                     enabled: false
                 },
-                colors: [baseColor],
-                fill: {
-                    type: 'gradient',
-                    gradient: {
-                        type: 'vertical',
-                        shade: 'light',
-                        gradientToColors: [secondaryColor],
-                        stops: [0, 100]
-                    }
-                },
                 stroke: {
-                    curve: 'smooth'
+                    curve: 'smooth',
+                    width: 3
                 },
                 xaxis: {
-                    type: 'datetime',
-                    categories: [],
+                    categories: xAxisLabels,
                     labels: {
                         style: {
                             colors: '#fff',
@@ -373,19 +443,44 @@
                     }
                 },
                 yaxis: {
+                    min: {{ $priceFrom ?? 0 }},
+                    max: {{ $priceTo ?? 20 }},
                     labels: {
                         style: {
                             colors: '#fff',
+                        },
+                        formatter: function(value) {
+                            return value.toFixed(2);
                         }
                     }
                 },
                 tooltip: {
-                    x: {
-                        format: 'dd/MM/yy'
-                    },
                     theme: 'dark',
+                    y: {
+                        formatter: function(value) {
+                            return value.toFixed(2) + ' {{ __(gs("cur_text")) }}';
+                        }
+                    }
                 },
+                legend: {
+                    show: true,
+                    position: 'top',
+                    horizontalAlign: 'center',
+                    labels: {
+                        colors: '#fff',
+                        useSeriesColors: false
+                    },
+                    markers: {
+                        width: 12,
+                        height: 12,
+                        radius: 6
+                    }
+                },
+                grid: {
+                    borderColor: 'rgba(255, 255, 255, 0.1)'
+                }
             };
+            
             var chart = new ApexCharts(document.querySelector("#apex_chart_three"), options);
             chart.render();
 

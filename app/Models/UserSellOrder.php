@@ -155,6 +155,26 @@ class UserSellOrder extends Model
     }
     
     /**
+     * Override badgeData to show custom status badges
+     */
+    public function badgeData()
+    {
+        $html = '';
+        if ($this->status == Status::SELL_ORDER_ACTIVE) {
+            $html = '<span class="badge badge--success">' . trans('Active') . '</span>';
+        } elseif ($this->status == Status::SELL_ORDER_INACTIVE) {
+            $html = '<span class="badge badge--warning">' . trans('Inactive') . '</span>';
+        } elseif ($this->status == Status::SELL_ORDER_SOLD) {
+            $html = '<span class="badge badge--info">' . trans('Sold') . '</span>';
+        } elseif ($this->status == Status::SELL_ORDER_CANCELLED) {
+            $html = '<span class="badge badge--danger">' . trans('Cancelled') . '</span>';
+        } else {
+            $html = '<span class="badge badge--warning">' . trans('Unknown') . '</span>';
+        }
+        return $html;
+    }
+
+    /**
      * الحصول على الكمية المتوفرة بسعر معين
      */
     private function getAvailableQuantityAtPrice($productId, $price)

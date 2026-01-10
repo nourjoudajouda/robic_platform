@@ -244,10 +244,11 @@ class AdminController extends Controller
 
         if ($request->hasFile('image')) {
             try {
-                $old         = $user->image;
+                $old = $user->image;
                 $user->image = fileUploader($request->image, getFilePath('adminProfile'), getFileSize('adminProfile'), $old);
             } catch (\Exception $exp) {
-                $notify[] = ['error', 'Couldn\'t upload your image'];
+                \Log::error('Image upload error: ' . $exp->getMessage() . ' | Trace: ' . $exp->getTraceAsString());
+                $notify[] = ['error', 'Couldn\'t upload your image. Please try again or contact support if the problem persists.'];
                 return back()->withNotify($notify);
             }
         }

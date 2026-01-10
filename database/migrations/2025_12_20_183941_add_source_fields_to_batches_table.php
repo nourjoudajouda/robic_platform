@@ -13,13 +13,19 @@ return new class extends Migration
     {
         Schema::table('batches', function (Blueprint $table) {
             // نوع الـ batch: admin_created (أضافها الأدمن) أو user_sale (اشتريت من المستخدم)
-            $table->string('type')->default('admin_created')->after('batch_code')->comment('admin_created or user_sale');
+            if (!Schema::hasColumn('batches', 'type')) {
+                $table->string('type')->default('admin_created')->after('batch_code')->comment('admin_created or user_sale');
+            }
             
             // معرف المستخدم إذا كان الـ batch جاي من بيع مستخدم
-            $table->foreignId('user_id')->nullable()->after('type')->constrained('users')->onDelete('set null')->comment('User ID if batch is from user sale');
+            if (!Schema::hasColumn('batches', 'user_id')) {
+                $table->foreignId('user_id')->nullable()->after('type')->constrained('users')->onDelete('set null')->comment('User ID if batch is from user sale');
+            }
             
             // معرفات الـ batches الأصلية التي جاءت منها هذه الكميات (JSON array)
-            $table->json('parent_ids')->nullable()->after('user_id')->comment('Array of original batch IDs if from user sale');
+            if (!Schema::hasColumn('batches', 'parent_ids')) {
+                $table->json('parent_ids')->nullable()->after('user_id')->comment('Array of original batch IDs if from user sale');
+            }
         });
     }
 

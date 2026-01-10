@@ -39,7 +39,6 @@ class UserFactory extends Factory
             'type' => $type,
             'user_type' => $type,
             'balance' => $this->faker->randomFloat(2, 1000, 100000),
-            'email_verified_at' => now(),
         ];
 
         if ($type === 'establishment') {

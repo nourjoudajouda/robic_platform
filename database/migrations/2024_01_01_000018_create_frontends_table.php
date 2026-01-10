@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('charge_limits', function (Blueprint $table) {
+        Schema::create('frontends', function (Blueprint $table) {
             $table->id();
+            $table->string('data_keys', 40)->nullable();
+            $table->longText('data_values')->nullable();
+            $table->longText('seo_content')->nullable();
+            $table->string('tempname', 40)->nullable();
+            $table->string('slug')->nullable();
             $table->timestamps();
         });
     }
@@ -22,6 +27,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('charge_limits');
+        Schema::dropIfExists('frontends');
     }
 };
+

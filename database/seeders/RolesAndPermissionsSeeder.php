@@ -14,27 +14,33 @@ class RolesAndPermissionsSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create Roles
-        $superAdmin = Role::create([
-            'name' => 'Super Admin',
-            'slug' => 'super_admin',
-            'description' => 'Full access to all features',
-            'status' => 1
-        ]);
+        // Create Roles (use firstOrCreate to avoid duplicates)
+        $superAdmin = Role::firstOrCreate(
+            ['slug' => 'super_admin'],
+            [
+                'name' => 'Super Admin',
+                'description' => 'Full access to all features',
+                'status' => 1
+            ]
+        );
 
-        $warehousesTeam = Role::create([
-            'name' => 'Warehouses Team',
-            'slug' => 'warehouses_team',
-            'description' => 'Access to warehouses and batches management',
-            'status' => 1
-        ]);
+        $warehousesTeam = Role::firstOrCreate(
+            ['slug' => 'warehouses_team'],
+            [
+                'name' => 'Warehouses Team',
+                'description' => 'Access to warehouses and batches management',
+                'status' => 1
+            ]
+        );
 
-        $financeTeam = Role::create([
-            'name' => 'Finance Team',
-            'slug' => 'finance_team',
-            'description' => 'Access to financial operations',
-            'status' => 1
-        ]);
+        $financeTeam = Role::firstOrCreate(
+            ['slug' => 'finance_team'],
+            [
+                'name' => 'Finance Team',
+                'description' => 'Access to financial operations',
+                'status' => 1
+            ]
+        );
 
         // Create Permissions Groups
         $permissions = [
@@ -80,14 +86,18 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $createdPermissions = [];
         foreach ($permissions as $permission) {
-            $createdPermissions[$permission['slug']] = Permission::create($permission);
+            $createdPermissions[$permission['slug']] = Permission::firstOrCreate(
+                ['slug' => $permission['slug']],
+                $permission
+            );
         }
 
-        // Assign all permissions to Super Admin
-        $superAdmin->permissions()->attach($createdPermissions);
+        // Assign all permissions to Super Admin (use syncWithoutDetaching to avoid duplicates)
+        $superAdminPermissionIds = array_map(fn($p) => $p->id, $createdPermissions);
+        $superAdmin->permissions()->syncWithoutDetaching($superAdminPermissionIds);
 
         // Assign warehouses permissions to Warehouses Team
-        $warehousesTeam->permissions()->attach([
+        $warehousesPermissionIds = [
             $createdPermissions['products.view']->id,
             $createdPermissions['products.create']->id,
             $createdPermissions['products.edit']->id,
@@ -100,10 +110,11 @@ class RolesAndPermissionsSeeder extends Seeder
             $createdPermissions['batches.create']->id,
             $createdPermissions['batches.edit']->id,
             $createdPermissions['batches.delete']->id,
-        ]);
+        ];
+        $warehousesTeam->permissions()->syncWithoutDetaching($warehousesPermissionIds);
 
         // Assign finance permissions to Finance Team
-        $financeTeam->permissions()->attach([
+        $financePermissionIds = [
             $createdPermissions['users.view']->id,
             $createdPermissions['deposits.view']->id,
             $createdPermissions['deposits.approve']->id,
@@ -112,6 +123,7 @@ class RolesAndPermissionsSeeder extends Seeder
             $createdPermissions['withdrawals.approve']->id,
             $createdPermissions['withdrawals.reject']->id,
             $createdPermissions['reports.view']->id,
-        ]);
+        ];
+        $financeTeam->permissions()->syncWithoutDetaching($financePermissionIds);
     }
 }

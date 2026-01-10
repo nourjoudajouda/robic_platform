@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('batches', function (Blueprint $table) {
-            $table->string('quality_grade')->nullable()->after('batch_code');
-            $table->string('origin_country')->nullable()->after('quality_grade');
+            if (!Schema::hasColumn('batches', 'quality_grade')) {
+                $table->string('quality_grade')->nullable()->after('batch_code');
+            }
+            if (!Schema::hasColumn('batches', 'origin_country')) {
+                $table->string('origin_country')->nullable()->after('quality_grade');
+            }
         });
     }
 

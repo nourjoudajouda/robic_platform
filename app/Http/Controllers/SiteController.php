@@ -24,7 +24,7 @@ class SiteController extends Controller
     {
         $pageTitle   = 'Home';
         $sections    = Page::where('tempname', activeTemplate())->where('slug', '/')->first();
-        $seoContents = $sections->seo_content;
+        $seoContents = $sections ? $sections->seo_content : null;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
         return view('Template::home', compact('pageTitle', 'sections', 'seoContents', 'seoImage'));
     }
@@ -169,7 +169,7 @@ class SiteController extends Controller
         $faqContent  = Frontend::where('data_keys', 'faq.content')->where('tempname', activeTemplateName())->orderBy('id', 'desc')->first();
         $faqElement  = Frontend::where('data_keys', 'faq.element')->where('tempname', activeTemplateName())->orderBy('id', 'desc')->paginate(getPaginate(9));
         $sections    = Page::where('tempname', activeTemplate())->where('slug', 'faq')->first();
-        $seoContents = $sections->seo_content;
+        $seoContents = $sections ? $sections->seo_content : null;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
         return view('Template::faq', compact('pageTitle', 'faqContent', 'faqElement', 'sections', 'seoContents', 'seoImage'));
     }
@@ -255,7 +255,7 @@ class SiteController extends Controller
         $pageTitle   = "Blogs";
         $sections    = Page::where('tempname', activeTemplate())->where('slug', 'blog')->first();
         $blogs       = Frontend::where('data_keys', 'blog.element')->where('tempname', activeTemplateName())->orderBy('id', 'desc')->paginate(getPaginate(9));
-        $seoContents = $sections->seo_content;
+        $seoContents = $sections ? $sections->seo_content : null;
         $seoImage    = @$seoContents->image ? getImage(getFilePath('seo') . '/' . @$seoContents->image, getFileSize('seo')) : null;
         return view('Template::blogs', compact('pageTitle', 'sections', 'blogs', 'seoContents', 'seoImage'));
     }

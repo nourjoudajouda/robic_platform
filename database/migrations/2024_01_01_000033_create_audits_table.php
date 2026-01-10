@@ -28,15 +28,6 @@ return new class extends Migration
             $table->json('old_values')->nullable()->comment('Old values before update (for update actions)');
             $table->json('new_values')->nullable()->comment('New values after update (for update actions)');
             $table->timestamps();
-            
-            // Indexes for better query performance
-            $table->index('user_id');
-            $table->index('admin_id');
-            $table->index('user_type');
-            $table->index('action');
-            $table->index('model_type');
-            $table->index('model_id');
-            $table->index('created_at');
         });
     }
 
@@ -48,3 +39,4 @@ return new class extends Migration
         Schema::dropIfExists('audits');
     }
 };
+

@@ -12,11 +12,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::table('general_settings')->update([
-            'cur_text' => 'Saudi Riyal',
-            'cur_sym' => 'ر.س',
-            'updated_at' => now()
-        ]);
+        if (Schema::hasTable('general_settings')) {
+            DB::table('general_settings')->update([
+                'cur_text' => 'Saudi Riyal',
+                'cur_sym' => 'ر.س',
+                'updated_at' => now()
+            ]);
+        }
     }
 
     /**

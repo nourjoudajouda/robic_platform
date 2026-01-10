@@ -97,9 +97,19 @@ class FileManager
     */
 	public function upload(){
 
+        // Ensure path is absolute (add public_path if needed)
+        $publicPath = public_path();
+        $isAbsolute = (strpos($this->path, $publicPath) === 0) || 
+                      preg_match('/^[A-Z]:\\\\/', $this->path) || 
+                      (strpos($this->path, '/') === 0);
+        
+        if (!$isAbsolute) {
+            $this->path = public_path($this->path);
+        }
+
         //create the directory if doesn't exists
 		$path = $this->makeDirectory();
-		if (!$path) throw new \Exception('File could not been created.');
+		if (!$path) throw new \Exception('File could not been created. Path: ' . $this->path);
 
         //remove the old file if exist
 		if ($this->old) {
@@ -133,33 +143,43 @@ class FileManager
             }
             
             // Otherwise, use Intervention Image for resizing
-        $manager = new ImageManager(new Driver());
-        $image = $manager->read($this->file);
-
-        //resize the
-	    if ($this->size) {
-	        $size = explode('x', strtolower($this->size));
-	        $image->resize($size[0], $size[1]);
-	    }
-        //save the image
-	    $image->save($this->path . '/' . $this->filename);
-
-        //save the image as thumbnail version
-	    if ($this->thumb) {
-            if ($this->old) {
-                $this->removeFile($this->path . '/thumb_' . $this->old);
+            // Get the file path - Intervention Image v3 needs the actual file path
+            $filePath = $this->file->getRealPath();
+            if (!$filePath) {
+                // If getRealPath() returns null, use temporary path
+                $filePath = $this->file->getPathname();
             }
-	        $thumb = explode('x', $this->thumb);
-	        $manager->read($this->file)->resize($thumb[0], $thumb[1])->save($this->path . '/thumb_' . $this->filename);
+            
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($filePath);
+
+            //resize the image
+            if ($this->size) {
+                $size = explode('x', strtolower($this->size));
+                $image->resize($size[0], $size[1]);
+            }
+            
+            //save the image
+            $image->save($this->path . '/' . $this->filename);
+
+            //save the image as thumbnail version
+            if ($this->thumb) {
+                if ($this->old) {
+                    $this->removeFile($this->path . '/thumb_' . $this->old);
+                }
+                $thumb = explode('x', $this->thumb);
+                $manager->read($filePath)->resize($thumb[0], $thumb[1])->save($this->path . '/thumb_' . $this->filename);
             }
         } catch (\Exception $e) {
             // If Intervention Image fails, try to move the file directly
             if (!$this->size && !$this->thumb) {
                 $this->file->move($this->path, $this->filename);
             } else {
+                // Log the error for debugging
+                \Log::error('Image processing error: ' . $e->getMessage() . ' | File: ' . ($filePath ?? 'unknown'));
                 throw $e;
             }
-	    }
+        }
 	}
 
 

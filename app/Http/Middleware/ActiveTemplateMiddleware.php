@@ -27,7 +27,13 @@ class ActiveTemplateMiddleware {
             ]);
         });
 
-        View::addNamespace('Template',resource_path('views/templates/'.activeTemplateName()));
+        $templateName = activeTemplateName();
+        if ($templateName) {
+            View::addNamespace('Template', resource_path('views/templates/' . $templateName));
+        } else {
+            // Fallback to 'basic' template if no template is set
+            View::addNamespace('Template', resource_path('views/templates/basic'));
+        }
         return $next($request);
     }
 }

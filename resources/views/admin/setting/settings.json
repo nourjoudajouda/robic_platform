@@ -23,6 +23,14 @@
         "route_name": "admin.setting.system.configuration",
         "enabled": true
     },
+    "bank_transfer": {
+        "keyword": ["bank transfer", "deposit", "account details", "bank account", "iban", "swift", "banking", "payment method", "manual deposit"],
+        "title": "Bank Transfer Details",
+        "subtitle": "Manage bank transfer details for manual deposits.",
+        "icon": "las la-university",
+        "route_name": "admin.setting.bank.transfer",
+        "enabled": true
+    },
     "redeem_unit": {
         "keyword": [
             "redeem unit",

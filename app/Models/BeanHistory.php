@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use App\Constants\Status;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use App\Traits\ApiQuery;
 
 class BeanHistory extends Model
 {
-    use ApiQuery;
+    use HasFactory, ApiQuery;
 
     protected $table = 'bean_history';
 

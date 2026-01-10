@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('type', ['individual', 'establishment'])->default('individual')->after('lastname');
+            if (!Schema::hasColumn('users', 'type')) {
+                $table->enum('type', ['individual', 'establishment'])->default('individual')->after('lastname');
+            }
         });
     }
 

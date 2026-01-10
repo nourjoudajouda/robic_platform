@@ -4,7 +4,7 @@
         <div class="col-xxl-8">
             <div class="dashboard-card">
                 <div class="account-setting">
-                    <form method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('user.profile.setting') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="account-setting__top">
                             <span class="account-setting__thumb">
@@ -101,6 +101,7 @@
 @push('script')
     <script>
         $(document).ready(function() {
+            // Preview image when file is selected
             $('#change-profile-picture').on('change', function() {
                 const file = this.files[0];
                 if (file) {
@@ -110,6 +111,12 @@
                     }
                     reader.readAsDataURL(file);
                 }
+            });
+            
+            // Reload page after successful form submission to show updated image
+            $('form').on('submit', function(e) {
+                // The form will submit normally, and after success, page will reload
+                // The image will be updated from the server response
             });
         });
     </script>

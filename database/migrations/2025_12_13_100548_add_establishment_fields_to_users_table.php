@@ -12,10 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('user_type', ['individual', 'establishment'])->default('individual')->after('lastname');
-            $table->string('establishment_name')->nullable()->after('user_type');
-            $table->string('commercial_registration')->nullable()->after('establishment_name');
-            $table->text('establishment_info')->nullable()->after('commercial_registration');
+            if (!Schema::hasColumn('users', 'user_type')) {
+                $table->enum('user_type', ['individual', 'establishment'])->default('individual')->after('lastname');
+            }
+            if (!Schema::hasColumn('users', 'establishment_name')) {
+                $table->string('establishment_name')->nullable()->after('user_type');
+            }
+            if (!Schema::hasColumn('users', 'commercial_registration')) {
+                $table->string('commercial_registration')->nullable()->after('establishment_name');
+            }
+            if (!Schema::hasColumn('users', 'establishment_info')) {
+                $table->text('establishment_info')->nullable()->after('commercial_registration');
+            }
         });
     }
 

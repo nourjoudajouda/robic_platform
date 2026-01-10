@@ -13,18 +13,30 @@ return new class extends Migration
     {
         Schema::table('assets', function (Blueprint $table) {
             // إضافة product_id و warehouse_id من batch
-            $table->foreignId('product_id')->nullable()->after('batch_id')->constrained('products')->onDelete('set null');
-            $table->foreignId('warehouse_id')->nullable()->after('product_id')->constrained('warehouses')->onDelete('set null');
+            if (!Schema::hasColumn('assets', 'product_id')) {
+                $table->foreignId('product_id')->nullable()->after('batch_id')->constrained('products')->onDelete('set null');
+            }
+            if (!Schema::hasColumn('assets', 'warehouse_id')) {
+                $table->foreignId('warehouse_id')->nullable()->after('product_id')->constrained('warehouses')->onDelete('set null');
+            }
             
             // إضافة سعر الشراء (buy_price)
-            $table->decimal('buy_price', 10, 2)->nullable()->after('warehouse_id');
+            if (!Schema::hasColumn('assets', 'buy_price')) {
+                $table->decimal('buy_price', 10, 2)->nullable()->after('warehouse_id');
+            }
             
             // إضافة الوحدات
-            $table->foreignId('unit_id')->nullable()->after('buy_price')->constrained('units')->onDelete('set null');
-            $table->foreignId('item_unit_id')->nullable()->after('unit_id')->constrained('units')->onDelete('set null');
+            if (!Schema::hasColumn('assets', 'unit_id')) {
+                $table->foreignId('unit_id')->nullable()->after('buy_price')->constrained('units')->onDelete('set null');
+            }
+            if (!Schema::hasColumn('assets', 'item_unit_id')) {
+                $table->foreignId('item_unit_id')->nullable()->after('unit_id')->constrained('units')->onDelete('set null');
+            }
             
             // إضافة العملة
-            $table->foreignId('currency_id')->nullable()->after('item_unit_id')->constrained('currencies')->onDelete('set null');
+            if (!Schema::hasColumn('assets', 'currency_id')) {
+                $table->foreignId('currency_id')->nullable()->after('item_unit_id')->constrained('currencies')->onDelete('set null');
+            }
         });
     }
 

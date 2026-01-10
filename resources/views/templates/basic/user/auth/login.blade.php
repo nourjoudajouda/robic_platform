@@ -44,6 +44,18 @@
                             <!-- Login Form -->
                             <form action="{{ route('user.login') }}" method="POST" class="login-form verify-gcaptcha" id="loginForm" autocomplete="off">
                                 @csrf
+                                
+                                @if ($errors->any())
+                                    <div class="alert alert-danger mb-3" role="alert">
+                                        <i class="fas fa-exclamation-circle me-2"></i>
+                                        <ul class="mb-0">
+                                            @foreach ($errors->all() as $error)
+                                                <li>{{ $error }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                                
                                 <div class="row">
                                     <div class="form-group col-12">
                                         <label for="username" class="form-label">@lang('Username or Email')</label>

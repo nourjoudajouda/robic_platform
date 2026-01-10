@@ -65,17 +65,42 @@ class AddArabicLanguage extends Command
         $language->name = 'Arabic';
         $language->code = 'ar';
         $language->is_default = Status::NO;
-        $language->image = 'default.png'; // Default image, can be updated later from admin panel
         
-        // Check if default image exists, if not create a placeholder
-        $imagePath = public_path('assets/images/language/default.png');
-        if (!File::exists($imagePath)) {
-            $languageDir = public_path('assets/images/language');
-            if (!File::isDirectory($languageDir)) {
-                File::makeDirectory($languageDir, 0755, true);
-            }
-            // Create a simple placeholder or copy from another language
-            $this->warn('Default language image not found. Please upload an image from admin panel.');
+        // Create language directory if it doesn't exist
+        $languageDir = public_path('assets/images/language');
+        if (!File::isDirectory($languageDir)) {
+            File::makeDirectory($languageDir, 0755, true);
+        }
+        
+        // Create a simple Arabic flag placeholder image
+        $imageFileName = 'ar_flag_' . time() . '.png';
+        $imagePath = $languageDir . '/' . $imageFileName;
+        
+        // Create a simple flag image using GD (50x50 as per FileInfo)
+        if (function_exists('imagecreatetruecolor')) {
+            $img = imagecreatetruecolor(50, 50);
+            
+            // Arabic flag colors: black, red, white, green
+            $black = imagecolorallocate($img, 0, 0, 0);
+            $red = imagecolorallocate($img, 206, 17, 38);
+            $white = imagecolorallocate($img, 255, 255, 255);
+            $green = imagecolorallocate($img, 0, 122, 61);
+            
+            // Create horizontal stripes (simplified version)
+            imagefilledrectangle($img, 0, 0, 50, 12, $black);   // Black stripe
+            imagefilledrectangle($img, 0, 13, 50, 25, $white);  // White stripe
+            imagefilledrectangle($img, 0, 26, 50, 37, $green);  // Green stripe
+            imagefilledrectangle($img, 0, 38, 50, 50, $red);     // Red stripe
+            
+            imagepng($img, $imagePath);
+            imagedestroy($img);
+            
+            $language->image = $imageFileName;
+            $this->info('Arabic flag image created successfully!');
+        } else {
+            // Fallback if GD is not available
+            $language->image = 'default.png';
+            $this->warn('GD library not available. Using default image. Please upload an Arabic flag image from admin panel.');
         }
         
         $language->save();

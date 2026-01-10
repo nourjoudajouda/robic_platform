@@ -12,8 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bean_history', function (Blueprint $table) {
-            $table->foreignId('item_unit_id')->nullable()->after('quantity')->constrained('units')->onDelete('set null');
-            $table->foreignId('currency_id')->nullable()->after('amount')->constrained('currencies')->onDelete('set null');
+            if (!Schema::hasColumn('bean_history', 'item_unit_id')) {
+                $table->foreignId('item_unit_id')->nullable()->after('quantity')->constrained('units')->onDelete('set null');
+            }
+            if (!Schema::hasColumn('bean_history', 'currency_id')) {
+                $table->foreignId('currency_id')->nullable()->after('amount')->constrained('currencies')->onDelete('set null');
+            }
         });
     }
 

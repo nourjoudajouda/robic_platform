@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Constants\Status;
 use App\Traits\GlobalStatus;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use App\Models\MarketPriceHistory;
@@ -11,7 +12,7 @@ use App\Models\BatchSellOrder;
 
 class Batch extends Model
 {
-    use GlobalStatus;
+    use HasFactory, GlobalStatus;
     
     protected $fillable = [
         'product_id',
@@ -217,15 +218,15 @@ class Batch extends Model
 
     /**
      * Generate unique batch code automatically
-     * Format: BATCH-XXX (for admin) or USER-XXX (for user sale)
+     * Format: BT-XXX (for admin) or USER-XXX (for user sale)
      */
     public static function generateBatchCode($type = 'admin_created')
     {
-        $prefix = $type === 'user_sale' ? 'USER' : 'BATCH';
+        $prefix = $type === 'user_sale' ? 'USER' : 'BT';
         $code = '';
         
         do {
-            $number = getNumber(5);
+            $number = getNumber(3); // 3-digit number like in BatchController
             $code = $prefix . '-' . $number;
         } while (self::where('batch_code', $code)->exists());
         

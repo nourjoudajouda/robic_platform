@@ -80,100 +80,131 @@ class BuyController extends Controller
         // حساب الكمية الكلية المتوفرة في السوق
         $totalMarketQuantity = array_sum(array_column($orderBook, 'qty'));
         
-        // أرخص سعر متوفر
-        $cheapestPrice = $orderBook[0]['price'];
+        // دالة لحساب سعر السوق (المتوسط الموزون) من order book
+        $calculateMarketPrice = function($book) {
+            $totalQty = 0;
+            $totalAmount = 0;
+            foreach ($book as $order) {
+                $totalQty += $order['qty'];
+                $totalAmount += $order['qty'] * $order['price'];
+            }
+            return $totalQty > 0 ? $totalAmount / $totalQty : 0;
+        };
         
-        // حساب الكمية المتوفرة بأرخص سعر فقط
+        // حساب سعر السوق الأولي
+        $firstMarketPrice = $calculateMarketPrice($orderBook);
+        
+        // أرخص سعر متوفر (للمودال - الكمية المتوفرة بأرخص سعر)
+        $cheapestPrice = $orderBook[0]['price'] ?? 0;
         $quantityAtCheapestPrice = 0;
         foreach ($orderBook as $order) {
-            if (abs($order['price'] - $cheapestPrice) < 0.01) { // نفس السعر تقريباً
+            if (abs($order['price'] - $cheapestPrice) < 0.01) {
                 $quantityAtCheapestPrice += $order['qty'];
             } else {
-                break; // توقف عند أول سعر مختلف
+                break;
             }
         }
         
         $remainingQuantity = $requestedQuantity;
         $totalAmount = 0;
         $ordersToBuy = [];
+        $priceChanges = []; // لتخزين أسعار السوق لكل كمية للعرض
         $fulfilledQuantity = 0;
         $pendingQuantity = 0;
         
-        // نشتري فقط من أرخص سعر
-        if ($quantityAtCheapestPrice >= $requestedQuantity) {
-            // الكمية المطلوبة متوفرة بالكامل بأرخص سعر
-            foreach ($orderBook as $order) {
-                if (abs($order['price'] - $cheapestPrice) < 0.01 && $remainingQuantity > 0) {
-                    $qtyToTake = min($remainingQuantity, $order['qty']);
-                    
-                    $ordersToBuy[] = [
-                        'type' => $order['type'],
-                        'order_id' => $order['id'],
-                        'quantity' => $qtyToTake,
-                        'price' => $cheapestPrice,
-                    ];
-                    
-                    $totalAmount += $qtyToTake * $cheapestPrice;
-                    $remainingQuantity -= $qtyToTake;
-                    $fulfilledQuantity += $qtyToTake;
-                }
-            }
-            
+        // نسخة من order book للحسابات
+        $workingOrderBook = array_map(function($order) {
             return [
-                'success' => true,
-                'average_price' => $cheapestPrice,
-                'total_amount' => $totalAmount,
-                'orders' => $ordersToBuy,
-                'price_changes' => [],
-                'first_price' => $cheapestPrice,
-                'fulfilled_quantity' => $fulfilledQuantity,
-                'pending_quantity' => 0,
-                'total_market_quantity' => $totalMarketQuantity,
+                'type' => $order['type'],
+                'id' => $order['id'],
+                'price' => $order['price'],
+                'qty' => $order['qty'],
             ];
-        } else {
-            // الكمية المطلوبة أكبر من المتوفر بأرخص سعر
-            // نشتري كل ما هو متوفر بأرخص سعر
-            foreach ($orderBook as $order) {
-                if (abs($order['price'] - $cheapestPrice) < 0.01) {
-                    $qtyToTake = $order['qty'];
-                    
-                    $ordersToBuy[] = [
-                        'type' => $order['type'],
-                        'order_id' => $order['id'],
-                        'quantity' => $qtyToTake,
-                        'price' => $cheapestPrice,
-                    ];
-                    
-                    $totalAmount += $qtyToTake * $cheapestPrice;
-                    $fulfilledQuantity += $qtyToTake;
-                }
+        }, $orderBook);
+        
+        // نشتري من جميع الأوامر بالترتيب حسب السعر (أرخص أولاً) حتى يتم استيفاء الكمية المطلوبة
+        while ($remainingQuantity > 0 && !empty($workingOrderBook)) {
+            // حساب سعر السوق قبل أخذ الكمية (للعرض)
+            $marketPriceBefore = $calculateMarketPrice($workingOrderBook);
+            
+            $order = $workingOrderBook[0];
+            $qtyToTake = min($remainingQuantity, $order['qty']);
+            
+            // إضافة order للشراء (بالسعر الفعلي للـ order للشراء الفعلي)
+            $ordersToBuy[] = [
+                'type' => $order['type'],
+                'order_id' => $order['id'],
+                'quantity' => $qtyToTake,
+                'price' => $order['price'], // السعر الفعلي للشراء
+                'market_price' => $marketPriceBefore, // سعر السوق للعرض
+            ];
+            
+            // حساب المبلغ بالسعر الفعلي (للشراء الفعلي)
+            $totalAmount += $qtyToTake * $order['price'];
+            
+            $remainingQuantity -= $qtyToTake;
+            $fulfilledQuantity += $qtyToTake;
+            
+            // خصم الكمية من order book
+            $workingOrderBook[0]['qty'] -= $qtyToTake;
+            if ($workingOrderBook[0]['qty'] <= 0) {
+                array_shift($workingOrderBook);
             }
             
-            $pendingQuantity = $requestedQuantity - $fulfilledQuantity;
+            // حساب سعر السوق بعد أخذ الكمية
+            $marketPriceAfter = !empty($workingOrderBook) ? $calculateMarketPrice($workingOrderBook) : $marketPriceBefore;
             
-            return [
-                'success' => false,
-                'message' => 'Insufficient quantity at lowest price',
-                'available_quantity' => $fulfilledQuantity,
-                'average_price' => $cheapestPrice,
-                'total_amount' => $totalAmount,
-                'orders' => $ordersToBuy,
-                'first_price' => $cheapestPrice,
-                'pending_quantity' => $pendingQuantity,
-                'pending_price' => $cheapestPrice,
-                'fulfilled_quantity' => $fulfilledQuantity,
-                'total_market_quantity' => $totalMarketQuantity,
+            // إضافة price change للعرض (أسعار السوق) - منفصل لكل كمية
+            $priceChanges[] = [
+                'from_price' => $marketPriceBefore,
+                'to_price' => $marketPriceAfter,
+                'quantity_at_old_price' => $fulfilledQuantity - $qtyToTake,
+                'quantity_at_new_price' => $qtyToTake,
             ];
         }
         
-        return [
-            'success' => true,
-            'average_price' => $cheapestPrice,
-            'total_amount' => $totalAmount,
-            'orders' => $ordersToBuy,
-            'price_changes' => [],
-            'first_price' => $cheapestPrice,
-        ];
+        // حساب السعر المتوسط الموزون
+        $averagePrice = $fulfilledQuantity > 0 ? $totalAmount / $fulfilledQuantity : 0;
+        
+        // حساب سعر السوق الجديد بعد استهلاك الكمية المتوفرة (للمودال)
+        $nextAvailablePrice = !empty($workingOrderBook) ? $calculateMarketPrice($workingOrderBook) : $firstMarketPrice;
+        
+        // التحقق من نجاح العملية (هل تم استيفاء الكمية المطلوبة بالكامل)
+        if ($remainingQuantity <= 0) {
+            // تم استيفاء الكمية المطلوبة بالكامل
+            return [
+                'success' => true,
+                'average_price' => $averagePrice,
+                'total_amount' => $totalAmount,
+                'orders' => $ordersToBuy,
+                'price_changes' => $priceChanges,
+                'first_price' => $firstMarketPrice,
+                'fulfilled_quantity' => $fulfilledQuantity,
+                'pending_quantity' => 0,
+                'total_market_quantity' => $totalMarketQuantity,
+                'quantity_at_cheapest_price' => $quantityAtCheapestPrice, // للمودال
+            ];
+        } else {
+            // الكمية المطلوبة أكبر من المتوفر في السوق
+            $pendingQuantity = $remainingQuantity;
+            
+            return [
+                'success' => false,
+                'message' => 'Insufficient quantity available',
+                'available_quantity' => $fulfilledQuantity,
+                'average_price' => $averagePrice,
+                'total_amount' => $totalAmount,
+                'orders' => $ordersToBuy,
+                'price_changes' => $priceChanges,
+                'first_price' => $firstMarketPrice,
+                'pending_quantity' => $pendingQuantity,
+                'pending_price' => $averagePrice,
+                'fulfilled_quantity' => $fulfilledQuantity,
+                'total_market_quantity' => $totalMarketQuantity,
+                'next_available_price' => $nextAvailablePrice, // سعر السوق الجديد بعد استهلاك الكمية المتوفرة
+                'quantity_at_cheapest_price' => $quantityAtCheapestPrice, // للمودال
+            ];
+        }
     }
 
     public function buyForm()
@@ -695,19 +726,13 @@ class BuyController extends Controller
         $multipleOrders = $priceCalculation['orders'] ?? [];
         $priceChanges = $priceCalculation['price_changes'] ?? [];
 
-        if ($chargeLimit->min_amount > $amount) {
-            $notify[] = ['error', 'The minimum buy amount is ' . showAmount($chargeLimit->min_amount)];
-            return back()->withNotify($notify);
-        }
-
-        if ($chargeLimit->max_amount < $amount) {
-            $notify[] = ['error', 'The maximum buy amount is ' . showAmount($chargeLimit->max_amount)];
-            return back()->withNotify($notify);
-        }
-
+        // حساب الرسوم والضريبة أولاً
         $charge      = $chargeLimit->fixed_charge + $chargeLimit->percent_charge * $amount / 100;
         $vat         = $amount * $chargeLimit->vat / 100;
         $totalAmount = $amount + $charge + $vat;
+
+        // لا يوجد قيود على الحد الأدنى أو الأقصى - المستخدم حر في الشراء
+        // التحقق الوحيد هو من الكمية المتاحة
 
         $buyData = [
             'order_type' => 'multiple', // نوع جديد للشراء من عدة orders

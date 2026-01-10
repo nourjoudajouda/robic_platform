@@ -103,6 +103,12 @@ Route::middleware('admin')->group(function () {
         Route::post('status/{id}', 'status')->name('status');
     });
 
+    // User Sell Orders Management
+    Route::controller('UserSellOrderController')->name('user-sell-order.')->prefix('user-sell-order')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('{id}', 'show')->name('show');
+    });
+
     // Pending Buy Orders Management
     Route::controller('PendingBuyOrderController')->name('pending-buy-orders.')->prefix('pending-buy-orders')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -346,6 +352,10 @@ Route::middleware('admin')->group(function () {
         //maintenance_mode
         Route::get('maintenance-mode', 'maintenanceMode')->name('maintenance.mode');
         Route::post('maintenance-mode', 'maintenanceModeSubmit');
+
+        //Bank Transfer Details
+        Route::get('bank-transfer-setting', 'bankTransfer')->name('setting.bank.transfer');
+        Route::post('bank-transfer-setting', 'bankTransferUpdate')->name('setting.bank.transfer.update');
     });
 
     Route::controller('CronConfigurationController')->name('cron.')->prefix('cron')->group(function () {

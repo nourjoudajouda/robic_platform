@@ -105,6 +105,19 @@
         "route_name": "admin.batch-sell-order.index",
         "menu_active": "admin.batch-sell-order*"
     },
+    "user_sell_orders": {
+        "keyword": [
+            "User Sell Orders",
+            "User Sales",
+            "User Sell Order Management",
+            "User Sell Order List",
+            "User Orders"
+        ],
+        "title": "User Sell Orders",
+        "icon": "las la-user-tag",
+        "route_name": "admin.user-sell-order.index",
+        "menu_active": "admin.user-sell-order*"
+    },
     "pending_buy_orders": {
         "keyword": [
             "Pending Buy Orders",
@@ -398,6 +411,7 @@
             "admin.cron*",
             "admin.setting.system.configuration",
             "admin.setting.logo.icon",
+            "admin.setting.bank.transfer",
             "admin.extensions.index",
             "admin.language.manage",
             "admin.language.key",

@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('price_apis', function (Blueprint $table) {
+        Schema::create('device_tokens', function (Blueprint $table) {
             $table->id();
+            $table->unsignedInteger('user_id')->default(0);
+            $table->tinyInteger('is_app')->default(0);
+            $table->text('token')->nullable();
             $table->timestamps();
         });
     }
@@ -22,6 +25,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('price_apis');
+        Schema::dropIfExists('device_tokens');
     }
 };
+

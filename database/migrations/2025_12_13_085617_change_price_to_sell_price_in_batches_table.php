@@ -14,9 +14,13 @@ return new class extends Migration
     {
         Schema::table('batches', function (Blueprint $table) {
             // حذف حقل price (لأن sell_price موجود بالفعل)
-            $table->dropColumn('price');
-            // حذف حقل buy_price
-            $table->dropColumn('buy_price');
+            if (Schema::hasColumn('batches', 'price')) {
+                $table->dropColumn('price');
+            }
+            // حذف حقل buy_price (سيتم إضافته لاحقاً)
+            if (Schema::hasColumn('batches', 'buy_price')) {
+                $table->dropColumn('buy_price');
+            }
         });
     }
 

@@ -11,13 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('shipping_methods', function (Blueprint $table) {
-            $table->string('name_en')->nullable()->after('name');
-            $table->string('name_ar')->nullable()->after('name_en');
-        });
-        
-        // Migrate existing data
-        \DB::statement("UPDATE shipping_methods SET name_en = name, name_ar = name WHERE name_en IS NULL");
+        if (Schema::hasTable('shipping_methods')) {
+            Schema::table('shipping_methods', function (Blueprint $table) {
+                if (!Schema::hasColumn('shipping_methods', 'name_en')) {
+                    $table->string('name_en')->nullable()->after('name');
+                }
+                if (!Schema::hasColumn('shipping_methods', 'name_ar')) {
+                    $table->string('name_ar')->nullable()->after('name_en');
+                }
+            });
+            
+            // Migrate existing data
+            if (Schema::hasColumn('shipping_methods', 'name_en') && Schema::hasColumn('shipping_methods', 'name_ar')) {
+                \DB::statement("UPDATE shipping_methods SET name_en = name, name_ar = name WHERE name_en IS NULL");
+            }
+        }
     }
 
     /**

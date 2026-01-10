@@ -4,10 +4,12 @@ namespace App\Models;
 
 use App\Constants\Status;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Withdrawal extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'method_id', 'user_id', 'amount', 'currency', 'rate', 'charge', 'trx',
         'final_amount', 'after_charge', 'withdraw_information', 'status',

@@ -89,10 +89,10 @@
                             
                             <div class="form-group mt-3">
                                 <label class="form--label">@lang('Sell Price') <span class="text--danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" min="0" class="form--control" placeholder="00.00" name="sell_price" id="sell_price" required>
+                                <div class="input-group sell-price-input-group">
+                                    <input type="number" step="0.01" min="0" class="form--control sell-price-input" placeholder="00.00" name="sell_price" id="sell_price" required>
                                     <span class="input-group-text currency-symbol">{{ $groupedAssets->first()->product->currency->symbol ?? '' }}</span>
-                                    <span class="input-group-text">/</span>
+                                    <span class="input-group-text separator">/</span>
                                     <span class="input-group-text unit-symbol">{{ $groupedAssets->first()->product->unit->symbol ?? 'Unit' }}</span>
                                 </div>
                                 <small class="form-text text-muted">@lang('Enter the price you want to sell at')</small>
@@ -106,7 +106,7 @@
                                 </small>
                             </div>
                             
-                            @if ($chargeLimit->fixed_charge || $chargeLimit->percent_charge)
+                            @if ($chargeLimit && ($chargeLimit->fixed_charge || $chargeLimit->percent_charge))
                                 <span class="info">
                                     <span class="info__icon"><i class="fa-solid fa-circle-info me-1"></i></span>
                                     <span class="info__text">
@@ -142,6 +142,65 @@
 
 @push('pageHeaderButton')
     <a href="{{ route('user.sell.history') }}" class="btn btn--base btn--lg"> <i class="fas fa-history"></i> @lang('Sell History')</a>
+@endpush
+
+@push('style')
+    <style>
+        .sell-price-input-group {
+            display: flex;
+            align-items: stretch;
+            width: 100%;
+        }
+        
+        .sell-price-input-group .sell-price-input {
+            border-radius: 8px 0 0 8px;
+            border-right: none;
+            flex: 1;
+        }
+        
+        .sell-price-input-group .input-group-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-left: none;
+            white-space: nowrap;
+        }
+        
+        .sell-price-input-group .input-group-text.currency-symbol {
+            border-right: none;
+            border-radius: 0;
+        }
+        
+        .sell-price-input-group .input-group-text.separator {
+            border-right: none;
+            border-radius: 0;
+            padding: 17px 8px;
+        }
+        
+        .sell-price-input-group .input-group-text.unit-symbol {
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .sell-price-input-group .sell-price-input:focus {
+            border-right: none;
+            z-index: 1;
+        }
+        
+        .sell-price-input-group .sell-price-input:focus + .input-group-text {
+            border-left: 1px solid hsl(var(--heading-color));
+        }
+        
+        @media screen and (max-width: 575px) {
+            .sell-price-input-group .input-group-text {
+                padding: 14px 10px;
+                font-size: 0.875rem;
+            }
+            
+            .sell-price-input-group .input-group-text.separator {
+                padding: 14px 6px;
+            }
+        }
+    </style>
 @endpush
 
 @push('script')
@@ -214,8 +273,8 @@
             }
 
             function calculateTotalCharge() {
-                let fixedCharge = {{ $chargeLimit->fixed_charge }};
-                let percentCharge = {{ $chargeLimit->percent_charge }};
+                let fixedCharge = {{ $chargeLimit ? $chargeLimit->fixed_charge : 0 }};
+                let percentCharge = {{ $chargeLimit ? $chargeLimit->percent_charge : 0 }};
                 let totalCharge = fixedCharge + amount * percentCharge / 100;
                 $('.totalCharge').text(totalCharge.toFixed(2));
                 let userGetAmount = amount - totalCharge;

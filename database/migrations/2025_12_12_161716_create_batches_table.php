@@ -17,14 +17,18 @@ return new class extends Migration
             $table->foreignId('warehouse_id')->constrained('warehouses')->onDelete('cascade');
             $table->decimal('units_count', 10, 2);
             $table->foreignId('unit_id')->constrained('units')->onDelete('cascade');
-            $table->decimal('items_count_per_unit', 10, 2);
-            $table->foreignId('item_unit_id')->constrained('units')->onDelete('cascade');
-            $table->decimal('price', 10, 2);
             $table->foreignId('currency_id')->constrained('currencies')->onDelete('cascade');
-            $table->string('batch_code')->unique();
+            $table->string('batch_code');
+            $table->string('type')->default('admin_created')->comment('admin_created or user_sale');
+            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->json('parent_ids')->nullable()->comment('Array of original batch IDs if from user sale');
+            $table->string('quality_grade')->nullable();
+            $table->string('origin_country')->nullable();
+            $table->tinyInteger('status')->default(1);
             $table->date('exp_date')->nullable();
             $table->decimal('sell_price', 10, 2)->nullable();
             $table->decimal('buy_price', 10, 2)->nullable();
+            $table->string('attachment')->nullable();
             $table->timestamps();
         });
     }

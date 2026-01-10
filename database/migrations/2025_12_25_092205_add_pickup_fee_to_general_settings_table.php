@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('general_settings', function (Blueprint $table) {
-            $table->decimal('pickup_fee', 10, 2)->default(0)->after('redeem_option');
-        });
+        if (Schema::hasTable('general_settings')) {
+            Schema::table('general_settings', function (Blueprint $table) {
+                if (!Schema::hasColumn('general_settings', 'pickup_fee')) {
+                    $table->decimal('pickup_fee', 10, 2)->default(0)->after('redeem_option');
+                }
+            });
+        }
     }
 
     /**
@@ -21,8 +25,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('general_settings', function (Blueprint $table) {
-            $table->dropColumn('pickup_fee');
-        });
+        if (Schema::hasTable('general_settings')) {
+            Schema::table('general_settings', function (Blueprint $table) {
+                $table->dropColumn('pickup_fee');
+            });
+        }
     }
 };

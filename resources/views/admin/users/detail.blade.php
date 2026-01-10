@@ -192,8 +192,28 @@
                 $bgClass = ['info', 'success', 'primary', 'orange'];
             @endphp
             @foreach ($assets as $asset)
+                @php
+                    $product = $asset->product ?? ($asset->batch ? $asset->batch->product : null);
+                    $productName = $product ? $product->name : 'N/A';
+                    
+                    // حساب السعر
+                    $price = $asset->buy_price ?? 0;
+                    if (!$price && $asset->batch) {
+                        $price = $asset->batch->sell_price ?? $asset->batch->buy_price ?? 0;
+                    }
+                    if (!$price && $product) {
+                        // جلب آخر سعر سوق
+                        $latestMarketPrice = \App\Models\MarketPriceHistory::where('product_id', $asset->product_id)
+                            ->orderBy('created_at', 'desc')
+                            ->first();
+                        $price = $latestMarketPrice ? $latestMarketPrice->market_price : 0;
+                    }
+                    
+                    $totalValue = $asset->quantity * $price;
+                    $unitSymbol = $product && $product->unit ? $product->unit->symbol : 'Unit';
+                @endphp
                 <div class="col-xxl-3 col-sm-6">
-                    <x-widget style="7" link="javascript:void(0)" title="{{ __($asset->category->name) }} - {{ showAmount($asset->quantity * $asset->category->price) }}" icon="fas fa-hand-holding-usd" value="{{ showAmount($asset->quantity, currencyFormat: false) }} gram" bg="{{ $bgClass[$loop->index % count($bgClass)] }}" type="2" />
+                    <x-widget style="7" link="javascript:void(0)" title="{{ __($productName) }} - {{ showAmount($totalValue) }}" icon="fas fa-hand-holding-usd" value="{{ showAmount($asset->quantity, 4, currencyFormat: false) }} {{ $unitSymbol }}" bg="{{ $bgClass[$loop->index % count($bgClass)] }}" type="2" />
                 </div>
             @endforeach
         </div>

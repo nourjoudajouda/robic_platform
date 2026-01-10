@@ -11,13 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('categories', function (Blueprint $table) {
-            $table->string('name_en')->nullable()->after('name');
-            $table->string('name_ar')->nullable()->after('name_en');
-        });
-        
-        // Migrate existing data
-        \DB::statement("UPDATE categories SET name_en = name, name_ar = name WHERE name_en IS NULL");
+        if (Schema::hasTable('categories')) {
+            Schema::table('categories', function (Blueprint $table) {
+                if (!Schema::hasColumn('categories', 'name_en')) {
+                    $table->string('name_en')->nullable()->after('name');
+                }
+                if (!Schema::hasColumn('categories', 'name_ar')) {
+                    $table->string('name_ar')->nullable()->after('name_en');
+                }
+            });
+            
+            // Migrate existing data
+            if (Schema::hasColumn('categories', 'name_en')) {
+                \DB::statement("UPDATE categories SET name_en = name, name_ar = name WHERE name_en IS NULL");
+            }
+        }
     }
 
     /**
@@ -25,8 +33,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('categories', function (Blueprint $table) {
-            $table->dropColumn(['name_en', 'name_ar']);
-        });
+        if (Schema::hasTable('categories')) {
+            Schema::table('categories', function (Blueprint $table) {
+                $table->dropColumn(['name_en', 'name_ar']);
+            });
+        }
     }
 };

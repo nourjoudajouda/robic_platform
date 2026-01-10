@@ -17,8 +17,7 @@ class BatchFactory extends Factory
 
         return [
             'batch_code' => Batch::generateBatchCode(),
-            'units_count' => $this->faker->randomFloat(2, 100, 5000),
-            'items_count_per_unit' => $this->faker->randomFloat(2, 1, 10),
+            'units_count' => $this->faker->numberBetween(100, 5000), // أرقام صحيحة
             'sell_price' => $this->faker->randomFloat(2, 50, 200),
             'buy_price' => $this->faker->randomFloat(2, 40, 180),
             'quality_grade' => $this->faker->randomElement($qualityGrades),

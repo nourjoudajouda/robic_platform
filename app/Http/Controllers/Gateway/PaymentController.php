@@ -21,8 +21,9 @@ class PaymentController extends Controller
     public function deposit()
     {
         $pageTitle = 'Deposit Balance';
-        $bankTransfer        = config('robic.bank_transfer', []);
-        $depositInstructions = config('robic.deposit_instructions', []);
+        // قراءة من GeneralSetting أولاً، إذا لم تكن موجودة استخدم config كقيم افتراضية
+        $bankTransfer = (array) (gs('bank_transfer') ?? config('robic.bank_transfer', []));
+        $depositInstructions = gs('deposit_instructions') ?? config('robic.deposit_instructions', []);
 
         return view('Template::user.payment.deposit', compact('pageTitle', 'bankTransfer', 'depositInstructions'));
     }

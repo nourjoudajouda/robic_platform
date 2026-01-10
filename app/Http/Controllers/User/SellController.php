@@ -152,6 +152,11 @@ class SellController extends Controller
 
         $chargeLimit = ChargeLimit::where('slug', 'sell')->first();
 
+        if (!$chargeLimit) {
+            $notify[] = ['error', 'Charge limit configuration not found. Please contact administrator.'];
+            return back()->withNotify($notify);
+        }
+
         if ($chargeLimit->min_amount > $amount) {
             $notify[] = ['error', 'The minimum sell amount is ' . showAmount($chargeLimit->min_amount)];
             return back()->withNotify($notify);

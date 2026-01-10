@@ -12,7 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::rename('gold_histories', 'bean_history');
+        // جدول bean_history تم إنشاؤه مباشرة في migration سابق
+        // لا حاجة لإعادة التسمية
+        if (Schema::hasTable('gold_histories') && !Schema::hasTable('bean_history')) {
+            Schema::rename('gold_histories', 'bean_history');
+        }
     }
 
     /**

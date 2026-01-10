@@ -13,20 +13,28 @@ class ProductFactory extends Factory
     public function definition(): array
     {
         $products = [
-            ['name_en' => 'Arabica Coffee', 'name_ar' => 'قهوة أرابيكا', 'sku' => 'ARB-001'],
-            ['name_en' => 'Robusta Coffee', 'name_ar' => 'قهوة روبوستا', 'sku' => 'ROB-001'],
-            ['name_en' => 'Ethiopian Coffee', 'name_ar' => 'قهوة إثيوبية', 'sku' => 'ETH-001'],
-            ['name_en' => 'Colombian Coffee', 'name_ar' => 'قهوة كولومبية', 'sku' => 'COL-001'],
-            ['name_en' => 'Brazilian Coffee', 'name_ar' => 'قهوة برازيلية', 'sku' => 'BRA-001'],
+            ['name_en' => 'Arabica Coffee', 'name_ar' => 'قهوة أرابيكا'],
+            ['name_en' => 'Robusta Coffee', 'name_ar' => 'قهوة روبوستا'],
+            ['name_en' => 'Ethiopian Coffee', 'name_ar' => 'قهوة إثيوبية'],
+            ['name_en' => 'Colombian Coffee', 'name_ar' => 'قهوة كولومبية'],
+            ['name_en' => 'Brazilian Coffee', 'name_ar' => 'قهوة برازيلية'],
         ];
 
         $product = $this->faker->randomElement($products);
+        
+        // Generate SKU in format RO-XXX (like in ProductController)
+        $prefix = 'RO';
+        $sku = '';
+        do {
+            $number = getNumber(3);
+            $sku = $prefix . '-' . $number;
+        } while (\App\Models\Product::where('sku', $sku)->exists());
 
         return [
             'name_en' => $product['name_en'],
             'name_ar' => $product['name_ar'],
             'name' => $product['name_en'],
-            'sku' => $product['sku'] . '-' . $this->faker->numerify('###'),
+            'sku' => $sku,
             'status' => Status::ENABLE,
             'market_price' => $this->faker->randomFloat(2, 50, 200),
         ];

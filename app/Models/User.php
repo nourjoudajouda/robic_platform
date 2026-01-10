@@ -5,12 +5,13 @@ namespace App\Models;
 use App\Constants\Status;
 use App\Traits\UserNotify;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, UserNotify;
+    use HasFactory, HasApiTokens, UserNotify;
 
     /**
      * The attributes that should be hidden for arrays.

@@ -27,7 +27,7 @@ class LanguageMiddleware
         if (session()->has('lang')) {
             return session('lang');
         }
-        $language = Language::where('is_default', Status::ENABLE)->first();
+        $language = Language::where('is_default', Status::YES)->first();
         return $language ? $language->code : 'en';
     }
 

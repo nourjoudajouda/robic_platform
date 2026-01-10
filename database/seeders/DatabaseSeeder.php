@@ -192,16 +192,26 @@ class DatabaseSeeder extends Seeder
 
         $created = [];
         foreach ($products as $index => $product) {
-            $created[] = Product::create([
-                'name_en' => $product['name_en'],
-                'name_ar' => $product['name_ar'],
-                'name' => $product['name_en'],
-                'sku' => $product['sku'] . '-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
-                'status' => Status::ENABLE,
-                'market_price' => rand(5000, 20000) / 100,
-                'unit_id' => $units[0]->id, // Use KG
-                'currency_id' => $currencies[0]->id, // Use SAR
-            ]);
+            // Generate SKU in format RO-XXX (like in ProductController)
+            $prefix = 'RO';
+            $sku = '';
+            do {
+                $number = getNumber(3);
+                $sku = $prefix . '-' . $number;
+            } while (Product::where('sku', $sku)->exists());
+            
+            $created[] = Product::firstOrCreate(
+                ['sku' => $sku],
+                [
+                    'name_en' => $product['name_en'],
+                    'name_ar' => $product['name_ar'],
+                    'name' => $product['name_en'],
+                    'status' => Status::ENABLE,
+                    'market_price' => rand(5000, 20000) / 100,
+                    'unit_id' => $units[0]->id, // Use KG
+                    'currency_id' => $currencies[0]->id, // Use SAR
+                ]
+            );
         }
 
         return $created;
@@ -225,7 +235,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
         if ($superAdminRole && !$superAdmin->roles()->where('slug', 'super_admin')->exists()) {
-            $superAdmin->roles()->attach($superAdminRole);
+            $superAdmin->roles()->syncWithoutDetaching([$superAdminRole->id]);
         }
         $admins[] = $superAdmin;
 
@@ -239,7 +249,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
         if ($warehousesTeamRole && !$warehouseAdmin->roles()->where('slug', 'warehouses_team')->exists()) {
-            $warehouseAdmin->roles()->attach($warehousesTeamRole);
+            $warehouseAdmin->roles()->syncWithoutDetaching([$warehousesTeamRole->id]);
         }
         $admins[] = $warehouseAdmin;
 
@@ -253,7 +263,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
         if ($financeTeamRole && !$financeAdmin->roles()->where('slug', 'finance_team')->exists()) {
-            $financeAdmin->roles()->attach($financeTeamRole);
+            $financeAdmin->roles()->syncWithoutDetaching([$financeTeamRole->id]);
         }
         $admins[] = $financeAdmin;
 
@@ -261,7 +271,7 @@ class DatabaseSeeder extends Seeder
         for ($i = 0; $i < 3; $i++) {
             $admin = Admin::factory()->create();
             if ($warehousesTeamRole && rand(0, 1)) {
-                $admin->roles()->attach($warehousesTeamRole);
+                $admin->roles()->syncWithoutDetaching([$warehousesTeamRole->id]);
             }
             $admins[] = $admin;
         }
@@ -310,20 +320,17 @@ class DatabaseSeeder extends Seeder
         foreach ($products as $product) {
             for ($i = 0; $i < 3; $i++) {
                 $warehouse = $warehouses[array_rand($warehouses)];
-                $unit = $units[array_rand($units)];
-                $currency = $currencies[array_rand($currencies)];
                 
+                // unit_id و currency_id يجب أن يكونا من المنتج (مثل BatchController)
                 $batch = Batch::create([
                     'product_id' => $product->id,
                     'warehouse_id' => $warehouse->id,
-                    'units_count' => rand(10000, 500000) / 100,
-                    'unit_id' => $unit->id,
-                    'items_count_per_unit' => rand(100, 1000) / 100,
-                    'item_unit_id' => $product->unit_id,
+                    'units_count' => rand(100, 5000), // أرقام صحيحة
+                    'unit_id' => $product->unit_id, // من المنتج
+                    'currency_id' => $product->currency_id, // من المنتج
                     'sell_price' => rand(5000, 20000) / 100,
                     'buy_price' => rand(4000, 18000) / 100,
-                    'currency_id' => $currency->id,
-                    'batch_code' => Batch::generateBatchCode(),
+                    'batch_code' => Batch::generateBatchCode(), // BT-XXX format
                     'quality_grade' => ['Premium', 'Grade A', 'Grade B', 'Standard'][array_rand(['Premium', 'Grade A', 'Grade B', 'Standard'])],
                     'origin_country' => ['Ethiopia', 'Colombia', 'Brazil', 'Yemen', 'Kenya'][array_rand(['Ethiopia', 'Colombia', 'Brazil', 'Yemen', 'Kenya'])],
                     'exp_date' => now()->addYears(rand(1, 3))->addDays(rand(0, 365)),
@@ -343,12 +350,35 @@ class DatabaseSeeder extends Seeder
         $sellOrders = [];
 
         foreach ($batches as $batch) {
-            // Create 1-2 sell orders per batch
-            $orderCount = rand(1, 2);
+            // حساب الكمية المتاحة من الباتش (أرقام صحيحة)
+            $batchTotalQuantity = (int)$batch->units_count;
+            
+            // إنشاء 1-3 sell orders لكل batch
+            $orderCount = rand(1, min(3, max(1, (int)($batchTotalQuantity / 50)))); // لا نزيد عن 3 طلبات
+            
+            $remainingQuantity = $batchTotalQuantity;
             
             for ($i = 0; $i < $orderCount; $i++) {
-                $maxQuantity = min(2000, $batch->units_count);
-                $quantity = rand(5000, (int)($maxQuantity * 10000)) / 10000;
+                // في آخر طلب، نأخذ كل الكمية المتبقية
+                if ($i === $orderCount - 1) {
+                    $quantity = $remainingQuantity;
+                } else {
+                    // توزيع الكمية بشكل عشوائي (لكن نضمن أن المتبقي كافٍ للطلبات المتبقية)
+                    $minQuantity = max(10, (int)($remainingQuantity / ($orderCount - $i) * 0.3)); // 30% كحد أدنى
+                    $maxQuantity = (int)($remainingQuantity / ($orderCount - $i) * 1.5); // 150% كحد أقصى
+                    $maxQuantity = min($maxQuantity, $remainingQuantity - ($orderCount - $i - 1) * 10); // نضمن أن المتبقي كافٍ
+                    $quantity = rand($minQuantity, max($minQuantity, $maxQuantity));
+                }
+                
+                // التأكد من أن الكمية صحيحة وليست صفر
+                $quantity = max(1, (int)$quantity);
+                $remainingQuantity -= $quantity;
+                
+                // إذا لم يبق شيء، نتوقف
+                if ($quantity <= 0 || $remainingQuantity < 0) {
+                    break;
+                }
+                
                 $sellPrice = $batch->sell_price + (rand(-1000, 2000) / 100);
                 
                 $sellOrder = BatchSellOrder::create([
@@ -356,9 +386,8 @@ class DatabaseSeeder extends Seeder
                     'product_id' => $batch->product_id,
                     'warehouse_id' => $batch->warehouse_id,
                     'unit_id' => $batch->unit_id,
-                    'item_unit_id' => $batch->item_unit_id,
                     'currency_id' => $batch->currency_id,
-                    'quantity' => $quantity,
+                    'quantity' => $quantity, // أرقام صحيحة
                     'available_quantity' => $quantity,
                     'sell_price' => $sellPrice,
                     'sell_order_code' => BatchSellOrder::generateSellOrderCode(),
@@ -366,6 +395,11 @@ class DatabaseSeeder extends Seeder
                 ]);
                 
                 $sellOrders[] = $sellOrder;
+                
+                // إذا لم يبق شيء، نتوقف
+                if ($remainingQuantity <= 0) {
+                    break;
+                }
             }
         }
 

@@ -12,8 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('batches', function (Blueprint $table) {
-            $table->dropForeign(['item_unit_id']);
-            $table->dropColumn(['items_count_per_unit', 'item_unit_id']);
+            if (Schema::hasColumn('batches', 'item_unit_id')) {
+                $table->dropForeign(['item_unit_id']);
+            }
+            if (Schema::hasColumn('batches', 'items_count_per_unit')) {
+                $table->dropColumn('items_count_per_unit');
+            }
+            if (Schema::hasColumn('batches', 'item_unit_id')) {
+                $table->dropColumn('item_unit_id');
+            }
         });
     }
 

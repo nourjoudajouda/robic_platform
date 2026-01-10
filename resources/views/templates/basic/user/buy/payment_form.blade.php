@@ -32,6 +32,21 @@
                                 <span class="text-list__item-title">@lang('Green Coffee Quantity')</span>
                                 <span class="text-list__item-value">{{ showAmount($buyData->quantity, 4, true, false, false) }} {{ $product && $product->unit ? $product->unit->symbol : ($batch && $batch->product && $batch->product->unit ? $batch->product->unit->symbol : 'Unit') }}</span>
                             </li>
+                            @if(isset($buyData->multiple_orders) && is_array($buyData->multiple_orders) && count($buyData->multiple_orders) > 1)
+                                <li class="text-list__item">
+                                    <span class="text-list__item-title">@lang('Purchase Breakdown')</span>
+                                    <span class="text-list__item-value">
+                                        <ul class="mb-0 ps-3" style="list-style: none; padding-left: 0;">
+                                            @foreach($buyData->multiple_orders as $order)
+                                                <li style="margin-bottom: 5px;">
+                                                    <strong>{{ showAmount($order['quantity'] ?? 0, 4, true, false, false) }}</strong> {{ $product && $product->unit ? $product->unit->symbol : 'Unit' }} 
+                                                    @ <strong>{{ showAmount($order['price'] ?? 0, 2, true, false, false) }}</strong> {{ $product && $product->currency ? $product->currency->code : gs('cur_sym') }}
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </span>
+                                </li>
+                            @endif
                             <li class="text-list__item">
                                 <span class="text-list__item-title">@lang('Green Coffee Value')</span>
                                 <span class="text-list__item-value">{{ showAmount($buyData->amount) }}</span>

@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('shipping_methods', function (Blueprint $table) {
+        Schema::create('historical_prices', function (Blueprint $table) {
             $table->id();
-            $table->string('name')->comment('اسم وسيلة الشحن');
-            $table->decimal('cost_per_kg', 20, 8)->comment('تكلفة الكيلو للشحن');
-            $table->tinyInteger('status')->default(1)->comment('0=inactive, 1=active');
+            $table->date('date')->nullable();
+            $table->decimal('price', 28, 8)->default(0);
             $table->timestamps();
         });
     }
@@ -25,6 +24,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('shipping_methods');
+        Schema::dropIfExists('historical_prices');
     }
 };
+

@@ -313,4 +313,57 @@ class GeneralSettingController extends Controller
         $notify[] = ['success', ucfirst($key) . ' credential updated successfully'];
         return back()->withNotify($notify);
     }
+
+    public function bankTransfer()
+    {
+        $pageTitle = 'Bank Transfer Details';
+        $bankTransferSetting = gs('bank_transfer');
+        $bankTransfer = $bankTransferSetting ? (array) $bankTransferSetting : config('robic.bank_transfer', []);
+        $depositInstructions = gs('deposit_instructions') ?? config('robic.deposit_instructions', []);
+        return view('admin.setting.bank_transfer', compact('pageTitle', 'bankTransfer', 'depositInstructions'));
+    }
+
+    public function bankTransferUpdate(Request $request)
+    {
+        $request->validate([
+            'bank_name'       => 'required|string|max:255',
+            'account_name'    => 'required|string|max:255',
+            'account_number'  => 'required|string|max:255',
+            'iban'            => 'nullable|string|max:255',
+            'swift'           => 'nullable|string|max:255',
+            'currency'        => 'required|string|max:10',
+            'reference_hint'  => 'nullable|string|max:500',
+            'instructions'    => 'nullable|array',
+            'instructions.*'  => 'nullable|string|max:500',
+        ]);
+
+        $general = gs();
+        
+        // حفظ Bank Transfer Details كـ JSON
+        $bankTransferData = [
+            'bank_name'       => $request->bank_name,
+            'account_name'    => $request->account_name,
+            'account_number'  => $request->account_number,
+            'iban'            => $request->iban ?? '',
+            'swift'           => $request->swift ?? '',
+            'currency'        => $request->currency,
+            'reference_hint'  => $request->reference_hint ?? '',
+        ];
+        $general->bank_transfer = $bankTransferData;
+        
+        // حفظ Deposit Instructions
+        if ($request->has('instructions')) {
+            $instructions = array_filter($request->instructions, function($instruction) {
+                return !empty(trim($instruction));
+            });
+            $general->deposit_instructions = array_values($instructions);
+        } else {
+            $general->deposit_instructions = [];
+        }
+        
+        $general->save();
+
+        $notify[] = ['success', 'Bank transfer details updated successfully'];
+        return back()->withNotify($notify);
+    }
 }

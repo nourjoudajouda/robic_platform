@@ -12,7 +12,7 @@ class BatchSellOrderFactory extends Factory
 
     public function definition(): array
     {
-        $quantity = $this->faker->randomFloat(4, 50, 2000);
+        $quantity = $this->faker->numberBetween(10, 500); // أرقام صحيحة
         $sellPrice = $this->faker->randomFloat(2, 50, 200);
 
         return [

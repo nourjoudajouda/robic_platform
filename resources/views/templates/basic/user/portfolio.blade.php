@@ -3,7 +3,7 @@
 @section('content')
     <div class="dashboard-card-wrapper">
         @foreach ($groupedAssets as $groupedAsset)
-            <div class="dashboard-card gradient-one gradient-two">
+            <div class="dashboard-card gradient-one gradient-two" style="{{ $groupedAsset->is_fully_sold ? 'opacity: 0.7; position: relative;' : '' }}">
                 <div class="dashboard-card__top">
                     <div class="dashboard-card__tag">
                         <span class="dashboard-card__tag-icon"><img src="{{ asset($activeTemplateTrue . 'images/icons/29.png') }}" alt="image"></span>
@@ -11,12 +11,31 @@
                         @if ($groupedAsset->batches_count > 1)
                             <span class="badge badge--success ms-2">{{ $groupedAsset->batches_count }} @lang('Batches')</span>
                         @endif
+                        @if($groupedAsset->is_fully_sold)
+                            <span class="badge badge--danger ms-2" style="font-size: 0.75rem; padding: 4px 8px;">
+                                <i class="las la-check-circle"></i> @lang('Sold')
+                            </span>
+                        @endif
                     </div>
                     <button type="button" class="dashboard-card__link" data-bs-toggle="modal" data-bs-target="#batchDetailsModal{{ $groupedAsset->product_id }}">
                         <i class="las la-info-circle"></i>
                     </button>
                 </div>
-                <h2 class="dashboard-card__bean">{{ showAmount($groupedAsset->total_quantity, 4, currencyFormat: false) }} <sub>{{ $groupedAsset->product->unit->symbol ?? 'Unit' }}</sub></h2>
+                <h2 class="dashboard-card__bean">{{ showAmount($groupedAsset->available_quantity, 4, currencyFormat: false) }} <sub>{{ $groupedAsset->product->unit->symbol ?? 'Unit' }}</sub></h2>
+                @if($groupedAsset->is_fully_sold)
+                    <small class="text-danger d-block mb-2" style="font-size: 0.85rem;">
+                        <i class="las la-info-circle"></i> @lang('This product has been fully sold and is not available now.')
+                    </small>
+                @elseif($groupedAsset->used_quantity > 0)
+                    <small class="text-warning d-block mb-2" style="font-size: 0.85rem;">
+                        <i class="las la-info-circle"></i> @lang('In Sell Orders'): {{ showAmount($groupedAsset->used_quantity, 4, currencyFormat: false) }} {{ $groupedAsset->product->unit->symbol ?? 'Unit' }}
+                    </small>
+                @endif
+                @if($groupedAsset->sold_quantity > 0 && !$groupedAsset->is_fully_sold)
+                    <small class="text-info d-block mb-2" style="font-size: 0.85rem;">
+                        <i class="las la-check-circle"></i> @lang('Sold Quantity'): {{ showAmount($groupedAsset->sold_quantity, 4, currencyFormat: false) }} {{ $groupedAsset->product->unit->symbol ?? 'Unit' }}
+                    </small>
+                @endif
                 <p class="dashboard-card__desc" style="margin-bottom: 5px;">
                     <small style="display: block; margin-bottom: 8px; opacity: 0.8; font-size: 0.85rem;">
                         <i class="las la-chart-line"></i> @lang('Market Price'): {{ showAmount($groupedAsset->current_market_price) }}/{{ $groupedAsset->product->unit->symbol ?? 'Unit' }}
@@ -46,12 +65,27 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                            @if($groupedAsset->is_fully_sold)
+                                <div class="alert alert-danger mb-3" style="background-color: #721c24; border: 1px solid #dc3545; color: #ffffff;">
+                                    <i class="las la-check-circle"></i> <strong>@lang('This product has been fully sold and is not available now.')</strong>
+                                </div>
+                            @endif
                             {{-- عرض معلومات إجمالية --}}
                             <div class="alert mb-3" style="background-color: #2a2a2a; border: 1px solid #444; color: #ffffff;">
                                 <div class="row">
                                     <div class="col-md-4">
-                                        <strong style="color: #ffc107;">@lang('Total Quantity'):</strong><br>
-                                        <span style="font-size: 1.1rem;">{{ showAmount($groupedAsset->total_quantity, 4, currencyFormat: false) }} {{ $groupedAsset->product->unit->symbol ?? 'Unit' }}</span>
+                                        <strong style="color: #ffc107;">@lang('Available Quantity'):</strong><br>
+                                        <span style="font-size: 1.1rem;">{{ showAmount($groupedAsset->available_quantity, 4, currencyFormat: false) }} {{ $groupedAsset->product->unit->symbol ?? 'Unit' }}</span>
+                                        @if($groupedAsset->used_quantity > 0)
+                                            <br><small class="text-warning" style="font-size: 0.85rem;">
+                                                @lang('In Sell Orders'): {{ showAmount($groupedAsset->used_quantity, 4, currencyFormat: false) }} {{ $groupedAsset->product->unit->symbol ?? 'Unit' }}
+                                            </small>
+                                        @endif
+                                        @if($groupedAsset->sold_quantity > 0)
+                                            <br><small class="text-info" style="font-size: 0.85rem;">
+                                                <i class="las la-check-circle"></i> @lang('Sold Quantity'): {{ showAmount($groupedAsset->sold_quantity, 4, currencyFormat: false) }} {{ $groupedAsset->product->unit->symbol ?? 'Unit' }}
+                                            </small>
+                                        @endif
                                     </div>
                                     <div class="col-md-4">
                                         <strong style="color: #17a2b8;">@lang('Purchase Value'):</strong><br>
@@ -91,17 +125,49 @@
                                     <tbody>
                                         @foreach ($groupedAsset->batches as $asset)
                                             @php
-                                                $purchaseValue = $asset->quantity * $asset->buy_price;
+                                                // حساب الكمية المستخدمة في sell orders نشطة (نستخدم quantity وليس available_quantity)
+                                                $usedQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                                                    ->where('status', \App\Constants\Status::SELL_ORDER_ACTIVE)
+                                                    ->sum('quantity'); // استخدام quantity وليس available_quantity
+                                                // حساب الكمية المباعة (status = SELL_ORDER_SOLD)
+                                                $soldQuantity = \App\Models\UserSellOrder::where('asset_id', $asset->id)
+                                                    ->where('status', \App\Constants\Status::SELL_ORDER_SOLD)
+                                                    ->sum('quantity');
+                                                $availableQuantity = max(0, $asset->quantity - $usedQuantity - $soldQuantity);
+                                                $purchaseValue = $availableQuantity * $asset->buy_price;
+                                                $isBatchFullySold = ($asset->quantity > 0 && $soldQuantity >= $asset->quantity) || ($availableQuantity == 0 && $soldQuantity > 0);
                                             @endphp
-                                            <tr style="border-bottom: 1px solid #333;">
+                                            <tr style="border-bottom: 1px solid #333; {{ $isBatchFullySold ? 'opacity: 0.7;' : '' }}">
                                                 <td>
                                                     <span class="badge badge--primary">
                                                         {{ $asset->batch ? $asset->batch->batch_code : 'N/A' }}
                                                     </span>
+                                                    @if($isBatchFullySold)
+                                                        <br><span class="badge badge--danger mt-1" style="font-size: 0.7rem;">
+                                                            <i class="las la-check-circle"></i> @lang('Sold')
+                                                        </span>
+                                                    @endif
                                                 </td>
                                                 <td>
-                                                    {{ showAmount($asset->quantity, 4, currencyFormat: false) }} 
-                                                    {{ $asset->batch && $asset->batch->product && $asset->batch->product->unit ? $asset->batch->product->unit->symbol : 'Unit' }}
+                                                    <span class="{{ $availableQuantity > 0 ? '' : 'text-muted' }}">
+                                                        {{ showAmount($availableQuantity, 4, currencyFormat: false) }} 
+                                                        {{ $asset->batch && $asset->batch->product && $asset->batch->product->unit ? $asset->batch->product->unit->symbol : 'Unit' }}
+                                                    </span>
+                                                    @if($usedQuantity > 0)
+                                                        <br><small class="text-warning" style="font-size: 0.75rem;">
+                                                            @lang('In Sell Orders'): {{ showAmount($usedQuantity, 4, currencyFormat: false) }}
+                                                        </small>
+                                                    @endif
+                                                    @if($soldQuantity > 0)
+                                                        <br><small class="text-info" style="font-size: 0.75rem;">
+                                                            <i class="las la-check-circle"></i> @lang('Sold'): {{ showAmount($soldQuantity, 4, currencyFormat: false) }}
+                                                        </small>
+                                                    @endif
+                                                    @if($isBatchFullySold)
+                                                        <br><small class="text-danger" style="font-size: 0.75rem;">
+                                                            <i class="las la-exclamation-triangle"></i> @lang('Fully Sold')
+                                                        </small>
+                                                    @endif
                                                 </td>
                                                 <td>{{ showAmount($asset->buy_price) }}</td>
                                                 <td>{{ showAmount($purchaseValue) }}</td>

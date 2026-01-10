@@ -50,13 +50,13 @@ function getNumber($length = 8)
 
 
 function activeTemplate($asset = false) {
-    $template = session('template') ?? gs('active_template');
+    $template = session('template') ?? gs('active_template') ?? 'basic';
     if ($asset) return 'assets/templates/' . $template . '/';
     return 'templates.' . $template . '.';
 }
 
 function activeTemplateName() {
-    $template = session('template') ?? gs('active_template');
+    $template = session('template') ?? gs('active_template') ?? 'basic';
     return $template;
 }
 
@@ -212,8 +212,26 @@ function getPageSections($arr = false)
 function getImage($image, $size = null)
 {
     $clean = '';
-    if (file_exists($image) && is_file($image)) {
-        return asset($image) . $clean;
+    
+    // Return default if image is empty or null
+    if (empty($image)) {
+        if ($size) {
+            return route('placeholder.image', $size);
+        }
+        return asset('assets/images/default.png');
+    }
+    
+    // Check if image path is absolute or relative
+    $imagePath = $image;
+    if (!file_exists($imagePath) && !preg_match('/^[A-Z]:\\\\/', $imagePath) && strpos($imagePath, '/') !== 0) {
+        // If relative path, try with public_path
+        $imagePath = public_path($image);
+    }
+    
+    if (file_exists($imagePath) && is_file($imagePath)) {
+        // Add timestamp to prevent caching issues
+        $timestamp = filemtime($imagePath);
+        return asset($image) . '?v=' . $timestamp . $clean;
     }
     if ($size) {
         return route('placeholder.image', $size);
@@ -458,6 +476,14 @@ function gs($key = null)
     $general = Cache::get('GeneralSetting');
     if (!$general) {
         $general = GeneralSetting::first();
+        if (!$general) {
+            // إنشاء سجل افتراضي إذا لم يكن موجوداً
+            $general = new GeneralSetting();
+            $general->site_name = 'ROBIC';
+            $general->cur_text = 'SAR';
+            $general->cur_sym = 'SAR';
+            $general->save();
+        }
         Cache::put('GeneralSetting', $general);
     }
     if ($key) return @$general->$key;

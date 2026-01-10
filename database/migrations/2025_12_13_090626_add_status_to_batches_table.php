@@ -13,7 +13,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('batches', function (Blueprint $table) {
-            $table->tinyInteger('status')->default(Status::ENABLE)->after('batch_code');
+            if (!Schema::hasColumn('batches', 'status')) {
+                $table->tinyInteger('status')->default(Status::ENABLE)->after('batch_code');
+            }
         });
     }
 

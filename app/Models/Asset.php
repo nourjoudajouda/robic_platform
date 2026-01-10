@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use App\Constants\Status;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class Asset extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'user_id',
         'batch_id',
