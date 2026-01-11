@@ -160,6 +160,13 @@ class LoginController extends Controller
 
         $this->audit('login', 'تسجيل دخول المستخدم: ' . $user->username, $user);
 
+        notify($user, 'LOGIN_NOTIFICATION', [
+            'time' => showDateTime(now()),
+            'ip' => getRealIP(),
+            'browser' => @$userAgent['browser'],
+            'os' => @$userAgent['os_platform'],
+        ]);
+
         $redirection = Intended::getRedirection();
         return $redirection ? $redirection : to_route('user.home');
     }

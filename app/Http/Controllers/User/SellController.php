@@ -238,7 +238,18 @@ class SellController extends Controller
             return to_route('user.sell.form')->withNotify($notify);
         }
 
+        // OTP Verification
+        $request->validate([
+            'verification_code' => 'required',
+        ]);
         $user = auth()->user();
+        if ($user->ver_code != $request->verification_code) {
+             $notify[] = ['error', 'Invalid verification code'];
+             return back()->withNotify($notify);
+        }
+        // Clear code after successful verification
+        $user->ver_code = null;
+        $user->save();
         $productId = $sellData->product_id;
         $sellPrice = $sellData->sell_price;
         
@@ -363,6 +374,13 @@ class SellController extends Controller
                 $transaction->remark = 'low_price_sale';
                 $transaction->save();
                 
+                notify($user, 'SELL_BEAN', [
+                    'product' => $product->name ?? 'Green Coffee',
+                    'quantity' => showAmount($sellData->quantity, 4, currencyFormat: false),
+                    'amount' => showAmount($amountToAdd),
+                    'trx' => $transaction->trx,
+                ]);
+
                 $notify[] = ['warning', 'Your sell price (' . showAmount($sellPrice) . ') is 20% or more below market price (' . showAmount($currentMarketPrice) . '). Asset ownership transferred to system (Batch: ' . $newBatch->batch_code . ') and ' . showAmount($amountToAdd) . ' added to your wallet'];
                 return to_route('user.sell.history')->withNotify($notify);
             });
@@ -410,7 +428,16 @@ class SellController extends Controller
         // لا ننقص الكمية من asset مباشرة - سيتم إدارتها من خلال user_sell_orders
         // عندما يتم شراء الكمية من sell order، سيتم تقليل available_quantity
 
+        // عندما يتم شراء الكمية من sell order، سيتم تقليل available_quantity
+
         $this->audit('sell', "تم إنشاء طلب بيع للكمية: {$sellData->quantity} من المنتج: " . ($product->name_en ?? 'N/A'), $product, null, ['quantity' => $sellData->quantity, 'sell_price' => $sellPrice, 'amount' => $sellData->amount]);
+
+        notify($user, 'SELL_ORDER_CREATED', [
+            'product' => $product->name ?? 'Green Coffee',
+            'quantity' => showAmount($sellData->quantity, 4, currencyFormat: false),
+            'price' => showAmount($sellPrice),
+            'amount' => showAmount($sellData->amount),
+        ]);
 
         $notify[] = ['success', 'Sell order(s) created successfully'];
         return to_route('user.sell.history')->withNotify($notify);

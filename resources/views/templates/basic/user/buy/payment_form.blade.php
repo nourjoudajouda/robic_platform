@@ -127,11 +127,33 @@
                                     </div>
                                 @endforeach
                             </div>
+                            <input type="hidden" name="verification_code" id="verification_code">
                             <div class="form-group mb-0">
-                                <button type="submit" class="btn btn--base w-100">@lang('Proceed to Payment')</button>
+                                <button type="submit" class="btn btn--base w-100" id="btn-submit">@lang('Proceed to Payment')</button>
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="otpModal" tabindex="-1" role="dialog" aria-labelledby="otpModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="otpModalLabel">@lang('Verification Code')</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>@lang('A verification code has been sent to your email. Please enter it below.')</p>
+                    <div class="form-group">
+                        <label for="otp_code">@lang('Code')</label>
+                        <input type="text" class="form-control" id="otp_code" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn--secondary" data-bs-dismiss="modal">@lang('Close')</button>
+                    <button type="button" class="btn btn--primary" id="verifyOtp">@lang('Verify & Submit')</button>
                 </div>
             </div>
         </div>
@@ -146,6 +168,39 @@
     <script>
         "use strict";
         (function($) {
+
+            $('form').on('submit', function(e) {
+                var code = $('#verification_code').val();
+                if (!code) {
+                    e.preventDefault();
+                     $.ajax({
+                        url: "{{ route('user.send.otp') }}",
+                        method: "POST",
+                        data: {
+                            _token: "{{ csrf_token() }}",
+                        },
+                        success: function(response) {
+                            if(response.error){
+                                notify('error', response.error);
+                            }else{
+                                notify('success', response.success);
+                                $('#otpModal').modal('show');
+                            }
+                        }
+                    });
+                }
+            });
+
+            $('#verifyOtp').on('click', function() {
+                var code = $('#otp_code').val();
+                if (code) {
+                    $('#verification_code').val(code);
+                    $('#otpModal').modal('hide');
+                    $('form').unbind('submit').submit();
+                } else {
+                    notify('error', 'Please enter the code');
+                }
+            });
 
             var amount = parseFloat($('.amount').val() || 0);
             var gateway, minAmount, maxAmount;

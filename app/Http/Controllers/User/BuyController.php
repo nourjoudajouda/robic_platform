@@ -789,7 +789,17 @@ class BuyController extends Controller
         $request->validate([
             'gateway'     => 'required',
             'currency'    => 'required',
+            'verification_code' => 'required',
         ]);
+
+        $user = auth()->user();
+        if ($user->ver_code != $request->verification_code) {
+             $notify[] = ['error', 'Invalid verification code'];
+             return back()->withNotify($notify);
+        }
+        // Clear code after successful verification
+        $user->ver_code = null;
+        $user->save();
 
         if ($request->gateway != 'main') {
             $gate = GatewayCurrency::whereHas('method', function ($gate) {

@@ -167,7 +167,7 @@ class RegisterController extends Controller
         }
         
         $user->kv = gs('kv') ? Status::NO : Status::YES;
-        $user->ev = gs('ev') ? Status::NO : Status::YES;
+        $user->ev = Status::NO; // Force email verification
         $user->sv = gs('sv') ? Status::NO : Status::YES;
         $user->ts = Status::DISABLE;
         $user->tv = Status::ENABLE;
