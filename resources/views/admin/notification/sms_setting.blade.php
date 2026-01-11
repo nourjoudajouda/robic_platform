@@ -12,14 +12,14 @@
                         <div class="form-group">
                             <label>@lang('Sms Send Method')</label>
                             <select name="sms_method" class="select2 form-control"  data-minimum-results-for-search="-1">
-                                <option value="clickatell" @if(@gs('sms_config')->name == 'clickatell') selected @endif>@lang('Clickatell')</option>
-                                <option value="infobip" @if(@gs('sms_config')->name == 'infobip') selected @endif>@lang('Infobip')</option>
-                                <option value="messageBird" @if(@gs('sms_config')->name == 'messageBird') selected @endif>@lang('Message Bird')</option>
-                                <option value="nexmo" @if(@gs('sms_config')->name == 'nexmo') selected @endif>@lang('Nexmo')</option>
-                                <option value="smsBroadcast" @if(@gs('sms_config')->name == 'smsBroadcast') selected @endif>@lang('Sms Broadcast')</option>
-                                <option value="twilio" @if(@gs('sms_config')->name == 'twilio') selected @endif>@lang('Twilio')</option>
-                                <option value="textMagic" @if(@gs('sms_config')->name == 'textMagic') selected @endif>@lang('Text Magic')</option>
-                                <option value="custom" @if(@gs('sms_config')->name == 'custom') selected @endif>@lang('Custom API')</option>
+                                <option value="clickatell" @if(@gs('sms_config')?->name == 'clickatell') selected @endif>@lang('Clickatell')</option>
+                                <option value="infobip" @if(@gs('sms_config')?->name == 'infobip') selected @endif>@lang('Infobip')</option>
+                                <option value="messageBird" @if(@gs('sms_config')?->name == 'messageBird') selected @endif>@lang('Message Bird')</option>
+                                <option value="nexmo" @if(@gs('sms_config')?->name == 'nexmo') selected @endif>@lang('Nexmo')</option>
+                                <option value="smsBroadcast" @if(@gs('sms_config')?->name == 'smsBroadcast') selected @endif>@lang('Sms Broadcast')</option>
+                                <option value="twilio" @if(@gs('sms_config')?->name == 'twilio') selected @endif>@lang('Twilio')</option>
+                                <option value="textMagic" @if(@gs('sms_config')?->name == 'textMagic') selected @endif>@lang('Text Magic')</option>
+                                <option value="custom" @if(@gs('sms_config')?->name == 'custom') selected @endif>@lang('Custom API')</option>
                             </select>
                         </div>
                         <div class="row mt-4 d-none configForm" id="clickatell">
@@ -29,7 +29,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label>@lang('API Key') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('API Key')" name="clickatell_api_key" value="{{ @gs('sms_config')->clickatell->api_key }}">
+                                    <input type="text" class="form-control" placeholder="@lang('API Key')" name="clickatell_api_key" value="{{ @gs('sms_config')?->clickatell?->api_key }}">
                                 </div>
                             </div>
                         </div>
@@ -40,13 +40,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Username') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Username')" name="infobip_username" value="{{ @gs('sms_config')->infobip->username }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Username')" name="infobip_username" value="{{ @gs('sms_config')?->infobip?->username }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Password') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Password')" name="infobip_password" value="{{ @gs('sms_config')->infobip->password }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Password')" name="infobip_password" value="{{ @gs('sms_config')?->infobip?->password }}">
                                 </div>
                             </div>
                         </div>
@@ -57,7 +57,7 @@
                             <div class="col-md-12">
                                 <div class="form-group">
                                     <label>@lang('API Key') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('API Key')" name="message_bird_api_key" value="{{ @gs('sms_config')->message_bird->api_key }}">
+                                    <input type="text" class="form-control" placeholder="@lang('API Key')" name="message_bird_api_key" value="{{ @gs('sms_config')?->message_bird?->api_key }}">
                                 </div>
                             </div>
                         </div>
@@ -68,13 +68,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('API Key') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('API Key')" name="nexmo_api_key" value="{{ @gs('sms_config')->nexmo->api_key }}">
+                                    <input type="text" class="form-control" placeholder="@lang('API Key')" name="nexmo_api_key" value="{{ @gs('sms_config')?->nexmo?->api_key }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('API Secret') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('API Secret')" name="nexmo_api_secret" value="{{ @gs('sms_config')->nexmo->api_secret }}">
+                                    <input type="text" class="form-control" placeholder="@lang('API Secret')" name="nexmo_api_secret" value="{{ @gs('sms_config')?->nexmo?->api_secret }}">
                                 </div>
                             </div>
                         </div>
@@ -85,13 +85,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Username') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Username')" name="sms_broadcast_username" value="{{ @gs('sms_config')->sms_broadcast->username }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Username')" name="sms_broadcast_username" value="{{ @gs('sms_config')?->sms_broadcast?->username }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Password') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Password')" name="sms_broadcast_password" value="{{ @gs('sms_config')->sms_broadcast->password }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Password')" name="sms_broadcast_password" value="{{ @gs('sms_config')?->sms_broadcast?->password }}">
                                 </div>
                             </div>
                         </div>
@@ -102,19 +102,19 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Account SID') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Account SID')" name="account_sid" value="{{ @gs('sms_config')->twilio->account_sid }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Account SID')" name="account_sid" value="{{ @gs('sms_config')?->twilio?->account_sid }}">
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Auth Token') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Auth Token')" name="auth_token" value="{{ @gs('sms_config')->twilio->auth_token }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Auth Token')" name="auth_token" value="{{ @gs('sms_config')?->twilio?->auth_token }}">
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('From Number') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('From Number')" name="from" value="{{ @gs('sms_config')->twilio->from }}">
+                                    <input type="text" class="form-control" placeholder="@lang('From Number')" name="from" value="{{ @gs('sms_config')?->twilio?->from }}">
                                 </div>
                             </div>
                         </div>
@@ -125,13 +125,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Username') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Username')" name="text_magic_username" value="{{ @gs('sms_config')->text_magic->username }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Username')" name="text_magic_username" value="{{ @gs('sms_config')?->text_magic?->username }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Apiv2 Key') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Apiv2 Key')" name="apiv2_key" value="{{ @gs('sms_config')->text_magic->apiv2_key }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Apiv2 Key')" name="apiv2_key" value="{{ @gs('sms_config')?->text_magic?->apiv2_key }}">
                                 </div>
                             </div>
                         </div>
@@ -149,7 +149,7 @@
                                                 <option value="post">@lang('POST')</option>
                                             </select>
                                         </span>
-                                        <input type="text" class="form-control" name="custom_api_url" value="{{ @gs('sms_config')->custom->url }}" placeholder="@lang('API URL')">
+                                        <input type="text" class="form-control" name="custom_api_url" value="{{ @gs('sms_config')?->custom?->url }}" placeholder="@lang('API URL')">
                                     </div>
                                 </div>
                             </div>
@@ -187,13 +187,13 @@
                                         </div>
                                         <div class="card-body">
                                             <div class="headerFields">
-                                                @for($i = 0; $i < count(gs('sms_config')->custom->headers->name); $i++)
+                                                @for($i = 0; $i < count(gs('sms_config')?->custom?->headers?->name ?? []); $i++)
                                                     <div class="row mt-3">
                                                         <div class="col-md-5">
-                                                            <input type="text" name="custom_header_name[]" class="form-control" value="{{ @gs('sms_config')->custom->headers->name[$i] }}" placeholder="@lang('Headers Name')">
+                                                            <input type="text" name="custom_header_name[]" class="form-control" value="{{ @gs('sms_config')?->custom?->headers?->name[$i] }}" placeholder="@lang('Headers Name')">
                                                         </div>
                                                         <div class="col-md-5">
-                                                            <input type="text" name="custom_header_value[]" class="form-control" value="{{ @gs('sms_config')->custom->headers->value[$i] }}" placeholder="@lang('Headers Value')">
+                                                            <input type="text" name="custom_header_value[]" class="form-control" value="{{ @gs('sms_config')?->custom?->headers?->value[$i] }}" placeholder="@lang('Headers Value')">
                                                         </div>
                                                         <div class="col-md-2">
                                                             <button type="button" class="btn btn--danger btn-block removeHeader h-100"><i class="las la-times"></i></button>
@@ -212,13 +212,13 @@
                                         </div>
                                         <div class="card-body">
                                             <div class="bodyFields">
-                                                @for($i = 0; $i < count(gs('sms_config')->custom->body->name); $i++)
+                                                @for($i = 0; $i < count(gs('sms_config')?->custom?->body?->name ?? []); $i++)
                                                     <div class="row mt-3">
                                                         <div class="col-md-5">
-                                                            <input type="text" name="custom_body_name[]" class="form-control" value="{{ @gs('sms_config')->custom->body->name[$i] }}" placeholder="@lang('Body Name')">
+                                                            <input type="text" name="custom_body_name[]" class="form-control" value="{{ @gs('sms_config')?->custom?->body?->name[$i] }}" placeholder="@lang('Body Name')">
                                                         </div>
                                                         <div class="col-md-5">
-                                                            <input type="text" name="custom_body_value[]" value="{{ @gs('sms_config')->custom->body->value[$i] }}" class="form-control" placeholder="@lang('Body Value')">
+                                                            <input type="text" name="custom_body_value[]" value="{{ @gs('sms_config')?->custom?->body?->value[$i] }}" class="form-control" placeholder="@lang('Body Value')">
                                                         </div>
                                                         <div class="col-md-2">
                                                             <button type="button" class="btn btn--danger btn-block removeBody h-100"><i class="las la-times"></i></button>
@@ -291,7 +291,7 @@
 
 
 
-            var method = '{{ @gs('sms_config')->name }}';
+            var method = '{{ @gs('sms_config')?->name }}';
 
             if (!method) {
                 method = 'clickatell';
@@ -352,7 +352,7 @@
                 $(this).closest('.row').remove();
             })
 
-            $('select[name=custom_api_method]').val('{{ @gs('sms_config')->custom->method }}');
+            $('select[name=custom_api_method]').val('{{ @gs('sms_config')?->custom?->method }}');
 
         })(jQuery);
 

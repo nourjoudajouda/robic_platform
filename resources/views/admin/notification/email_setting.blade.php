@@ -12,10 +12,10 @@
                         <div class="form-group">
                             <label>@lang('Email Send Method')</label>
                             <select name="email_method" class="select2 form-control" data-minimum-results-for-search="-1">
-                                <option value="php" @if (gs('mail_config')?->name == 'php') selected @endif>@lang('PHP Mail')</option>
-                                <option value="smtp" @if (gs('mail_config')?->name == 'smtp') selected @endif>@lang('SMTP')</option>
-                                <option value="sendgrid" @if (gs('mail_config')?->name == 'sendgrid') selected @endif>@lang('SendGrid API')</option>
-                                <option value="mailjet" @if (gs('mail_config')?->name == 'mailjet') selected @endif>@lang('Mailjet API')</option>
+                                <option value="php" @if (old('email_method', gs('mail_config')?->name) == 'php') selected @endif>@lang('PHP Mail')</option>
+                                <option value="smtp" @if (old('email_method', gs('mail_config')?->name) == 'smtp') selected @endif>@lang('SMTP')</option>
+                                <option value="sendgrid" @if (old('email_method', gs('mail_config')?->name) == 'sendgrid') selected @endif>@lang('SendGrid API')</option>
+                                <option value="mailjet" @if (old('email_method', gs('mail_config')?->name) == 'mailjet') selected @endif>@lang('Mailjet API')</option>
                             </select>
                         </div>
                         <div class="row mt-4 d-none configForm" id="smtp">
@@ -25,34 +25,34 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Host') </label>
-                                    <input type="text" class="form-control" placeholder="e.g. @lang('smtp.googlemail.com')" name="host" value="{{ gs('mail_config')?->host ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="e.g. @lang('smtp.googlemail.com')" name="host" value="{{ old('host', gs('mail_config')?->host ?? '') }}">
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Port') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Available port')" name="port" value="{{ gs('mail_config')?->port ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Available port')" name="port" value="{{ old('port', gs('mail_config')?->port ?? '') }}">
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label>@lang('Encryption')</label>
                                     <select class="form-control select2" data-minimum-results-for-search="-1" name="enc">
-                                        <option value="ssl" @selected(@gs('mail_config')?->enc == 'ssl')>@lang('SSL')</option>
-                                        <option value="tls" @selected(@gs('mail_config')?->enc == 'tls')>@lang('TLS')</option>
+                                        <option value="ssl" @selected(old('enc', @gs('mail_config')?->enc) == 'ssl')>@lang('SSL')</option>
+                                        <option value="tls" @selected(old('enc', @gs('mail_config')?->enc) == 'tls')>@lang('TLS')</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Username') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Normally your email') address" name="username" value="{{ gs('mail_config')?->username ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Normally your email') address" name="username" value="{{ old('username', gs('mail_config')?->username ?? '') }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Password') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Normally your email password')" name="password" value="{{ gs('mail_config')?->password ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Normally your email password')" name="password" value="{{ old('password', gs('mail_config')?->password ?? '') }}">
                                 </div>
                             </div>
                         </div>
@@ -62,7 +62,7 @@
                             </div>
                             <div class="form-group col-md-12">
                                 <label>@lang('App Key') </label>
-                                <input type="text" class="form-control" placeholder="@lang('SendGrid App key')" name="appkey" value="{{ gs('mail_config')?->appkey ?? '' }}">
+                                <input type="text" class="form-control" placeholder="@lang('SendGrid App key')" name="appkey" value="{{ old('appkey', gs('mail_config')?->appkey ?? '') }}">
                             </div>
                         </div>
                         <div class="row mt-4 d-none configForm" id="mailjet">
@@ -72,13 +72,13 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Api Public Key') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Mailjet Api Public Key')" name="public_key" value="{{ gs('mail_config')?->public_key ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Mailjet Api Public Key')" name="public_key" value="{{ old('public_key', gs('mail_config')?->public_key ?? '') }}">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label>@lang('Api Secret Key') </label>
-                                    <input type="text" class="form-control" placeholder="@lang('Mailjet Api Secret Key')" name="secret_key" value="{{ gs('mail_config')?->secret_key ?? '' }}">
+                                    <input type="text" class="form-control" placeholder="@lang('Mailjet Api Secret Key')" name="secret_key" value="{{ old('secret_key', gs('mail_config')?->secret_key ?? '') }}">
                                 </div>
                             </div>
                         </div>
@@ -134,7 +134,7 @@
 
 
 
-            var method = '{{ gs('mail_config')?->name }}';
+            var method = '{{ old('email_method', gs('mail_config')?->name) }}';
             emailMethod(method);
             $('select[name=email_method]').on('change', function() {
                 var method = $(this).val();
