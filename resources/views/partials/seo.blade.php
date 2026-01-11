@@ -3,7 +3,7 @@
     <meta name="title" Content="{{ gs()->siteName(__($pageTitle)) }}">
     <meta name="description" content="{{ @$seoContents->description ?? $seo->description }}">
     <meta name="keywords" content="{{ implode(',',@$seoContents->keywords ?? $seo->keywords) }}">
-    <link rel="shortcut icon" href="{{ siteFavicon() }}" type="image/x-icon">
+
 
     {{--<!-- Apple Stuff -->--}}
     <link rel="apple-touch-icon" href="{{ siteLogo() }}">

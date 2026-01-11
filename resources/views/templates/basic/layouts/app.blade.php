@@ -10,6 +10,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title> {{ gs()->siteName(__($pageTitle)) }}</title>
+    <link rel="shortcut icon" href="{{ asset('assets/images/logo_icon/favicon.png') }}?v=1766919126" type="image/x-icon">
     @include('partials.seo')
     <!-- Bootstrap CSS -->
     @if($isRTL)

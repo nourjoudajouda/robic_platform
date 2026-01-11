@@ -464,7 +464,7 @@
                 },
                 legend: {
                     show: true,
-                    position: 'top',
+                    position: 'bottom',
                     horizontalAlign: 'center',
                     labels: {
                         colors: '#fff',

@@ -15,7 +15,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (gs('socialite_credentials') as $key => $credential)
+                                @foreach (gs('socialite_credentials') ?? [] as $key => $credential)
                                     @if ($key == 'facebook' || $key == 'linkedin')
                                         {{-- <tr>
                                             <td class="fw-bold">{{ ucfirst($key) }}</td>
