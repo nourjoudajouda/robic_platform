@@ -42,7 +42,6 @@ Route::middleware('auth')->name('user.')->group(function () {
         Route::post('verify-email', 'emailVerification')->name('verify.email');
         Route::post('verify-mobile', 'mobileVerification')->name('verify.mobile');
         Route::post('verify-g2fa', 'g2faVerification')->name('2fa.verify');
-        Route::post('send-otp', 'sendActionOtp')->name('send.otp');
     });
 
     Route::middleware(['check.status', 'registration.complete'])->group(function () {

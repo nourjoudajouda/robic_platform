@@ -161,25 +161,4 @@ class AuthorizationController extends Controller
             return back()->withNotify($notify);
         }
     }
-
-    public function sendActionOtp()
-    {
-        $user = auth()->user();
-
-        if ($this->checkCodeValidity($user)) {
-             $targetTime = $user->ver_code_send_at->addMinutes(2)->timestamp;
-             $delay = $targetTime - time();
-             return response()->json(['error' => 'Please try after ' . $delay . ' seconds']);
-        }
-
-        $user->ver_code = verificationCode(6);
-        $user->ver_code_send_at = Carbon::now();
-        $user->save();
-
-        notify($user, 'EVER_CODE', [
-            'code' => $user->ver_code
-        ], ['email']);
-
-        return response()->json(['success' => 'Verification code sent successfully']);
-    }
 }

@@ -238,18 +238,7 @@ class SellController extends Controller
             return to_route('user.sell.form')->withNotify($notify);
         }
 
-        // OTP Verification
-        $request->validate([
-            'verification_code' => 'required',
-        ]);
         $user = auth()->user();
-        if ($user->ver_code != $request->verification_code) {
-             $notify[] = ['error', 'Invalid verification code'];
-             return back()->withNotify($notify);
-        }
-        // Clear code after successful verification
-        $user->ver_code = null;
-        $user->save();
         $productId = $sellData->product_id;
         $sellPrice = $sellData->sell_price;
         
