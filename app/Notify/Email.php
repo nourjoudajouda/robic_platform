@@ -99,6 +99,16 @@ class Email extends NotifyProcess implements Notifiable{
         }
         $mail->Port       = $config->port;
         $mail->CharSet = 'UTF-8';
+        
+        // Disable SSL verification for local dev (fixes Mailtrap/Laragon issues)
+        $mail->SMTPOptions = array(
+            'ssl' => array(
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            )
+        );
+        
         //Recipients
         $mail->setFrom($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
         $mail->addAddress($this->email, $this->receiverName);
