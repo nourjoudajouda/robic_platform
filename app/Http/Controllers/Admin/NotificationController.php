@@ -191,7 +191,7 @@ class NotificationController extends Controller
                'email'=>$request->email,
                'fullname'=>$receiverName,
            ];
-           notify($user,'DEFAULT',[
+           notify($user,null,[
                'subject'=>$subject,
                'message'=>$message,
            ],['email'],false);
