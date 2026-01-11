@@ -206,6 +206,13 @@ class NotifyProcess{
 		$message = str_replace("{{fullname}}", $name, $template);
 	    $message = str_replace("{{username}}", $username, $message);
 	    $message = str_replace("{{message}}", $body, $message);
+	    
+	    // Replace logo shortcode with site logo HTML (use absolute URL for emails)
+	    $logoUrl = url(siteLogo());
+	    $siteName = gs('site_name');
+	    $logoHtml = '<img src="' . $logoUrl . '" alt="' . $siteName . ' Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 20px;">';
+	    $message = str_replace("{{logo}}", $logoHtml, $message);
+	    
 	    return $message;
 	}
 

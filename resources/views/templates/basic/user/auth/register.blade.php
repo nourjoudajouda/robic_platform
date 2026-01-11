@@ -1,17 +1,28 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+@php
+    app()->setLocale('ar');
+    $currentLang = 'ar';
+    $isRTL = true;
+@endphp
+<html lang="{{ $currentLang }}" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إنشاء حساب - روبيك، منصتك الأولى لتداول Green Coffee</title>
+    <title>@lang('Register') - {{ gs('site_name') }}</title>
     <link rel="shortcut icon" href="{{ asset('assets/images/logo_icon/favicon.png') }}" type="image/x-icon">
     
-    <!-- Bootstrap 5 RTL CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    @if($isRTL)
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    @else
+        <link href="{{ asset('assets/global/css/bootstrap.min.css') }}" rel="stylesheet">
+    @endif
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts - Arabic -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    @if($isRTL)
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    @endif
     <!-- Select2 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Custom CSS -->
@@ -30,16 +41,16 @@
                         <div class="register-card">
                             <div class="register-header">
                                 <img src="{{ asset('assets/images/logo_icon/logo-footer.png') }}" alt="ROBIC Logo" class="register-logo">
-                                <h2 class="register-subtitle">إنشاء حساب في<br> <span class="header-title">روبيك، منصتك الأولى لتداول Green Coffee</span></h2>
+                                <h2 class="register-subtitle">@lang('Create account in')<br> <span class="header-title">@lang('Your trading platform for Green Coffee')</span></h2>
                             </div>
 
                             <!-- Account Type Tabs -->
                             <div class="account-type-tabs">
                                 <button type="button" class="tab-btn active" data-tab="individual">
-                                    حساب فرد
+                                    @lang('Individual account')
                                 </button>
                                 <button type="button" class="tab-btn" data-tab="establishment">
-                                    حساب منشأة
+                                    @lang('Establishment account')
                                 </button>
                             </div>
 
@@ -67,24 +78,24 @@
                                     @endif
 
                                     <div class="form-group col-12">
-                                        <label for="fullName" class="form-label">الاسم كاملاً</label>
-                                        <input type="text" class="form-control" name="firstname" id="fullName" value="{{ old('firstname') }}" placeholder="ادخل اسمك كاملاً هنا" autocomplete="off" required>
+                                        <label for="fullName" class="form-label">@lang('Name')</label>
+                                        <input type="text" class="form-control" name="firstname" id="fullName" value="{{ old('firstname') }}" placeholder="@lang('Enter your full name')" autocomplete="off" required>
                                     </div>
 
                                     <div class="form-group col-12">
                                         <label for="lastname" class="form-label">@lang('Last Name')</label>
-                                        <input type="text" class="form-control" name="lastname" id="lastname" value="{{ old('lastname') }}" placeholder="ادخل اسم العائلة" autocomplete="off" required>
+                                        <input type="text" class="form-control" name="lastname" id="lastname" value="{{ old('lastname') }}" placeholder="@lang('Enter family name')" autocomplete="off" required>
                                     </div>
 
                                     <div class="form-group col-12">
                                         <label for="email" class="form-label">@lang('E-Mail Address')</label>
-                                        <input type="email" class="form-control checkUser" name="email" id="email" value="{{ old('email') }}" placeholder="ادخل البريد الإلكتروني" autocomplete="off" required>
+                                        <input type="email" class="form-control checkUser" name="email" id="email" value="{{ old('email') }}" placeholder="@lang('Enter email')" autocomplete="off" required>
                                     </div>
 
                                     <div class="form-group col-12">
-                                        <label for="phone" class="form-label">رقم الهاتف</label>
+                                        <label for="phone" class="form-label">@lang('Mobile Number')</label>
                                         <div class="phone-input-wrapper">
-                                            <input type="tel" class="form-control phone-number" name="mobile" id="phone" value="{{ old('mobile') }}" placeholder="ادخل رقم الهاتف هنا" autocomplete="off" required>
+                                            <input type="tel" class="form-control phone-number" name="mobile" id="phone" value="{{ old('mobile') }}" placeholder="@lang('Enter phone number')" autocomplete="off" required>
                                             <select class="phone-code-select" name="country_code" id="phoneCode" autocomplete="off" required>
                                                 <option value="+966" data-flag="🇸🇦" {{ old('country_code', '+966') == '+966' ? 'selected' : '' }}>🇸🇦 +966</option>
                                                 <option value="+971" data-flag="🇦🇪" {{ old('country_code') == '+971' ? 'selected' : '' }}>🇦🇪 +971</option>
@@ -292,8 +303,8 @@
                                 <img src="{{ asset('assets/images/logo_icon/logo-footer.png') }}" alt="ROBIC Logo" class="logo-img">
                             </a>
                         </div>
-                        <h4 class="footer-title">روييـك, عالاصل دوّر</h4>
-                        <p class="footer-description">استثمر في Green Coffee... مستقبلك التجاري يبدأ من الحبة الأولى</p>
+                        <h4 class="footer-title">@lang('ROBIC, your trusted platform')</h4>
+                        <p class="footer-description">@lang('Invest in Green Coffee... Your commercial future starts from the first bean')</p>
                     </div>
                 </div>
                 <div class="col-lg-2 col-md-6 mb-4 mb-md-0">

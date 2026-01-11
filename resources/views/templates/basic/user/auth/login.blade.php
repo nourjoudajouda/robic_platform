@@ -1,17 +1,28 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+@php
+    app()->setLocale('ar');
+    $currentLang = 'ar';
+    $isRTL = true;
+@endphp
+<html lang="{{ $currentLang }}" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - روبيك، منصتك الأولى لتداول Green Coffee</title>
+    <title>@lang('Login') - {{ gs('site_name') }}</title>
     <link rel="shortcut icon" href="{{ asset('assets/images/logo_icon/favicon.png') }}" type="image/x-icon">
     
-    <!-- Bootstrap 5 RTL CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    @if($isRTL)
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    @else
+        <link href="{{ asset('assets/global/css/bootstrap.min.css') }}" rel="stylesheet">
+    @endif
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts - Arabic -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    @if($isRTL)
+        <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    @endif
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('assets/home/css/login.css') }}">
 </head>
@@ -27,17 +38,17 @@
                             <div class="login-header">
                                 <img src="{{ asset('assets/images/logo_icon/logo-footer.png') }}" alt="ROBIC Logo" class="login-logo">
                                 <h2 class="login-welcome">
-                                    مرحبا بك في روبيك ،<br> <span class="welcome-highlight">منصتك الأولى لتداول Green Coffee</span>
+                                    @lang('Welcome to robic'),<br> <span class="welcome-highlight">@lang('Your trading platform for Green Coffee')</span>
                                 </h2>
                             </div>
 
                             <!-- Account Type Tabs -->
                             <div class="account-type-tabs">
                                 <button type="button" class="tab-btn" data-tab="establishment">
-                                    حساب منشأة
+                                    @lang('Establishment account')
                                 </button>
                                 <button type="button" class="tab-btn active" data-tab="individual">
-                                    حساب فرد
+                                    @lang('Individual account')
                                 </button>
                             </div>
 
@@ -59,13 +70,13 @@
                                 <div class="row">
                                     <div class="form-group col-12">
                                         <label for="username" class="form-label">@lang('Username or Email')</label>
-                                        <input type="text" name="username" value="{{ old('username') }}" class="form-control" id="username" placeholder="ادخل البريد الإلكتروني" autocomplete="off" required>
+                                        <input type="text" name="username" value="{{ old('username') }}" class="form-control" id="username" placeholder="@lang('Enter email')" autocomplete="off" required>
                                     </div>
 
                                     <div class="form-group col-12">
                                         <label for="password" class="form-label">@lang('Password')</label>
                                         <div class="password-input-wrapper">
-                                            <input type="password" class="form-control" name="password" id="password" placeholder="أدخل كلمة المرور هنا" autocomplete="new-password" required>
+                                            <input type="password" class="form-control" name="password" id="password" placeholder="@lang('Enter password')" autocomplete="new-password" required>
                                             <button type="button" class="password-toggle" data-target="password">
                                                 <i class="fas fa-eye"></i>
                                             </button>
@@ -96,7 +107,7 @@
 
                                     <div class="col-12">
                                         <div class="divider">
-                                            <span class="divider-text">أو</span>
+                                            <span class="divider-text">@lang('or')</span>
                                         </div>
                                     </div>
 
@@ -104,7 +115,7 @@
                                         @if (@gs('socialite_credentials')->google->status == Status::ENABLE)
                                             <a href="{{ route('user.social.login', 'google') }}" class="btn btn-google-login">
                                                 <img src="{{ asset('assets/templates/basic/images/google.svg') }}" alt="Google" class="google-icon">
-                                                تسجيل باستخدام جوجل
+                                                @lang('Login with Google')
                                             </a>
                                         @endif
                                     </div>
@@ -128,8 +139,8 @@
                                 <img src="{{ asset('assets/images/logo_icon/logo-footer.png') }}" alt="ROBIC Logo" class="logo-img">
                             </a>
                         </div>
-                        <h4 class="footer-title">روييـك, عالاصل دوّر</h4>
-                        <p class="footer-description">استثمر في Green Coffee... مستقبلك التجاري يبدأ من الحبة الأولى</p>
+                        <h4 class="footer-title">@lang('ROBIC, your trusted platform')</h4>
+                        <p class="footer-description">@lang('Invest in Green Coffee... Your commercial future starts from the first bean')</p>
                     </div>
                 </div>
                 <div class="col-lg-2 col-md-6 mb-4 mb-md-0">

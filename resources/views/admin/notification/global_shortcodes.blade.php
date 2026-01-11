@@ -23,6 +23,10 @@
                         <td><span class="short-codes">@{{message}}</span></td>
                         <td>@lang('Message')</td>
                     </tr>
+                    <tr>
+                        <td><span class="short-codes">@{{logo}}</span></td>
+                        <td>@lang('Site Logo')</td>
+                    </tr>
                     @foreach(gs('global_shortcodes') ?? [] as $shortCode => $codeDetails)
                     <tr>
                         <td><span class="short-codes">@{{@php echo $shortCode @endphp}}</span></td>
