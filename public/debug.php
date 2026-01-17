@@ -32,7 +32,13 @@ try {
     $mail->SMTPAuth   = true;
     $mail->Username   = $config->username;
     $mail->Password   = $config->password;
-    if ($config->enc == 'ssl') {
+    
+    // Port 465 requires SSL (SMTPS), Port 587 requires TLS (STARTTLS)
+    if ($config->port == 465) {
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+    } elseif ($config->port == 587) {
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    } elseif ($config->enc == 'ssl') {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
     } else {
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;

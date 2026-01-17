@@ -97,15 +97,37 @@ class Email extends NotifyProcess implements Notifiable{
 	protected function sendSmtpMail(){
 		$mail = new PHPMailer(true);
 		$config = gs('mail_config');
+		
+		// Validate SMTP configuration
+		if (empty($config->host)) {
+			throw new Exception('SMTP Host is not configured');
+		}
+		if (empty($config->username)) {
+			throw new Exception('SMTP Username is not configured');
+		}
+		if (empty($config->password)) {
+			throw new Exception('SMTP Password is not configured');
+		}
+		if (empty($config->port)) {
+			throw new Exception('SMTP Port is not configured');
+		}
+		
         //Server settings
         $mail->isSMTP();
         $mail->Host       = $config->host;
         $mail->SMTPAuth   = true;
         $mail->Username   = $config->username;
         $mail->Password   = $config->password;
-        if ($config->enc == 'ssl') {
+        
+        // Port 465 requires SSL (SMTPS), Port 587 requires TLS (STARTTLS)
+        // Auto-detect encryption based on port if not explicitly set
+        if ($config->port == 465) {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-        }else{
+        } elseif ($config->port == 587) {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        } elseif ($config->enc == 'ssl') {
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        } else {
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         }
         $mail->Port       = $config->port;
@@ -123,6 +145,11 @@ class Email extends NotifyProcess implements Notifiable{
         //Recipients
         $fromEmail = $this->getEmailFrom()['email'];
         $fromName = $this->getEmailFrom()['name'];
+        
+        if (empty($fromEmail)) {
+			throw new Exception('Email From address is not configured. Please set it in Global Email Template settings.');
+		}
+        
         $mail->setFrom($fromEmail, $fromName);
         $mail->addAddress($this->email, $this->receiverName);
         $mail->addReplyTo($fromEmail, $fromName);
@@ -131,9 +158,17 @@ class Email extends NotifyProcess implements Notifiable{
         $mail->Subject = $this->subject;
         $mail->Body    = $this->finalMessage;
         
-        // PHPMailer with exception mode will throw Exception if send() fails
-        // The exception message will contain ErrorInfo automatically
-        $mail->send();
+        // PHPMailer with exception mode (true) will throw Exception if send() fails
+        // But we also check explicitly to ensure we catch any issues
+        try {
+            $result = $mail->send();
+            if (!$result) {
+                throw new Exception('PHPMailer send() returned false. Error: ' . $mail->ErrorInfo);
+            }
+        } catch (Exception $e) {
+            // Re-throw with more context
+            throw new Exception('SMTP Error: ' . $e->getMessage() . ' | PHPMailer ErrorInfo: ' . $mail->ErrorInfo);
+        }
 	}
 
 	protected function sendSendGridMail(){

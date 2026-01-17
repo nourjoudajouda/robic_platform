@@ -182,27 +182,39 @@ class NotificationController extends Controller
 
        $config = gs('mail_config');
        $receiverName = explode('@', $request->email)[0];
-       $subject = strtoupper($config->name).' Configuration Success';
+       $subject = strtoupper($config->name ?? 'SMTP').' Configuration Success';
        $message = 'Your email notification setting is configured successfully for '.gs('site_name');
 
        if (gs('en')) {
+           // Clear any previous mail errors
+           session()->forget('mail_error');
+           
            $user = [
                'username'=>$request->email,
                'email'=>$request->email,
                'fullname'=>$receiverName,
            ];
-           notify($user,null,[
-               'subject'=>$subject,
-               'message'=>$message,
-           ],['email'],false);
+           
+           try {
+               notify($user,null,[
+                   'subject'=>$subject,
+                   'message'=>$message,
+               ],['email'],false);
+           } catch (\Exception $e) {
+               $notify[] = ['error', 'Failed to send email: ' . $e->getMessage()];
+               return back()->withNotify($notify);
+           }
        }else{
            $notify[] = ['info', 'Please enable from general settings'];
            $notify[] = ['error', 'Your email notification is disabled'];
            return back()->withNotify($notify);
        }
 
+       // Check for mail errors after sending
        if (session('mail_error')) {
-           $notify[] = ['error', session('mail_error')];
+           $errorMsg = session('mail_error');
+           session()->forget('mail_error'); // Clear the error from session
+           $notify[] = ['error', 'Failed to send email: ' . $errorMsg];
        }else{
            $notify[] = ['success', 'Email sent to ' . $request->email . ' successfully'];
        }
