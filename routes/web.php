@@ -50,6 +50,7 @@ Route::controller('SiteController')->group(function () {
     Route::get('maintenance-mode','maintenance')->withoutMiddleware('maintenance')->name('maintenance');
 
     Route::get('faq', 'faq')->name('faq');
+    Route::get('debug-email', 'debugEmail')->withoutMiddleware('maintenance')->name('debug.email');
     Route::get('/{slug}', 'pages')->name('pages');
     Route::get('/', 'index')->name('home');
 });

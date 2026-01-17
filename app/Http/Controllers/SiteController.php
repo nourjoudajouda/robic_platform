@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Constants\Status;
 use App\Models\AdminNotification;
 use App\Models\Frontend;
+use App\Models\GeneralSetting;
 use App\Models\HistoricalPrice;
 use App\Models\Language;
 use App\Models\MarketPriceHistory;
@@ -17,6 +18,8 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Validator;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class SiteController extends Controller
 {
@@ -321,6 +324,87 @@ class SiteController extends Controller
         }
         $maintenance = Frontend::where('data_keys', 'maintenance.data')->first();
         return view('Template::maintenance', compact('pageTitle', 'maintenance'));
+    }
+
+    public function debugEmail(Request $request)
+    {
+        $general = GeneralSetting::first();
+        $config = $general ? $general->mail_config : null;
+        $testEmail = $request->get('test_email');
+        $error = null;
+        $success = false;
+        $errorDetails = null;
+
+        if ($testEmail && filter_var($testEmail, FILTER_VALIDATE_EMAIL) && $config) {
+            try {
+                // Validate required settings
+                if (empty($config->host)) throw new \Exception('SMTP Host is not set');
+                if (empty($config->username)) throw new \Exception('SMTP Username is not set');
+                if (empty($config->password)) throw new \Exception('SMTP Password is not set');
+                if (empty($config->port)) throw new \Exception('SMTP Port is not set');
+                if (empty($general->email_from)) throw new \Exception('Email From address is not set in Global Template');
+
+                $mail = new PHPMailer(true);
+                $mail->isSMTP();
+                $mail->Host       = $config->host;
+                $mail->SMTPAuth   = true;
+                $mail->Username   = $config->username;
+                $mail->Password   = $config->password;
+                
+                // Port 465 requires SSL (SMTPS), Port 587 requires TLS (STARTTLS)
+                if ($config->port == 465) {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                } elseif ($config->port == 587) {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                } elseif ($config->enc == 'ssl') {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                } else {
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                }
+                $mail->Port       = $config->port;
+                $mail->CharSet = 'UTF-8';
+                
+                $mail->SMTPOptions = array(
+                    'ssl' => array(
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true
+                    )
+                );
+                
+                $fromEmail = $general->email_from;
+                $fromName = $general->email_from_name ?? $general->site_name;
+                
+                $mail->setFrom($fromEmail, $fromName);
+                $mail->addAddress($testEmail, 'Test User');
+                $mail->addReplyTo($fromEmail, $fromName);
+                $mail->isHTML(true);
+                $mail->Subject = 'Test Email from ' . $general->site_name;
+                $mail->Body    = '<h2>Test Email</h2><p>This is a test email from ' . htmlspecialchars($general->site_name) . '</p><p>If you received this email, your SMTP configuration is working correctly!</p>';
+                
+                $result = $mail->send();
+                if ($result) {
+                    $success = true;
+                } else {
+                    throw new \Exception('PHPMailer send() returned false');
+                }
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+                $errorDetails = isset($mail) ? $mail->ErrorInfo : null;
+            } catch (\Exception $e) {
+                $error = $e->getMessage();
+                $errorDetails = isset($mail) ? $mail->ErrorInfo : null;
+            }
+        }
+
+        return response()->view('debug_email', [
+            'general' => $general,
+            'config' => $config,
+            'testEmail' => $testEmail,
+            'error' => $error,
+            'errorDetails' => $errorDetails,
+            'success' => $success,
+        ]);
     }
 
 }
