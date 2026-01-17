@@ -162,8 +162,16 @@ class Email extends NotifyProcess implements Notifiable{
         // But we also check explicitly to ensure we catch any issues
         try {
             $result = $mail->send();
+            
+            // Even if send() returns true, check ErrorInfo for warnings
             if (!$result) {
                 throw new Exception('PHPMailer send() returned false. Error: ' . $mail->ErrorInfo);
+            }
+            
+            // Check for any errors or warnings even after successful send
+            if (!empty($mail->ErrorInfo) && strpos($mail->ErrorInfo, 'SMTP') !== false) {
+                // Log warning but don't fail - sometimes SMTP servers return warnings but still send
+                \Log::warning('SMTP Warning after send: ' . $mail->ErrorInfo);
             }
         } catch (Exception $e) {
             // Re-throw with more context

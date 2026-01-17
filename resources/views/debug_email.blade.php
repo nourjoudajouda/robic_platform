@@ -54,17 +54,26 @@
                 
                 @if($success)
                     <div class="success">
-                        <strong>✅ SUCCESS!</strong><br>
+                        <strong>✅ PHPMailer reported SUCCESS!</strong><br>
                         Email sent successfully to: {{ $testEmail }}<br>
-                        Please check your inbox (and spam folder).
+                        <strong>⚠️ Important:</strong> If you don't receive the email, check:<br>
+                        <ul>
+                            <li>Spam/Junk folder</li>
+                            <li>Email server logs</li>
+                            <li>SMTP server may have accepted but not delivered</li>
+                        </ul>
+                        @if($errorDetails)
+                            <strong>SMTP Debug Output:</strong><br>
+                            <pre style="max-height: 300px; overflow-y: auto;">{{ $errorDetails }}</pre>
+                        @endif
                     </div>
                 @elseif($error)
                     <div class="error">
                         <strong>❌ FAILED TO SEND EMAIL</strong><br>
                         <strong>Error:</strong> {{ $error }}<br>
                         @if($errorDetails)
-                            <strong>PHPMailer Error Info:</strong><br>
-                            <pre>{{ $errorDetails }}</pre>
+                            <strong>SMTP Debug Output:</strong><br>
+                            <pre style="max-height: 300px; overflow-y: auto;">{{ $errorDetails }}</pre>
                         @endif
                     </div>
                 @endif

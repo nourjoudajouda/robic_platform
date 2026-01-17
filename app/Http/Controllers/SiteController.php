@@ -345,6 +345,14 @@ class SiteController extends Controller
                 if (empty($general->email_from)) throw new \Exception('Email From address is not set in Global Template');
 
                 $mail = new PHPMailer(true);
+                
+                // Enable debug output to capture SMTP conversation
+                $debugOutput = '';
+                $mail->SMTPDebug = 2; // 2 = client and server messages
+                $mail->Debugoutput = function($str, $level) use (&$debugOutput) {
+                    $debugOutput .= htmlspecialchars($str) . "\n";
+                };
+                
                 $mail->isSMTP();
                 $mail->Host       = $config->host;
                 $mail->SMTPAuth   = true;
@@ -382,11 +390,23 @@ class SiteController extends Controller
                 $mail->Subject = 'Test Email from ' . $general->site_name;
                 $mail->Body    = '<h2>Test Email</h2><p>This is a test email from ' . htmlspecialchars($general->site_name) . '</p><p>If you received this email, your SMTP configuration is working correctly!</p>';
                 
+                $debugOutput = '';
                 $result = $mail->send();
-                if ($result) {
+                
+                // Check ErrorInfo even if send() returns true
+                $hasError = !empty($mail->ErrorInfo);
+                
+                if ($result && !$hasError) {
                     $success = true;
                 } else {
-                    throw new \Exception('PHPMailer send() returned false');
+                    $errorMsg = 'PHPMailer send() returned ' . ($result ? 'true' : 'false');
+                    if ($hasError) {
+                        $errorMsg .= '. ErrorInfo: ' . $mail->ErrorInfo;
+                    }
+                    if (!empty($debugOutput)) {
+                        $errorDetails = $debugOutput;
+                    }
+                    throw new \Exception($errorMsg);
                 }
             } catch (Exception $e) {
                 $error = $e->getMessage();
@@ -402,7 +422,7 @@ class SiteController extends Controller
             'config' => $config,
             'testEmail' => $testEmail,
             'error' => $error,
-            'errorDetails' => $errorDetails,
+            'errorDetails' => $errorDetails ?? null,
             'success' => $success,
         ]);
     }
