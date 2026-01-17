@@ -6,6 +6,7 @@ use App\Constants\Status;
 use App\Models\AdminNotification;
 use App\Models\User;
 use App\Models\UserLogin;
+use App\Models\Wallet;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
@@ -31,9 +32,24 @@ class SocialLogin
 
     private function configuration()
     {
-        $provider      = $this->provider;
-        $configuration = gs('socialite_credentials')->$provider;
-        $provider    = $this->fromApi && $provider == 'linkedin' ? 'linkedin-openid' : $provider;
+        $provider = $this->provider;
+        $socialiteCredentials = gs('socialite_credentials');
+        
+        if (!$socialiteCredentials || !isset($socialiteCredentials->$provider)) {
+            throw new Exception('Social login is not configured. Please contact administrator.');
+        }
+        
+        $configuration = $socialiteCredentials->$provider;
+        
+        if (!$configuration->client_id || !$configuration->client_secret) {
+            throw new Exception('Social login credentials are not configured. Please contact administrator.');
+        }
+        
+        if ($configuration->status != Status::ENABLE) {
+            throw new Exception('Social login is currently disabled.');
+        }
+        
+        $provider = $this->fromApi && $provider == 'linkedin' ? 'linkedin-openid' : $provider;
 
         Config::set('services.' . $provider, [
             'client_id'     => $configuration->client_id,
@@ -119,13 +135,28 @@ class SocialLogin
 
         $newUser = new User();
         $newUser->provider_id = $user->id;
-
         $newUser->email = $user->email;
-
         $newUser->password = Hash::make($password);
-        $newUser->firstname = $firstName;
-        $newUser->lastname = $lastName;
-        $user->ref_by    = $referUser ? $referUser->id : 0;
+        $newUser->firstname = $firstName ?? 'User';
+        $newUser->lastname = $lastName ?? '';
+        
+        // Generate username from email if available
+        if ($user->email) {
+            $usernameBase = strtolower(explode('@', $user->email)[0]);
+            $username = $usernameBase;
+            $counter = 1;
+            while (User::where('username', $username)->exists()) {
+                $username = $usernameBase . $counter;
+                $counter++;
+            }
+            $newUser->username = $username;
+        }
+        
+        $newUser->ref_by = $referUser ? $referUser->id : 0;
+        
+        // Set user type to individual for social login users
+        $newUser->type = 'individual';
+        $newUser->user_type = 'individual';
 
         $newUser->status = Status::VERIFIED;
         $newUser->kv = $general->kv ? Status::NO : Status::YES;
@@ -134,7 +165,15 @@ class SocialLogin
         $newUser->ts = Status::DISABLE;
         $newUser->tv = Status::VERIFIED;
         $newUser->provider = $provider;
+        $newUser->profile_complete = Status::YES; // Set profile as complete
         $newUser->save();
+
+        // Create empty wallet for the user
+        $wallet = new Wallet();
+        $wallet->user_id = $newUser->id;
+        $wallet->balance = 0;
+        $wallet->status = Status::ENABLE;
+        $wallet->save();
 
         $adminNotification = new AdminNotification();
         $adminNotification->user_id = $newUser->id;

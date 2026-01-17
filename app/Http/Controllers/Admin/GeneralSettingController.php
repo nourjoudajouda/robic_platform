@@ -277,13 +277,42 @@ class GeneralSettingController extends Controller
     public function socialiteCredentials()
     {
         $pageTitle = 'Social Login Credentials';
+        $general = gs();
+        
+        // Initialize credentials if null
+        if (!$general->socialite_credentials) {
+            $general->socialite_credentials = (object)[
+                'google' => (object)[
+                    'client_id' => '',
+                    'client_secret' => '',
+                    'status' => Status::DISABLE,
+                ],
+            ];
+            $general->save();
+        }
+        
         return view('admin.setting.social_credential', compact('pageTitle'));
     }
 
     public function updateSocialiteCredentialStatus($key)
     {
-        $general     = gs();
+        $general = gs();
         $credentials = $general->socialite_credentials;
+        
+        // Initialize credentials if null
+        if (!$credentials) {
+            $credentials = (object)[];
+        }
+        
+        // Initialize provider if not exists
+        if (!isset($credentials->$key)) {
+            $credentials->$key = (object)[
+                'client_id' => '',
+                'client_secret' => '',
+                'status' => Status::DISABLE,
+            ];
+        }
+        
         try {
             $credentials->$key->status = $credentials->$key->status == Status::ENABLE ? Status::DISABLE : Status::ENABLE;
         } catch (\Throwable $th) {
@@ -299,14 +328,30 @@ class GeneralSettingController extends Controller
 
     public function updateSocialiteCredential(Request $request, $key)
     {
-        $general     = gs();
+        $general = gs();
         $credentials = $general->socialite_credentials;
+        
+        // Initialize credentials if null
+        if (!$credentials) {
+            $credentials = (object)[];
+        }
+        
+        // Initialize provider if not exists
+        if (!isset($credentials->$key)) {
+            $credentials->$key = (object)[
+                'client_id' => '',
+                'client_secret' => '',
+                'status' => Status::DISABLE,
+            ];
+        }
+        
         try {
-            @$credentials->$key->client_id     = $request->client_id;
-            @$credentials->$key->client_secret = $request->client_secret;
+            $credentials->$key->client_id = $request->client_id ?? '';
+            $credentials->$key->client_secret = $request->client_secret ?? '';
         } catch (\Throwable $th) {
             abort(404);
         }
+        
         $general->socialite_credentials = $credentials;
         $general->save();
 

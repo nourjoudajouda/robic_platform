@@ -154,32 +154,109 @@
     <x-confirmation-modal />
 @endsection
 
+@php
+    $helpTexts = [
+        'step1' => __('Step 1'),
+        'step2' => __('Step 2'),
+        'step3' => __('Step 3'),
+        'step4' => __('Step 4'),
+        'step5' => __('Step 5'),
+        'step6' => __('Step 6'),
+        'step7' => __('Step 7'),
+        'step8' => __('Step 8'),
+        'step9' => __('Step 9'),
+        'goTo' => __('Go to'),
+        'googleDevConsole' => __('google developer console'),
+        'newProject' => __('New Project'),
+        'credentials' => __('credentials'),
+        'oauthClientId' => __('OAuth client ID'),
+        'configureConsent' => __('Configure Consent Screen'),
+        'chooseExternal' => __('Choose External option and press the create button'),
+        'fillInfo' => __('Please fill up the required informations for app configuration'),
+        'clickCredentials' => __('Again click on'),
+        'step8Text' => __('and select type as web application and fill up the required informations. Also don\'t forget to add redirect url and press create button'),
+        'step9Text' => __('Finally you\'ve got the credentials. Please copy the Client ID and Client Secret and paste it in admin panel google configuration'),
+        'clickOn' => __('Click on'),
+        'selectProject' => __('Click on Select a project than click on'),
+        'createProject' => __('and create a project providing the project name'),
+        'createCredentials' => __('Click on create credentials and select'),
+    ];
+@endphp
+
 @push('script')
     <script>
         (function($) {
             "use strict";
-            $(document).on('click', '.editBtn', function() {
+            
+            var helpTexts = {!! json_encode($helpTexts) !!};
+            
+            // Wait for DOM to be ready
+            $(document).ready(function() {
+                console.log('Social credentials page loaded');
+            });
+            
+            $(document).on('click', '.editBtn', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('Configure button clicked');
+                
                 let modal = $('#editModal');
+                if (!modal.length) {
+                    console.error('Modal #editModal not found');
+                    alert('Modal not found. Please refresh the page.');
+                    return;
+                }
+                
                 let data = $(this).data();
+                console.log('Button data:', data);
+                
+                if (!data.key) {
+                    console.error('Key not found in data attributes');
+                    alert('Error: Key not found. Please refresh the page.');
+                    return;
+                }
+                
                 let route = "{{ route('admin.setting.socialite.credentials.update', '') }}";
                 let callbackUrl = "{{ route('user.social.login.callback', '') }}";
+                
                 modal.find('form').attr('action', `${route}/${data.key}`);
                 modal.find('.credential-name').text(data.key);
-                modal.find('[name=client_id]').val(data.client_id);
-                modal.find('[name=client_secret]').val(data.client_secret);
+                modal.find('[name=client_id]').val(data.client_id || '');
+                modal.find('[name=client_secret]').val(data.client_secret || '');
                 modal.find('.callback').val(`${callbackUrl}/${data.key}`);
-                modal.modal('show');
+                
+                console.log('Opening modal...');
+                
+                // Use Bootstrap 5 modal if available, otherwise Bootstrap 4
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var bsModal = new bootstrap.Modal(modal[0], {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    bsModal.show();
+                } else if ($.fn.modal) {
+                    modal.modal('show');
+                } else {
+                    console.error('Bootstrap modal not available');
+                    alert('Bootstrap modal not available. Please refresh the page.');
+                }
             });
-            $('.copyInput').on('click', function(e) {
+            $(document).on('click', '.copyInput', function(e) {
+                e.preventDefault();
                 var copybtn = $(this);
                 var input = copybtn.closest('.input-group').find('input');
-                if (input && input.select) {
-                    input.select();
+                if (input && input.length) {
+                    input[0].select();
+                    input[0].setSelectionRange(0, 99999); // For mobile devices
                     try {
-                        document.execCommand('SelectAll')
-                        document.execCommand('Copy', false, null);
+                        document.execCommand('copy');
                         input.blur();
-                        notify('success', `Copied: ${copybtn.closest('.input-group').find('input').val()}`);
+                        if (typeof notify !== 'undefined') {
+                            notify('success', `Copied: ${input.val()}`);
+                        } else {
+                            alert('Copied: ' + input.val());
+                        }
                     } catch (err) {
                         alert('Please press Ctrl/Cmd + C to copy');
                     }
@@ -194,19 +271,44 @@
                 modal.find('.title-key').text(key);
 
                 if (key == 'google') {
+                    var step1 = helpTexts.step1 || 'Step 1';
+                    var step2 = helpTexts.step2 || 'Step 2';
+                    var step3 = helpTexts.step3 || 'Step 3';
+                    var step4 = helpTexts.step4 || 'Step 4';
+                    var step5 = helpTexts.step5 || 'Step 5';
+                    var step6 = helpTexts.step6 || 'Step 6';
+                    var step7 = helpTexts.step7 || 'Step 7';
+                    var step8 = helpTexts.step8 || 'Step 8';
+                    var step9 = helpTexts.step9 || 'Step 9';
+                    var goTo = helpTexts.goTo || 'Go to';
+                    var googleDevConsole = helpTexts.googleDevConsole || 'google developer console';
+                    var newProject = helpTexts.newProject || 'New Project';
+                    var credentials = helpTexts.credentials || 'credentials';
+                    var oauthClientId = helpTexts.oauthClientId || 'OAuth client ID';
+                    var configureConsent = helpTexts.configureConsent || 'Configure Consent Screen';
+                    var chooseExternal = helpTexts.chooseExternal || 'Choose External option and press the create button';
+                    var fillInfo = helpTexts.fillInfo || 'Please fill up the required informations for app configuration';
+                    var clickCredentials = helpTexts.clickCredentials || 'Again click on';
+                    var step8Text = helpTexts.step8Text || 'and select type as web application and fill up the required informations. Also don\'t forget to add redirect url and press create button';
+                    var step9Text = helpTexts.step9Text || 'Finally you\'ve got the credentials. Please copy the Client ID and Client Secret and paste it in admin panel google configuration';
+                    var clickOn = helpTexts.clickOn || 'Click on';
+                    var selectProject = helpTexts.selectProject || 'Click on Select a project than click on';
+                    var createProject = helpTexts.createProject || 'and create a project providing the project name';
+                    var createCredentials = helpTexts.createCredentials || 'Click on create credentials and select';
 
-                    rules = `<ul class="list-group list-group-flush">
-                        <li class="list-group-item"><b>@lang('Step 1')</b>: @lang('Go to') <a href="https://console.developers.google.com" target="_blank">@lang('google developer console').</a></li>
-                        <li class="list-group-item"><b>@lang('Step 2')</b>: @lang('Click on Select a project than click on') <a href="https://console.cloud.google.com/projectcreate" target="_blank">@lang('New Project')</a>  @lang('and create a project providing the project name').</li>
-                        <li class="list-group-item"><b>@lang('Step 3')</b>: @lang('Click on') <a href="https://console.cloud.google.com/apis/credentials" target="_blank">@lang('credentials').</a></li>
-                        <li class="list-group-item"><b>@lang('Step 4')</b>: @lang('Click on create credentials and select') <a href="https://console.cloud.google.com/apis/credentials/oauthclient" target="_blank">@lang('OAuth client ID').</a></li>
-                        <li class="list-group-item"><b>@lang('Step 5')</b>: @lang('Click on') <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank">@lang('Configure Consent Screen').</a></li>
-                        <li class="list-group-item"><b>@lang('Step 6')</b>: @lang('Choose External option and press the create button'). </li>
-                        <li class="list-group-item"><b>@lang('Step 7')</b>: @lang('Please fill up the required informations for app configuration'). </li>
-                        <li class="list-group-item"><b>@lang('Step 8')</b>: @lang('Again click on') <a href="https://console.cloud.google.com/apis/credentials" target="_blank">@lang('credentials')</a> @lang('and select type as web application and fill up the required informations. Also don\'t forget to add redirect url and press create button'). </li>
-                        <li class="list-group-item"><b>@lang('Step 9')</b>: @lang('Finally you\'ve got the credentials. Please copy the Client ID and Client Secret and paste it in admin panel google configuration'). </li>
-                    </ul>`;
-                // } else if (key == 'facebook') {
+                    rules = '<ul class="list-group list-group-flush">' +
+                        '<li class="list-group-item"><b>' + step1 + '</b>: ' + goTo + ' <a href="https://console.developers.google.com" target="_blank">' + googleDevConsole + '.</a></li>' +
+                        '<li class="list-group-item"><b>' + step2 + '</b>: ' + selectProject + ' <a href="https://console.cloud.google.com/projectcreate" target="_blank">' + newProject + '</a> ' + createProject + '.</li>' +
+                        '<li class="list-group-item"><b>' + step3 + '</b>: ' + clickOn + ' <a href="https://console.cloud.google.com/apis/credentials" target="_blank">' + credentials + '.</a></li>' +
+                        '<li class="list-group-item"><b>' + step4 + '</b>: ' + createCredentials + ' <a href="https://console.cloud.google.com/apis/credentials/oauthclient" target="_blank">' + oauthClientId + '.</a></li>' +
+                        '<li class="list-group-item"><b>' + step5 + '</b>: ' + clickOn + ' <a href="https://console.cloud.google.com/apis/credentials/consent" target="_blank">' + configureConsent + '.</a></li>' +
+                        '<li class="list-group-item"><b>' + step6 + '</b>: ' + chooseExternal + '.</li>' +
+                        '<li class="list-group-item"><b>' + step7 + '</b>: ' + fillInfo + '.</li>' +
+                        '<li class="list-group-item"><b>' + step8 + '</b>: ' + clickCredentials + ' <a href="https://console.cloud.google.com/apis/credentials" target="_blank">' + credentials + '</a> ' + step8Text + '.</li>' +
+                        '<li class="list-group-item"><b>' + step9 + '</b>: ' + step9Text + '.</li>' +
+                        '</ul>';
+                }
+                //  else if (key == 'facebook') {
                 //     rules = ` <ul class="list-group list-group-flush">
                 //         <li class="list-group-item"><b>@lang('Step 1')</b>: @lang('Go to') <a href="https://developers.facebook.com/" target="_blank">@lang('facebook developer')</a></li>
                 //         <li class="list-group-item"><b>@lang('Step 2')</b>: @lang('Click on Get Started and create Meta Developer account').</li>
@@ -227,7 +329,20 @@
                 // }
 
                 modal.find('.modal-body').html(rules);
-                modal.modal('show');
+                
+                // Use Bootstrap 5 modal if available, otherwise Bootstrap 4
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    var bsModal = new bootstrap.Modal(modal[0], {
+                        backdrop: true,
+                        keyboard: true
+                    });
+                    bsModal.show();
+                } else if ($.fn.modal) {
+                    modal.modal('show');
+                } else {
+                    console.error('Bootstrap modal not available');
+                    alert('Bootstrap modal not available. Please refresh the page.');
+                }
             });
         })(jQuery);
     </script>
