@@ -43,17 +43,28 @@ class Email extends NotifyProcess implements Notifiable{
 		}
 		//get message from parent
 		$message = $this->getMessage();
-		if ($message) {
-			//Send mail
-			$methodName = gs('mail_config')->name;
-			$method = $this->mailMethods($methodName);
-			try{
-				$this->$method();
-				$this->createLog('email');
-			}catch(\Exception $e){
-				$this->createErrorLog($e->getMessage());
-				session()->flash('mail_error',$e->getMessage());
-			}
+		if (!$message || empty(trim($message))) {
+			$errorMsg = 'Email message is empty. Please check your email template configuration.';
+			$this->createErrorLog($errorMsg);
+			session()->flash('mail_error', $errorMsg);
+			return false;
+		}
+		
+		// Ensure subject is set
+		if (empty($this->subject)) {
+			$this->subject = $this->shortCodes['subject'] ?? 'Notification from ' . gs('site_name');
+		}
+		
+		//Send mail
+		$methodName = gs('mail_config')->name;
+		$method = $this->mailMethods($methodName);
+		try{
+			$this->$method();
+			$this->createLog('email');
+		}catch(\Exception $e){
+			$errorMsg = $e->getMessage();
+			$this->createErrorLog($errorMsg);
+			session()->flash('mail_error', $errorMsg);
 		}
 
 	}
@@ -110,13 +121,18 @@ class Email extends NotifyProcess implements Notifiable{
         );
         
         //Recipients
-        $mail->setFrom($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
+        $fromEmail = $this->getEmailFrom()['email'];
+        $fromName = $this->getEmailFrom()['name'];
+        $mail->setFrom($fromEmail, $fromName);
         $mail->addAddress($this->email, $this->receiverName);
-        $mail->addReplyTo($this->getEmailFrom()['email'], $this->getEmailFrom()['name']);
+        $mail->addReplyTo($fromEmail, $fromName);
         // Content
         $mail->isHTML(true);
         $mail->Subject = $this->subject;
         $mail->Body    = $this->finalMessage;
+        
+        // PHPMailer with exception mode will throw Exception if send() fails
+        // The exception message will contain ErrorInfo automatically
         $mail->send();
 	}
 
@@ -173,10 +189,17 @@ class Email extends NotifyProcess implements Notifiable{
 	}
 
     private function getEmailFrom(){
-        $this->sentFrom = $this->template->email_sent_from_address ?? gs('email_from');
+        $this->sentFrom = ($this->template && isset($this->template->email_sent_from_address)) 
+            ? $this->template->email_sent_from_address 
+            : gs('email_from');
+        
+        $fromName = ($this->template && isset($this->template->email_sent_from_name)) 
+            ? $this->template->email_sent_from_name 
+            : gs('site_name');
+        
         return [
             'email'=>$this->sentFrom,
-            'name'=>$this->replaceTemplateShortCode($this->template->email_sent_from_name ?? gs('site_name')),
+            'name'=>$this->replaceTemplateShortCode($fromName),
         ];
     }
 }

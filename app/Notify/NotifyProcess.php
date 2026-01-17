@@ -208,7 +208,8 @@ class NotifyProcess{
 	    $message = str_replace("{{message}}", $body, $message);
 	    
 	    // Replace logo shortcode with site logo HTML (use absolute URL for emails)
-	    $logoUrl = url(siteLogo());
+	    // Use logo-footer.png which is used on the home page
+	    $logoUrl = asset('assets/images/logo_icon/logo-footer.png');
 	    $siteName = gs('site_name');
 	    $logoHtml = '<img src="' . $logoUrl . '" alt="' . $siteName . ' Logo" style="max-width: 200px; height: auto; display: block; margin: 0 auto 20px;">';
 	    $message = str_replace("{{logo}}", $logoHtml, $message);
@@ -242,6 +243,13 @@ class NotifyProcess{
 			    }
 		    }
 			$this->subject = $subject;
+		} else {
+			// If no template, use subject from shortCodes or default
+			if ($this->shortCodes && isset($this->shortCodes['subject'])) {
+				$this->subject = $this->shortCodes['subject'];
+			} elseif (empty($this->subject)) {
+				$this->subject = 'Notification from ' . gs('site_name');
+			}
 		}
 	}
 
