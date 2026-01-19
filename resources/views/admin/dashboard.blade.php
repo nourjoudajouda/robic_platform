@@ -279,10 +279,12 @@
 
 @push('script-lib')
     <script src="{{ asset('assets/global/js/apexcharts.min.js') }}"></script>
-    <script src="{{ asset('assets/admin/js/vendor/chart.js.2.8.0.js') }}"></script>
+    <script src="{{ assetWithFallback('assets/admin/js/vendor/chart.js.2.8.0.js', 'https://cdn.jsdelivr.net/npm/chart.js@2.8.0/dist/Chart.min.js') }}"></script>
     <script src="{{ asset('assets/admin/js/moment.min.js') }}"></script>
     <script src="{{ asset('assets/admin/js/daterangepicker.min.js') }}"></script>
+    @if(file_exists(public_path('assets/admin/js/charts.js')))
     <script src="{{ asset('assets/admin/js/charts.js') }}"></script>
+    @endif
 @endpush
 
 @push('style-lib')

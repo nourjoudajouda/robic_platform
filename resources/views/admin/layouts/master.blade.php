@@ -17,7 +17,7 @@
     @endif
     <link rel="stylesheet" href="{{ asset('assets/global/css/bootstrap.min.css') }}">
 
-    <link rel="stylesheet" href="{{asset('assets/admin/css/vendor/bootstrap-toggle.min.css')}}">
+    <link rel="stylesheet" href="{{assetWithFallback('assets/admin/css/vendor/bootstrap-toggle.min.css', 'https://cdn.jsdelivr.net/npm/bootstrap-toggle@2.2.2/css/bootstrap-toggle.min.css')}}">
     <link rel="stylesheet" href="{{asset('assets/global/css/all.min.css')}}">
     <link rel="stylesheet" href="{{asset('assets/global/css/line-awesome.min.css')}}">
 
@@ -51,7 +51,7 @@
 
 <script src="{{asset('assets/global/js/jquery-3.7.1.min.js')}}"></script>
 <script src="{{asset('assets/global/js/bootstrap.bundle.min.js')}}"></script>
-<script src="{{asset('assets/admin/js/vendor/bootstrap-toggle.min.js')}}"></script>
+<script src="{{assetWithFallback('assets/admin/js/vendor/bootstrap-toggle.min.js', 'https://cdn.jsdelivr.net/npm/bootstrap-toggle@2.2.2/js/bootstrap-toggle.min.js')}}"></script>
 
 
 @include('partials.notify')

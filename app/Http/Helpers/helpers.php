@@ -659,3 +659,22 @@ function asset_url($path, $secure = null)
     }
     return asset($path, $secure);
 }
+
+// Helper function to get asset with fallback to CDN if file doesn't exist
+function assetWithFallback($path, $cdnUrl = null)
+{
+    $localPath = public_path($path);
+    
+    // Check if file exists locally
+    if (file_exists($localPath) && is_file($localPath)) {
+        return asset($path);
+    }
+    
+    // Return CDN URL if provided
+    if ($cdnUrl) {
+        return $cdnUrl;
+    }
+    
+    // Fallback to local asset anyway
+    return asset($path);
+}
