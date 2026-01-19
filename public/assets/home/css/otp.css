@@ -304,3 +304,53 @@
         height: 15px;
     }
 }
+
+/* ============================================
+   OTP Display for Local Environment
+   ============================================ */
+.otp-display-local {
+    margin: 1.5rem 0;
+}
+
+.otp-display-local .alert {
+    background: rgba(23, 162, 184, 0.2);
+    border: 2px solid #17a2b8;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.otp-display-local .alert strong {
+    color: #17a2b8;
+    font-size: 1rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.otp-code-display {
+    display: inline-block;
+    font-size: 2rem;
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    padding: 0.5rem 1.5rem;
+    border-radius: 10px;
+    margin-right: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 3px 10px rgba(23, 162, 184, 0.5);
+    letter-spacing: 0.5rem;
+    font-family: 'Courier New', monospace;
+}
+
+.otp-display-local .alert i {
+    color: #17a2b8;
+    font-size: 1.2rem;
+}
+
+@media (max-width: 576px) {
+    .otp-code-display {
+        font-size: 1.5rem;
+        padding: 0.4rem 1rem;
+        letter-spacing: 0.3rem;
+    }
+}

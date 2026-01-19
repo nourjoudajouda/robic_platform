@@ -42,6 +42,17 @@
                                 @lang('A 6 digit verification code sent to your mobile number'): +{{ showMobileNumber(auth()->user()->mobileNumber) }}
                             </p>
 
+                            <!-- OTP Display (Local Environment Only) -->
+                            @if(config('app.env') === 'local' && isset($user->ver_code) && $user->ver_code)
+                            <div class="otp-display-local mb-3">
+                                <div class="alert alert-info text-center" role="alert">
+                                    <i class="fas fa-key me-2"></i>
+                                    <strong>@lang('Development Mode'):</strong>
+                                    <span class="otp-code-display">{{ $user->ver_code }}</span>
+                                </div>
+                            </div>
+                            @endif
+
                             <!-- OTP Form -->
                             <form action="{{ route('user.verify.mobile') }}" method="POST" class="submit-form">
                                 @csrf
