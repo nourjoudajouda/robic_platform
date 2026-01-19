@@ -6,6 +6,45 @@ Route::get('/clear', function(){
     \Illuminate\Support\Facades\Artisan::call('optimize:clear');
 });
 
+// Clear cache route - runs config:clear and cache:clear
+// Usage: /clear-cache?token=your-secret-token
+Route::get('/clear-cache', function(\Illuminate\Http\Request $request){
+    // Optional token protection - if CACHE_CLEAR_TOKEN is set in .env, require it
+    $expectedToken = env('CACHE_CLEAR_TOKEN');
+    
+    if ($expectedToken) {
+        $token = $request->get('token') ?? $request->header('X-Cache-Token');
+        
+        if ($token !== $expectedToken) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Unauthorized. Invalid or missing token.'
+            ], 401);
+        }
+    }
+    
+    try {
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Cache cleared successfully',
+            'commands' => [
+                'config:clear' => 'executed',
+                'cache:clear' => 'executed'
+            ],
+            'timestamp' => now()->toDateTimeString()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'timestamp' => now()->toDateTimeString()
+        ], 500);
+    }
+})->name('clear.cache');
+
 // Deployment endpoints (protected with token)
 Route::prefix('deploy')->name('deploy.')->withoutMiddleware('maintenance')->group(function () {
     Route::post('setup-env', 'DeployController@setupEnv')->name('setup.env');
